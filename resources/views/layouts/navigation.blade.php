@@ -22,10 +22,52 @@
                     </x-nav-link>
                     @endhasanyrole
 
-                    <x-nav-link :href="route('travel-requests.index')"
-                        :active="request()->routeIs('travel-requests.*')">
+                    @hasanyrole('admin|head-office-director|commercial-director|ceo')
+                    <x-nav-link :href="route('travel-requests.index')" :active="request()->routeIs('travel-requests.*') && !request()->query('view')">
                         {{ __('Travel Requests') }}
                     </x-nav-link>
+                    @endhasanyrole
+
+                    @unlessrole('admin|head-office-director|commercial-director|ceo|project-manager')
+                    <x-nav-link :href="route('travel-requests.index', ['view' => 'personal'])"
+                        :active="request()->routeIs('travel-requests.*')">
+                        {{ __('Travel History') }}
+                    </x-nav-link>
+                    @endunlessrole
+
+                    @hasrole('project-manager')
+                    <div
+                        class="inline-flex items-center sm:-my-px mt-1 border-b-2 {{ request()->routeIs('travel-requests.*') ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} transition duration-150 ease-in-out">
+                        <x-dropdown align="left" width="48">
+                            <x-slot name="trigger">
+                                <button
+                                    class="inline-flex items-center px-1 pt-1 text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out h-full">
+                                    <div>{{ __('History') }}</div>
+
+                                    <div class="ms-1">
+                                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd"
+                                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                </button>
+                            </x-slot>
+
+                            <x-slot name="content">
+                                <x-dropdown-link :href="route('travel-requests.index', ['view' => 'personal'])"
+                                    :active="request()->query('view') === 'personal'">
+                                    {{ __('My Travel History') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link :href="route('travel-requests.index', ['view' => 'project'])"
+                                    :active="request()->query('view') === 'project'">
+                                    {{ __('My Projects Travel History') }}
+                                </x-dropdown-link>
+                            </x-slot>
+                        </x-dropdown>
+                    </div>
+                    @endhasrole
 
                     @hasanyrole('admin|head-office-director')
                     <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
@@ -116,9 +158,11 @@
                                         </span>
                                         <div class="min-w-0">
                                             <p class="text-xs font-semibold text-gray-800 leading-snug">
-                                                {{ $notification->data['message'] ?? 'Notification' }}</p>
+                                                {{ $notification->data['message'] ?? 'Notification' }}
+                                            </p>
                                             <p class="text-xs text-gray-400 mt-0.5">
-                                                {{ $notification->created_at->diffForHumans() }}</p>
+                                                {{ $notification->created_at->diffForHumans() }}
+                                            </p>
                                         </div>
                                         @if(!$notification->read_at)
                                             <span class="w-2 h-2 rounded-full bg-indigo-500 flex-shrink-0 mt-1.5 ml-auto"></span>
@@ -133,6 +177,16 @@
                             </div>
                         </div>
                     </div>
+
+                    <button type="button" data-theme-toggle
+                        class="p-2 rounded-full text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 focus:outline-none transition"
+                        aria-label="Toggle dark mode">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 3v2m0 14v2m9-9h-2M5 12H3m14.95 6.95-1.414-1.414M7.464 7.464 6.05 6.05m11.9 0-1.414 1.414M7.464 16.536 6.05 17.95M12 7a5 5 0 100 10 5 5 0 000-10z" />
+                        </svg>
+                    </button>
                 @endauth
 
                 <x-dropdown align="right" width="48">
@@ -199,10 +253,37 @@
             </x-responsive-nav-link>
             @endhasanyrole
 
+            @hasanyrole('admin|head-office-director|commercial-director|ceo')
             <x-responsive-nav-link :href="route('travel-requests.index')"
-                :active="request()->routeIs('travel-requests.*')">
+                :active="request()->routeIs('travel-requests.*') && !request()->query('view')">
                 {{ __('Travel Requests') }}
             </x-responsive-nav-link>
+            @endhasanyrole
+
+            @unlessrole('admin|head-office-director|commercial-director|ceo|project-manager')
+            <x-responsive-nav-link :href="route('travel-requests.index', ['view' => 'personal'])"
+                :active="request()->routeIs('travel-requests.*')">
+                {{ __('Travel History') }}
+            </x-responsive-nav-link>
+            @endunlessrole
+
+            @hasrole('project-manager')
+            <div class="pt-2 pb-1 border-t border-gray-200">
+                <div class="px-4 mb-2">
+                    <div class="font-medium text-base text-gray-600">{{ __('History') }}</div>
+                </div>
+                <div class="space-y-1">
+                    <x-responsive-nav-link :href="route('travel-requests.index', ['view' => 'personal'])"
+                        :active="request()->routeIs('travel-requests.*') && request()->query('view') === 'personal'">
+                        {{ __('My Travel History') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('travel-requests.index', ['view' => 'project'])"
+                        :active="request()->routeIs('travel-requests.*') && request()->query('view') === 'project'">
+                        {{ __('My Projects Travel History') }}
+                    </x-responsive-nav-link>
+                </div>
+            </div>
+            @endhasrole
 
             @hasanyrole('admin|head-office-director')
             <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
@@ -236,3 +317,22 @@
         </div>
     </div>
 </nav>
+
+<script>
+    (function () {
+        const root = document.documentElement;
+        const storedTheme = localStorage.getItem('theme');
+        if (storedTheme === 'dark') {
+            root.classList.add('dark');
+        }
+
+        const themeToggle = document.querySelector('[data-theme-toggle]');
+        if (themeToggle && !themeToggle.dataset.bound) {
+            themeToggle.dataset.bound = 'true';
+            themeToggle.addEventListener('click', () => {
+                const isDark = root.classList.toggle('dark');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            });
+        }
+    })();
+</script>

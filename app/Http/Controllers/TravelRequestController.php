@@ -11,22 +11,33 @@ use Illuminate\Support\Facades\Auth;
 
 class TravelRequestController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         $query = TravelRequest::with(['user', 'project']);
+        $viewType = $request->query('view');
 
         if ($user->hasRole('admin') || $user->hasRole('ceo') || $user->hasRole('head-office-director')) {
             // Can see all (ceo is view only, admin/hod have actions if needed, though hod is deprecated in new flow)
         } elseif ($user->hasRole('commercial-director')) {
-            // Can see all requests that are at the commercial-director stage, or already approved/rejected,
-            // plus any they created themselves.
-            $query->whereIn('status', ['pending_commercial', 'pending_hod', 'approved', 'rejected'])
-                ->orWhere('user_id', $user->id);
+            if ($viewType === 'personal') {
+                $query->where('user_id', $user->id);
+            } else {
+                // Can see all requests that are at the commercial-director stage, or already approved/rejected,
+                // plus any they created themselves.
+                $query->where(function ($q) use ($user) {
+                    $q->whereIn('status', ['pending_commercial', 'pending_hod', 'approved', 'rejected'])
+                        ->orWhere('user_id', $user->id);
+                });
+            }
         } elseif ($user->hasRole('project-manager')) {
-            // PMs see everything in their project
-            $pmProjectId = $user->managedProject?->id ?? $user->project_id;
-            $query->where('project_id', $pmProjectId ?? -1);
+            if ($viewType === 'personal') {
+                $query->where('user_id', $user->id);
+            } else {
+                // PMs see everything in their project
+                $pmProjectId = $user->managedProject?->id ?? $user->project_id;
+                $query->where('project_id', $pmProjectId ?? -1);
+            }
         } else {
             // Regular users see only their own
             $query->where('user_id', $user->id);

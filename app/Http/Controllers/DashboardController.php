@@ -83,10 +83,22 @@ class DashboardController extends Controller
                 return $project->travelRequests->count();
             });
 
-            $data['ceoChartLabels'] = $sortedProjects->pluck('name')->toArray();
-            $data['ceoChartData'] = $sortedProjects->map(function ($project) {
+            // Ensure the collections are re-indexed (values) so json_encode produces JS arrays
+            $data['ceoChartLabels'] = $sortedProjects->values()->pluck('name')->toArray();
+            $data['ceoChartData'] = $sortedProjects->values()->map(function ($project) {
                 return $project->travelRequests->count();
             })->toArray();
+
+            // Overall status counts for CEO pie chart
+            $data['pendingPm'] = TravelRequest::where('status', 'pending_pm')->count();
+            $data['pendingCommercial'] = TravelRequest::where('status', 'pending_commercial')->count();
+            $data['ceoStatusChartLabels'] = ['Approved', 'Rejected', 'Pending (PM)', 'Pending (Commercial)'];
+            $data['ceoStatusChartData'] = [
+                $data['approved'],
+                $data['rejected'],
+                $data['pendingPm'],
+                $data['pendingCommercial'],
+            ];
 
         } elseif ($user->hasRole('commercial-director')) {
             $data['pendingCommercial'] = TravelRequest::whereIn('status', ['pending_commercial', 'pending_hod'])->count();

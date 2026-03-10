@@ -53,29 +53,91 @@
         [x-cloak] {
             display: none !important;
         }
+
+        .sidebar {
+            width: 16rem;
+            transition: width 0.2s ease;
+        }
+
+        #app-shell[data-sidebar-collapsed="true"] .sidebar {
+            width: 5rem;
+        }
+
+        #app-shell[data-sidebar-collapsed="true"] .sidebar .sidebar-text,
+        #app-shell[data-sidebar-collapsed="true"] .sidebar .sidebar-user-text {
+            display: none;
+        }
+
+        #app-shell[data-sidebar-collapsed="true"] .sidebar .sidebar-link {
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        #app-shell[data-sidebar-collapsed="true"] .sidebar .sidebar-link svg {
+            margin-right: 0;
+        }
+
+        #app-shell[data-sidebar-collapsed="true"] .sidebar .sidebar-logo {
+            justify-content: center;
+        }
+
+        html.dark body {
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+
+        html.dark .top-bar-shadow {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
+        }
+
+        html.dark header {
+            background: #0b1220;
+            color: #e2e8f0;
+        }
+
+        html.dark .bg-white { background-color: #0b1220 !important; }
+        html.dark .bg-gray-50 { background-color: #0f172a !important; }
+        html.dark .text-gray-900 { color: #f1f5f9 !important; }
+        html.dark .text-gray-800 { color: #e2e8f0 !important; }
+        html.dark .text-gray-700 { color: #cbd5f5 !important; }
+        html.dark .text-gray-600 { color: #b6c2d6 !important; }
+        html.dark .text-gray-500 { color: #94a3b8 !important; }
+        html.dark .border-gray-100 { border-color: #1f2937 !important; }
+        html.dark .border-gray-200 { border-color: #1f2937 !important; }
+        html.dark .divide-gray-50 > :not([hidden]) ~ :not([hidden]) { border-color: #1f2937 !important; }
+        html.dark .hover\:bg-gray-50:hover { background-color: #111827 !important; }
     </style>
 </head>
 
 <body class="bg-gray-50 text-gray-800 antialiased">
 
-    <div class="flex min-h-screen">
+    <div id="app-shell" class="flex min-h-screen" data-sidebar-collapsed="false">
 
         {{-- ===========================
         SIDEBAR
         =========================== --}}
-        <aside class="w-64 flex-shrink-0 flex flex-col"
+        <aside class="sidebar flex-shrink-0 flex flex-col"
             style="background: linear-gradient(180deg,#1e1b4b 0%,#312e81 100%); min-height:100vh;">
 
             {{-- Logo --}}
-            <div class="flex items-center gap-3 px-6 py-5 border-b border-white/10">
-                <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:#818cf8;">
+            <div class="flex items-center gap-3 px-6 py-5 border-b border-white/10 relative sidebar-logo">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#818cf8;">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 004 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
                     </svg>
                 </div>
-                <span class="text-white font-bold text-lg tracking-tight">TravelPass</span>
+                <span class="text-white font-bold text-lg tracking-tight sidebar-text">TravelPass</span>
+                <button id="sidebar-toggle" type="button"
+                    class="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg text-indigo-200 hover:text-white hover:bg-white/10 transition"
+                    aria-label="Toggle sidebar">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h7" />
+                    </svg>
+                </button>
             </div>
 
             {{-- Navigation --}}
@@ -96,19 +158,68 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                     </svg>
-                    Dashboard
+                    <span class="sidebar-text">Dashboard</span>
                 </a>
 
-                {{-- Travel Requests (all roles) --}}
+                {{-- Travel Requests (admin / director / ceo) --}}
+                @hasanyrole('admin|head-office-director|commercial-director|ceo')
                 <a href="{{ route('travel-requests.index') }}"
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('travel-requests.*') && !request()->query('view') ? 'active' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <span class="sidebar-text">Travel Requests</span>
+                </a>
+                @endhasanyrole
+
+                {{-- Travel History (regular users) --}}
+                @unlessrole('admin|head-office-director|commercial-director|ceo|project-manager')
+                <a href="{{ route('travel-requests.index', ['view' => 'personal']) }}"
                     class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('travel-requests.*') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
-                    Travel Requests
+                    <span class="sidebar-text">Travel History</span>
                 </a>
+                @endunlessrole
+
+                {{-- History Dropdown (Project Manager) --}}
+                @hasrole('project-manager')
+                <div x-data="{ historyOpen: {{ request()->routeIs('travel-requests.*') ? 'true' : 'false' }} }"
+                    class="space-y-1">
+                    <button @click="historyOpen = !historyOpen"
+                        class="w-full sidebar-link flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium hover:bg-white/10 transition">
+                        <div class="flex items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span class="sidebar-text">History</span>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 transition-transform duration-200"
+                            :class="{ 'rotate-180': historyOpen }" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    <div x-show="historyOpen" x-collapse style="display: none;" class="pl-11 space-y-1">
+                        <a href="{{ route('travel-requests.index', ['view' => 'personal']) }}"
+                            class="block px-3 py-2 rounded-lg text-indigo-300 hover:text-white hover:bg-white/10 text-sm transition {{ request()->query('view') === 'personal' ? 'text-white' : '' }}">
+                            My Travel History
+                        </a>
+                        <a href="{{ route('travel-requests.index', ['view' => 'project']) }}"
+                            class="block px-3 py-2 rounded-lg text-indigo-300 hover:text-white hover:bg-white/10 text-sm transition {{ request()->query('view') === 'project' ? 'text-white' : '' }}">
+                            My Projects Travel History
+                        </a>
+                    </div>
+                </div>
+                @endhasrole
 
                 {{-- Projects (admin / director / hod / ceo) --}}
                 @hasanyrole('admin|head-office-director|commercial-director|ceo')
@@ -119,7 +230,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
-                    Projects
+                    <span class="sidebar-text">Projects</span>
                 </a>
                 @endhasanyrole
 
@@ -133,7 +244,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                         </svg>
-                        My Project
+                        <span class="sidebar-text">My Project</span>
                     </a>
                 @endif
                 @endhasrole
@@ -147,7 +258,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
-                    Users & Roles
+                    <span class="sidebar-text">Users & Roles</span>
                 </a>
                 @endhasrole
 
@@ -160,7 +271,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
-                    Reports
+                    <span class="sidebar-text">Reports</span>
                 </a>
                 @endhasanyrole
 
@@ -177,7 +288,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    My Profile
+                    <span class="sidebar-text">My Profile</span>
                 </a>
             </nav>
 
@@ -188,7 +299,7 @@
                         style="background:#6366f1;">
                         {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
                     </div>
-                    <div class="min-w-0">
+                    <div class="min-w-0 sidebar-user-text">
                         <p class="text-white text-sm font-semibold truncate">{{ Auth::user()->name }}</p>
                         <p class="text-indigo-300 text-xs truncate">
                             {{ Auth::user()->getRoleNames()->first() ?? 'user' }}
@@ -317,6 +428,16 @@
                         </div>
                     @endauth
 
+                    <button type="button" data-theme-toggle
+                        class="p-2 rounded-full text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 focus:outline-none transition"
+                        aria-label="Toggle dark mode">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 3v2m0 14v2m9-9h-2M5 12H3m14.95 6.95-1.414-1.414M7.464 7.464 6.05 6.05m11.9 0-1.414 1.414M7.464 16.536 6.05 17.95M12 7a5 5 0 100 10 5 5 0 000-10z" />
+                        </svg>
+                    </button>
+
                     <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm"
                         style="background:#6366f1;">
                         {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
@@ -330,6 +451,34 @@
             </main>
         </div>
     </div>
+
+    <script>
+        (function () {
+            const root = document.documentElement;
+            const storedTheme = localStorage.getItem('theme');
+            if (storedTheme === 'dark') {
+                root.classList.add('dark');
+            }
+
+            const themeToggle = document.querySelector('[data-theme-toggle]');
+            if (themeToggle) {
+                themeToggle.addEventListener('click', () => {
+                    const isDark = root.classList.toggle('dark');
+                    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                    window.dispatchEvent(new Event('themechange'));
+                });
+            }
+
+            const shell = document.getElementById('app-shell');
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            if (shell && sidebarToggle) {
+                sidebarToggle.addEventListener('click', () => {
+                    const next = shell.dataset.sidebarCollapsed !== 'true';
+                    shell.dataset.sidebarCollapsed = next ? 'true' : 'false';
+                });
+            }
+        })();
+    </script>
 
 </body>
 

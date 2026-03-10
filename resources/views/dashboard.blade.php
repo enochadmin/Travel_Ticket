@@ -125,36 +125,58 @@
     {{-- Admin Chart Scripts --}}
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const chartTheme = () => {
+                const isDark = document.documentElement.classList.contains('dark');
+                return {
+                    isDark,
+                    text: isDark ? '#e2e8f0' : '#475569',
+                    grid: isDark ? 'rgba(148, 163, 184, 0.2)' : 'rgba(148, 163, 184, 0.3)',
+                    border: isDark ? '#0b1220' : '#ffffff',
+                    tooltipBg: isDark ? 'rgba(2, 6, 23, 0.95)' : 'rgba(17, 24, 39, 0.9)'
+                };
+            };
+
+            const applyChartTheme = () => {
+                const t = chartTheme();
+                Chart.defaults.color = t.text;
+                Chart.defaults.borderColor = t.grid;
+                return t;
+            };
+
+            const t = applyChartTheme();
+            window.__charts = window.__charts || [];
+
             const commonOptions = {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { position: 'bottom', labels: { font: { family: "'Inter', sans-serif" } } },
-                    tooltip: { backgroundColor: 'rgba(17, 24, 39, 0.9)', padding: 12, cornerRadius: 8, titleFont: { size: 14 } }
+                    tooltip: { backgroundColor: t.tooltipBg, padding: 12, cornerRadius: 8, titleFont: { size: 14 } }
                 }
             };
 
             // 1. Roles Doughnut
             const roleCtx = document.getElementById('roleChart');
             if (roleCtx) {
-                new Chart(roleCtx.getContext('2d'), {
+                const roleChart = new Chart(roleCtx.getContext('2d'), {
                     type: 'doughnut',
                     data: {
                         labels: {!! json_encode($roleChartLabels) !!},
                         datasets: [{
                             data: {!! json_encode($roleChartData) !!},
                             backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#64748b'],
-                            borderWidth: 2, borderColor: '#ffffff'
+                            borderWidth: 2, borderColor: t.border
                         }]
                     },
                     options: { ...commonOptions, cutout: '65%' }
                 });
+                window.__charts.push(roleChart);
             }
 
             // 2. Discipline Bar
             const discCtx = document.getElementById('disciplineChart');
             if(discCtx) {
-                new Chart(discCtx.getContext('2d'), {
+                const disciplineChart = new Chart(discCtx.getContext('2d'), {
                     type: 'bar',
                     data: {
                         labels: {!! json_encode($disciplineChartLabels) !!},
@@ -168,32 +190,37 @@
                     options: {
                         ...commonOptions,
                         plugins: { legend: { display: false }, tooltip: commonOptions.plugins.tooltip },
-                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { grid: { display: false } } }
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1, color: t.text }, grid: { color: t.grid } },
+                            x: { grid: { display: false }, ticks: { color: t.text } }
+                        }
                     }
                 });
+                window.__charts.push(disciplineChart);
             }
 
             // 3. Status Pie
             const statusCtx = document.getElementById('statusChart');
             if(statusCtx) {
-                new Chart(statusCtx.getContext('2d'), {
+                const statusChart = new Chart(statusCtx.getContext('2d'), {
                     type: 'pie',
                     data: {
                         labels: {!! json_encode($statusChartLabels) !!},
                         datasets: [{
                             data: {!! json_encode($statusChartData) !!},
                             backgroundColor: ['#10b981', '#f59e0b', '#3b82f6', '#ef4444'],
-                            borderWidth: 2, borderColor: '#ffffff'
+                            borderWidth: 2, borderColor: t.border
                         }]
                     },
                     options: commonOptions
                 });
+                window.__charts.push(statusChart);
             }
 
             // 4. Users per Project Vertical Bar
             const upCtx = document.getElementById('projectUsersChart');
             if(upCtx) {
-                new Chart(upCtx.getContext('2d'), {
+                const projectUsersChart = new Chart(upCtx.getContext('2d'), {
                     type: 'bar',
                     data: {
                         labels: {!! json_encode($projectUsersChartLabels) !!},
@@ -207,10 +234,34 @@
                     options: {
                         ...commonOptions,
                         plugins: { legend: { display: false }, tooltip: commonOptions.plugins.tooltip },
-                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { grid: { display: false } } }
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1, color: t.text }, grid: { color: t.grid } },
+                            x: { grid: { display: false }, ticks: { color: t.text } }
+                        }
                     }
                 });
+                window.__charts.push(projectUsersChart);
             }
+
+            window.addEventListener('themechange', () => {
+                const nt = applyChartTheme();
+                (window.__charts || []).forEach((chart) => {
+                    if (chart?.options?.scales) {
+                        if (chart.options.scales.x?.ticks) chart.options.scales.x.ticks.color = nt.text;
+                        if (chart.options.scales.y?.ticks) chart.options.scales.y.ticks.color = nt.text;
+                        if (chart.options.scales.x?.grid) chart.options.scales.x.grid.color = nt.grid;
+                        if (chart.options.scales.y?.grid) chart.options.scales.y.grid.color = nt.grid;
+                    }
+                    if (chart?.data?.datasets) {
+                        chart.data.datasets.forEach((ds) => {
+                            if (Array.isArray(ds.borderColor) || typeof ds.borderColor === 'string') {
+                                ds.borderColor = nt.border;
+                            }
+                        });
+                    }
+                    chart.update();
+                });
+            });
         });
     </script>
     @endhasrole
@@ -248,11 +299,51 @@
         </div>
 
         {{-- CEO Chart: Compare Requests Across Projects --}}
-        <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
-            <h2 class="text-lg font-bold text-gray-800 mb-4">Project Request Volume Comparison</h2>
-            <div style="height:320px;">
-                <canvas id="ceoChart"></canvas>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {{-- Pie chart card (separate DIV) --}}
+            <div class="lg:col-span-1 bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+                <h3 class="text-sm font-semibold text-gray-700 mb-3 text-center">Requests by Status</h3>
+                <div class="relative" style="height:220px;">
+                    <canvas id="ceoStatusChart"></canvas>
+                </div>
             </div>
+
+            {{-- Bar chart card (separate DIV) --}}
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+                <h2 class="text-lg font-bold text-gray-800 mb-4">Project Request Volume Comparison</h2>
+                <div style="height:320px;">
+                    <canvas id="ceoChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        {{-- CEO: Active Projects Cards (clickable, shows approved requests per project) --}}
+        <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+            <h3 class="text-base font-bold text-gray-800 mb-4">Active Projects — Approved Requests</h3>
+            @if($projects->isEmpty())
+                <p class="text-sm text-gray-500">No projects available.</p>
+            @else
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    @foreach($projects as $project)
+                        @php
+                            $approvedCount = $project->travelRequests->where('status', 'approved')->count();
+                        @endphp
+                        <a href="{{ route('travel-requests.index', ['project_id' => $project->id, 'status' => 'approved']) }}"
+                           class="group block bg-gray-50 hover:bg-white border border-gray-100 rounded-xl p-4 transition">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-semibold text-gray-800">{{ $project->name }}</p>
+                                    <p class="text-xs text-gray-500 mt-1">{{ optional($project->manager)->name ?? 'No manager' }}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-2xl font-bold text-indigo-600">{{ $approvedCount }}</p>
+                                    <p class="text-xs text-gray-500">Approved</p>
+                                </div>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            @endif
         </div>
 
         {{-- Dynamic Projects Accordion Using Alpine.js --}}
@@ -264,123 +355,154 @@
                     to Expand</span>
             </div>
 
-            <div class="divide-y divide-gray-100" x-data="{ expandedProject: null }">
-                @foreach($projects as $project)
-                    @php
-                        $projectApproved = $project->travelRequests->where('status', 'approved');
-                        $projectRejected = $project->travelRequests->where('status', 'rejected');
-                    @endphp
-                    <div class="project-accordion">
-                        {{-- Accordion Header --}}
-                        <button
-                            @click="expandedProject === {{ $project->id }} ? expandedProject = null : expandedProject = {{ $project->id }}"
-                            class="w-full px-6 py-5 flex items-center justify-between hover:bg-gray-50 transition duration-150 focus:outline-none">
-                            <div class="flex items-center gap-4">
-                                <div
-                                    class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
-                                    {{ substr($project->name, 0, 1) }}
-                                </div>
-                                <div class="text-left">
-                                    <p class="font-bold text-gray-800 text-base">{{ $project->name }}</p>
-                                    <p class="text-xs text-gray-500 mt-0.5">Manager: <span
-                                            class="font-medium text-gray-700">{{ optional($project->manager)->name ?? 'Unassigned' }}</span>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-6">
-                                <div class="flex gap-3 text-sm">
-                                    <span
-                                        class="bg-green-100 text-green-800 px-2 py-1 rounded-md font-semibold font-mono">{{ $projectApproved->count() }}
-                                        ✓</span>
-                                    <span
-                                        class="bg-red-100 text-red-800 px-2 py-1 rounded-md font-semibold font-mono">{{ $projectRejected->count() }}
-                                        ✗</span>
-                                </div>
-                                <svg class="w-5 h-5 text-gray-400 transition-transform duration-200"
-                                    :class="expandedProject === {{ $project->id }} ? 'transform rotate-180' : ''"
-                                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd"
-                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                            </div>
+            @php
+                $projectChunks = $projects->chunk(5);
+                $chunksCount = $projectChunks->count();
+            @endphp
+
+            <div x-data="{ page: 0, pages: {{ $chunksCount }}, expandedProject: null }" class="px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-bold text-gray-800">Projects Breakdown</h2>
+                    <div class="flex items-center gap-2">
+                        <button type="button" @click="page = Math.max(0, page - 1)"
+                            :disabled="page === 0"
+                            class="px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50">
+                            ‹
                         </button>
+                        <button type="button" @click="page = Math.min(pages - 1, page + 1)"
+                            :disabled="page >= pages - 1"
+                            class="px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50">
+                            ›
+                        </button>
+                    </div>
+                </div>
 
-                        {{-- Accordion Content --}}
-                        <div x-show="expandedProject === {{ $project->id }}" x-collapse
-                            class="bg-gray-50 border-t border-gray-100 px-6 py-4">
-
-                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {{-- Approved List --}}
-                                <div class="bg-white rounded-xl shadow-sm border border-green-100 overflow-hidden">
-                                    <h3 class="bg-green-500 text-white text-xs font-bold uppercase py-2 px-4">Approved
-                                        Requests</h3>
-                                    @if($projectApproved->isEmpty())
-                                        <p class="p-4 text-sm text-gray-500 italic">No approved requests.</p>
-                                    @else
-                                        <ul class="divide-y divide-gray-100">
-                                            @foreach($projectApproved as $req)
-                                                <li class="p-4 text-sm">
-                                                    <div class="flex justify-between items-start mb-2">
-                                                        <span
-                                                            class="font-semibold text-gray-800">{{ optional($req->user)->name }}</span>
-                                                        <span
-                                                            class="text-xs text-gray-500 font-medium">{{ $req->destination }}</span>
-                                                    </div>
+                <div class="overflow-hidden mt-4">
+                    <div class="flex transition-transform duration-300" :style="`transform: translateX(-${page * 100}%);`">
+                        @foreach($projectChunks as $chunk)
+                            <div class="w-full flex-shrink-0 px-2">
+                                <div class="divide-y divide-gray-100">
+                                    @foreach($chunk as $project)
+                                        @php
+                                            $projectApproved = $project->travelRequests->where('status', 'approved');
+                                            $projectRejected = $project->travelRequests->where('status', 'rejected');
+                                        @endphp
+                                        <div class="project-accordion">
+                                            {{-- Accordion Header --}}
+                                            <button
+                                                @click="expandedProject === {{ $project->id }} ? expandedProject = null : expandedProject = {{ $project->id }}"
+                                                class="w-full px-6 py-5 flex items-center justify-between hover:bg-gray-50 transition duration-150 focus:outline-none">
+                                                <div class="flex items-center gap-4">
                                                     <div
-                                                        class="text-xs text-gray-600 bg-gray-50 p-2 rounded border border-gray-100">
-                                                        <p class="mb-1"><span class="font-medium">Approved On:</span>
-                                                            {{ $req->updated_at->format('M d, Y H:i') }}</p>
-                                                        <p class="mb-1"><span class="font-medium text-purple-700">PM:</span>
-                                                            {{ optional($req->pm)->name ?? 'N/A' }}</p>
-                                                        <p><span class="font-medium text-green-700">Director:</span>
-                                                            {{ optional($req->hod)->name ?? 'N/A' }}</p>
+                                                        class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+                                                        {{ substr($project->name, 0, 1) }}
                                                     </div>
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    @endif
-                                </div>
+                                                    <div class="text-left">
+                                                        <p class="font-bold text-gray-800 text-base">{{ $project->name }}</p>
+                                                        <p class="text-xs text-gray-500 mt-0.5">Manager: <span
+                                                                class="font-medium text-gray-700">{{ optional($project->manager)->name ?? 'Unassigned' }}</span>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center gap-6">
+                                                    <div class="flex gap-3 text-sm">
+                                                        <span
+                                                            class="bg-green-100 text-green-800 px-2 py-1 rounded-md font-semibold font-mono">{{ $projectApproved->count() }}
+                                                            ✓</span>
+                                                        <span
+                                                            class="bg-red-100 text-red-800 px-2 py-1 rounded-md font-semibold font-mono">{{ $projectRejected->count() }}
+                                                            ✗</span>
+                                                    </div>
+                                                    <svg class="w-5 h-5 text-gray-400 transition-transform duration-200"
+                                                        :class="expandedProject === {{ $project->id }} ? 'transform rotate-180' : ''"
+                                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fill-rule="evenodd"
+                                                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                            clip-rule="evenodd" />
+                                                    </svg>
+                                                </div>
+                                            </button>
 
-                                {{-- Rejected List --}}
-                                <div class="bg-white rounded-xl shadow-sm border border-red-100 overflow-hidden">
-                                    <h3 class="bg-red-500 text-white text-xs font-bold uppercase py-2 px-4">Rejected
-                                        Requests</h3>
-                                    @if($projectRejected->isEmpty())
-                                        <p class="p-4 text-sm text-gray-500 italic">No rejected requests.</p>
-                                    @else
-                                        <ul class="divide-y divide-gray-100">
-                                            @foreach($projectRejected as $req)
-                                                <li class="p-4 text-sm">
-                                                    <div class="flex justify-between items-start mb-2">
-                                                        <span
-                                                            class="font-semibold text-gray-800">{{ optional($req->user)->name }}</span>
-                                                        <span
-                                                            class="text-xs text-gray-500 font-medium">{{ $req->destination }}</span>
-                                                    </div>
-                                                    <div
-                                                        class="text-xs text-gray-600 bg-gray-50 p-2 rounded border border-gray-100">
-                                                        <p class="mb-1"><span class="font-medium">Rejected On:</span>
-                                                            {{ $req->updated_at->format('M d, Y H:i') }}</p>
-                                                        @if($req->hod_id)
-                                                            <p><span class="font-medium text-red-700">Rejected By Director:</span>
-                                                                {{ optional($req->hod)->name }}</p>
-                                                        @elseif($req->pm_id)
-                                                            <p><span class="font-medium text-red-700">Rejected By PM:</span>
-                                                                {{ optional($req->pm)->name }}</p>
+                                            {{-- Accordion Content --}}
+                                            <div x-show="expandedProject === {{ $project->id }}" x-collapse
+                                                class="bg-gray-50 border-t border-gray-100 px-6 py-4">
+
+                                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                    {{-- Approved List --}}
+                                                    <div class="bg-white rounded-xl shadow-sm border border-green-100 overflow-hidden">
+                                                        <h3 class="bg-green-500 text-white text-xs font-bold uppercase py-2 px-4">Approved
+                                                            Requests</h3>
+                                                        @if($projectApproved->isEmpty())
+                                                            <p class="p-4 text-sm text-gray-500 italic">No approved requests.</p>
                                                         @else
-                                                            <p><span class="font-medium text-red-700">Rejected By:</span> Unknown</p>
+                                                            <ul class="divide-y divide-gray-100">
+                                                                @foreach($projectApproved as $req)
+                                                                    <li class="p-4 text-sm">
+                                                                        <div class="flex justify-between items-start mb-2">
+                                                                            <span
+                                                                                class="font-semibold text-gray-800">{{ optional($req->user)->name }}</span>
+                                                                            <span
+                                                                                class="text-xs text-gray-500 font-medium">{{ $req->destination }}</span>
+                                                                        </div>
+                                                                        <div
+                                                                            class="text-xs text-gray-600 bg-gray-50 p-2 rounded border border-gray-100">
+                                                                            <p class="mb-1"><span class="font-medium">Approved On:</span>
+                                                                                {{ $req->updated_at->format('M d, Y H:i') }}</p>
+                                                                            <p class="mb-1"><span class="font-medium text-purple-700">PM:</span>
+                                                                                {{ optional($req->pm)->name ?? 'N/A' }}</p>
+                                                                            <p><span class="font-medium text-green-700">Director:</span>
+                                                                                {{ optional($req->hod)->name ?? 'N/A' }}</p>
+                                                                        </div>
+                                                                    </li>
+                                                                @endforeach
+                                                            </ul>
                                                         @endif
                                                     </div>
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    @endif
+
+                                                    {{-- Rejected List --}}
+                                                    <div class="bg-white rounded-xl shadow-sm border border-red-100 overflow-hidden">
+                                                        <h3 class="bg-red-500 text-white text-xs font-bold uppercase py-2 px-4">Rejected
+                                                            Requests</h3>
+                                                        @if($projectRejected->isEmpty())
+                                                            <p class="p-4 text-sm text-gray-500 italic">No rejected requests.</p>
+                                                        @else
+                                                            <ul class="divide-y divide-gray-100">
+                                                                @foreach($projectRejected as $req)
+                                                                    <li class="p-4 text-sm">
+                                                                        <div class="flex justify-between items-start mb-2">
+                                                                            <span
+                                                                                class="font-semibold text-gray-800">{{ optional($req->user)->name }}</span>
+                                                                            <span
+                                                                                class="text-xs text-gray-500 font-medium">{{ $req->destination }}</span>
+                                                                        </div>
+                                                                        <div
+                                                                            class="text-xs text-gray-600 bg-gray-50 p-2 rounded border border-gray-100">
+                                                                            <p class="mb-1"><span class="font-medium">Rejected On:</span>
+                                                                                {{ $req->updated_at->format('M d, Y H:i') }}</p>
+                                                                            @if($req->hod_id)
+                                                                                <p><span class="font-medium text-red-700">Rejected By Director:</span>
+                                                                                    {{ optional($req->hod)->name }}</p>
+                                                                            @elseif($req->pm_id)
+                                                                                <p><span class="font-medium text-red-700">Rejected By PM:</span>
+                                                                                    {{ optional($req->pm)->name }}</p>
+                                                                            @else
+                                                                                <p><span class="font-medium text-red-700">Rejected By:</span> Unknown</p>
+                                                                            @endif
+                                                                        </div>
+                                                                    </li>
+                                                                @endforeach
+                                                            </ul>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
                                 </div>
                             </div>
-                        </div>
+                        @endforeach
                     </div>
-                @endforeach
+                </div>
             </div>
         </div>
     </div>
@@ -389,14 +511,38 @@
         document.addEventListener('DOMContentLoaded', function () {
             const ctxCeo = document.getElementById('ceoChart');
             if (ctxCeo) {
+                // Ensure ceoChartLabels contains only project names and ceoChartData matches its length
+                // If you generate these in the controller, use:
+                // $ceoChartLabels = $projects->pluck('name')->toArray();
+                // $ceoChartData = $projects->map(fn($p) => $p->travelRequests->count())->toArray();
+                const labels = {!! json_encode($ceoChartLabels) !!};
+                const data = {!! json_encode($ceoChartData) !!};
+                if (labels.length !== data.length) {
+                    console.warn('ceoChartLabels and ceoChartData length mismatch!');
+                }
+                // Build colors to highlight highest and lowest bars
+                const numericData = data.map(v => Number(v) || 0);
+                const maxVal = Math.max(...numericData);
+                const minVal = Math.min(...numericData);
+                const bgColors = numericData.map(v => {
+                    if (v === maxVal && v === minVal) return '#3b82f6'; // all equal
+                    if (v === maxVal) return '#ef4444'; // highest in red
+                    if (v === minVal) return '#10b981'; // lowest in green
+                    return '#3b82f6'; // default blue
+                });
+
+                // choose stepSize = 1 for small ranges to make counts clear
+                const maxCount = maxVal;
+                const stepSize = maxCount <= 10 ? 1 : undefined;
+
                 new Chart(ctxCeo.getContext('2d'), {
                     type: 'bar',
                     data: {
-                        labels: {!! json_encode($ceoChartLabels) !!},
+                        labels: labels,
                         datasets: [{
-                            label: 'Total Requests',
-                            data: {!! json_encode($ceoChartData) !!},
-                            backgroundColor: ['#3b82f6', '#8b5cf6', '#ec4899', '#f43f5e', '#f59e0b', '#10b981'],
+                            label: 'Ticket Count',
+                            data: numericData,
+                            backgroundColor: bgColors,
                             borderRadius: 6,
                             borderSkipped: false,
                         }]
@@ -418,16 +564,45 @@
                         scales: {
                             y: {
                                 beginAtZero: true,
-                                ticks: { stepSize: 1, color: '#6b7280' },
+                                ticks: stepSize ? { stepSize: stepSize, color: '#6b7280' } : { color: '#6b7280' },
                                 grid: { color: '#f3f4f6', drawBorder: false }
                             },
                             x: {
+                                type: 'category',
                                 ticks: { color: '#4b5563', font: { weight: '600' } },
                                 grid: { display: false, drawBorder: false }
                             }
-                        }
+                        },
+                        interaction: { intersect: false, mode: 'index' }
                     }
                 });
+                }
+
+                // Status pie chart (Approved / Rejected / Pending PM / Pending Commercial)
+                const statusCtx = document.getElementById('ceoStatusChart');
+                if (statusCtx) {
+                    const statusLabels = {!! json_encode($ceoStatusChartLabels) !!};
+                    const statusData = {!! json_encode($ceoStatusChartData) !!};
+                    new Chart(statusCtx.getContext('2d'), {
+                        type: 'pie',
+                        data: {
+                            labels: statusLabels,
+                            datasets: [{
+                                data: statusData,
+                                backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#8b5cf6'],
+                                borderColor: '#ffffff',
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'bottom', labels: { font: { family: "'Inter', sans-serif" } } },
+                                tooltip: { backgroundColor: 'rgba(17, 24, 39, 0.9)', padding: 10, cornerRadius: 6 }
+                            }
+                        }
+                    });
             }
         });
     </script>
