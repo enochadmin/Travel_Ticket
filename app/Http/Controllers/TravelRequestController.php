@@ -14,6 +14,9 @@ class TravelRequestController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
+        if ($user->hasRole('reception')) {
+            return redirect()->route('reception.tickets.index');
+        }
         $query = TravelRequest::with(['user', 'project']);
         $viewType = $request->query('view');
 
@@ -49,6 +52,9 @@ class TravelRequestController extends Controller
 
     public function create(Request $request)
     {
+        if (Auth::user()->hasRole('reception')) {
+            abort(403);
+        }
         $user = Auth::user();
         $project_id = $request->query('project_id');
         $preselectedProject = null;
@@ -86,9 +92,14 @@ class TravelRequestController extends Controller
 
     public function store(Request $request)
     {
+        if (Auth::user()->hasRole('reception')) {
+            abort(403);
+        }
         $validated = $request->validate([
             'project_id' => 'required|exists:projects,id',
             'destination' => 'required|string|max:255',
+            'origin' => 'required|string|max:255',
+            'passenger_count' => 'required|integer|min:1',
             'travel_date' => 'required|date',
             'return_date' => 'nullable|date|after_or_equal:travel_date',
             'purpose' => 'required|string',
@@ -117,25 +128,24 @@ class TravelRequestController extends Controller
 
         $travelRequest = new TravelRequest($validated);
         $travelRequest->user_id = Auth::id();
-
-        // The project_id is guaranteed to be validated above (either from select dropdown or hidden field)
         $travelRequest->project_id = $request->project_id;
-
-
+        $travelRequest->origin = $validated['origin'];
+        $travelRequest->passenger_count = $validated['passenger_count'];
         // If the requester is a project manager, we skip the PM approval stage.
         if (Auth::user()->hasRole('project-manager')) {
             $travelRequest->status = 'pending_commercial';
         } else {
             $travelRequest->status = 'pending_pm';
         }
-
         $travelRequest->save();
-
         return redirect()->route('travel-requests.index')->with('success', 'Travel request submitted successfully.');
     }
 
     public function show(TravelRequest $travelRequest)
     {
+        if (Auth::user()->hasRole('reception')) {
+            abort(403);
+        }
         $user = Auth::user();
         $pmProjectId = $user->hasRole('project-manager') ? ($user->managedProject?->id ?? $user->project_id) : null;
 
@@ -152,6 +162,9 @@ class TravelRequestController extends Controller
 
     public function edit(TravelRequest $travelRequest)
     {
+        if (Auth::user()->hasRole('reception')) {
+            abort(403);
+        }
         if ($travelRequest->user_id !== Auth::id() || ($travelRequest->status !== 'pending_pm' && $travelRequest->status !== 'pending_commercial')) {
             abort(403, 'Cannot edit this request at this stage.');
         }
@@ -168,6 +181,9 @@ class TravelRequestController extends Controller
 
     public function update(Request $request, TravelRequest $travelRequest)
     {
+        if (Auth::user()->hasRole('reception')) {
+            abort(403);
+        }
         if ($travelRequest->user_id !== Auth::id() || ($travelRequest->status !== 'pending_pm' && $travelRequest->status !== 'pending_commercial')) {
             abort(403, 'Cannot edit this request at this stage.');
         }
@@ -178,12 +194,13 @@ class TravelRequestController extends Controller
 
         $validated = $request->validate([
             'destination' => 'required|string|max:255',
+            'origin' => 'required|string|max:255',
+            'passenger_count' => 'required|integer|min:1',
             'travel_date' => 'required|date',
             'return_date' => 'nullable|date|after_or_equal:travel_date',
             'purpose' => 'required|string',
             'remarks' => 'nullable|string',
         ]);
-
         $travelRequest->update($validated);
 
         return redirect()->route('travel-requests.index')->with('success', 'Travel request updated successfully.');
@@ -191,6 +208,9 @@ class TravelRequestController extends Controller
 
     public function destroy(TravelRequest $travelRequest)
     {
+        if (Auth::user()->hasRole('reception')) {
+            abort(403);
+        }
         if ($travelRequest->user_id !== Auth::id() || ($travelRequest->status !== 'pending_pm' && $travelRequest->status !== 'pending_commercial')) {
             abort(403, 'Cannot delete this request at this stage.');
         }
@@ -206,6 +226,9 @@ class TravelRequestController extends Controller
 
     public function approve(Request $request, TravelRequest $travelRequest)
     {
+        if (Auth::user()->hasRole('reception')) {
+            abort(403);
+        }
         $user = Auth::user();
         $pmProjectId = $user->hasRole('project-manager') ? ($user->managedProject?->id ?? $user->project_id) : null;
 
@@ -253,6 +276,9 @@ class TravelRequestController extends Controller
 
     public function reject(Request $request, TravelRequest $travelRequest)
     {
+        if (Auth::user()->hasRole('reception')) {
+            abort(403);
+        }
         $user = Auth::user();
         $pmProjectId = $user->hasRole('project-manager') ? ($user->managedProject?->id ?? $user->project_id) : null;
 

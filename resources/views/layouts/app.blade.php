@@ -150,7 +150,8 @@
                     }
                 @endphp
 
-                {{-- Dashboard (all roles) --}}
+                {{-- Dashboard (all except reception) --}}
+                @unlessrole('reception')
                 <a href="{{ route('dashboard') }}"
                     class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
@@ -160,6 +161,7 @@
                     </svg>
                     <span class="sidebar-text">Dashboard</span>
                 </a>
+                @endunlessrole
 
                 {{-- Travel Requests (admin / director / ceo) --}}
                 @hasanyrole('admin|head-office-director|commercial-director|ceo')
@@ -186,6 +188,27 @@
                     <span class="sidebar-text">Travel History</span>
                 </a>
                 @endunlessrole
+
+                @hasrole('reception')
+                <a href="{{ route('reception.dashboard') }}"
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('reception.dashboard') ? 'active' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+                <a href="{{ route('reception.tickets.index') }}"
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('reception.tickets.*') ? 'active' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span class="sidebar-text">Approved Tickets</span>
+                </a>
+                @endhasrole
 
                 {{-- History Dropdown (Project Manager) --}}
                 @hasrole('project-manager')
@@ -292,7 +315,7 @@
                 </a>
             </nav>
 
-            {{-- User card + logout --}}
+            {{-- User card --}}
             <div class="px-4 py-4 border-t border-white/10">
                 <div class="flex items-center gap-3 mb-3">
                     <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm"
@@ -306,18 +329,6 @@
                         </p>
                     </div>
                 </div>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit"
-                        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-indigo-200 text-sm hover:bg-white/10 transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                        Sign Out
-                    </button>
-                </form>
             </div>
         </aside>
 
@@ -438,10 +449,20 @@
                         </svg>
                     </button>
 
-                    <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm"
-                        style="background:#6366f1;">
-                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-                    </div>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit"
+                            class="p-2 rounded-full text-gray-500 hover:text-red-600 hover:bg-red-50 focus:outline-none transition"
+                            aria-label="Sign out">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                        </button>
+                    </form>
+
+                    
                 </div>
             </header>
 

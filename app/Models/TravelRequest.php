@@ -12,6 +12,8 @@ class TravelRequest extends Model
         'user_id',
         'project_id',
         'destination',
+        'origin',
+        'passenger_count',
         'travel_date',
         'return_date',
         'purpose',

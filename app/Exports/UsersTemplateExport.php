@@ -30,7 +30,7 @@ class UsersTemplateExport implements FromArray, WithHeadings, WithEvents
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 // Roles list
-                $roles = ['admin', 'user', 'head-office-director', 'commercial-director', 'project-manager', 'ceo'];
+                $roles = ['admin', 'user', 'head-office-director', 'commercial-director', 'project-manager', 'ceo', 'reception'];
                 $options = '"' . implode(',', $roles) . '"';
 
                 // Apply validation to the 'Role' column (Column D) for rows 2 to 1000

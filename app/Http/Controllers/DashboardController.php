@@ -15,6 +15,10 @@ class DashboardController extends Controller
         $user = Auth::user();
         $data = [];
 
+        if ($user->hasRole('reception')) {
+            return redirect()->route('reception.dashboard');
+        }
+
         if ($user->hasRole('admin')) {
             $data['totalUsers'] = User::count();
             $data['totalProjects'] = Project::count();

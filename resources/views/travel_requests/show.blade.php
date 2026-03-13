@@ -38,6 +38,22 @@
                     <h2 class="text-lg font-bold text-gray-800">Request #{{ $travelRequest->id }}</h2>
                     <p class="text-xs text-gray-400 mt-0.5">Submitted by <span
                             class="font-semibold text-gray-600">{{ $travelRequest->user->name }}</span></p>
+                    @if($travelRequest->status === 'pending_pm')
+                        @php
+                            $pm = $travelRequest->project?->manager;
+                        @endphp
+                        <div class="mt-2">
+                            <span class="text-xs text-yellow-700 font-semibold">Approval State: Pending</span>
+                            <br>
+                            <span class="text-xs text-gray-600">Expected Approver: 
+                                @if($pm)
+                                    <span class="font-semibold">{{ $pm->name }}</span> <span class="text-xs text-gray-400">({{ $pm->email }})</span>
+                                @else
+                                    <span class="text-red-500">No Project Manager assigned</span>
+                                @endif
+                            </span>
+                        </div>
+                    @endif
                 </div>
                 <span class="px-3 py-1.5 rounded-full text-sm font-semibold {{ $s['color'] }}">{{ $s['label'] }}</span>
             </div>
@@ -47,7 +63,9 @@
                 @php
                     $fields = [
                         ['label' => 'Project', 'value' => optional($travelRequest->project)->name ?? 'N/A'],
+                        ['label' => 'Origin (Starting Place)', 'value' => $travelRequest->origin],
                         ['label' => 'Destination', 'value' => $travelRequest->destination],
+                        ['label' => 'Number of Passengers', 'value' => $travelRequest->passenger_count],
                         ['label' => 'Travel Date', 'value' => $travelRequest->travel_date],
                         ['label' => 'Return Date', 'value' => $travelRequest->return_date ?? 'Not specified'],
                         ['label' => 'Purpose', 'value' => $travelRequest->purpose],

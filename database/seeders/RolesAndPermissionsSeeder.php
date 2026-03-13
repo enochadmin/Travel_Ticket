@@ -12,7 +12,7 @@ class RolesAndPermissionsSeeder extends Seeder
      */
     public function run(): void
     {
-        $roles = ['admin', 'user', 'project-manager', 'head-office-director', 'commercial-director', 'ceo'];
+        $roles = ['admin', 'user', 'project-manager', 'head-office-director', 'commercial-director', 'ceo', 'reception'];
         foreach ($roles as $role) {
             \Spatie\Permission\Models\Role::firstOrCreate(['name' => $role]);
         }

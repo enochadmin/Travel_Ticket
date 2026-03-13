@@ -19,6 +19,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ReceptionTicketController;
 use App\Http\Controllers\TravelRequestController;
 use App\Http\Controllers\ReportController;
 
@@ -44,6 +45,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('travel-requests', TravelRequestController::class);
     Route::patch('travel-requests/{travel_request}/approve', [TravelRequestController::class, 'approve'])->name('travel-requests.approve');
     Route::patch('travel-requests/{travel_request}/reject', [TravelRequestController::class, 'reject'])->name('travel-requests.reject');
+
+    Route::get('reception/dashboard', [ReceptionTicketController::class, 'dashboard'])
+        ->name('reception.dashboard')
+        ->middleware('role:reception');
+    Route::get('reception/tickets', [ReceptionTicketController::class, 'index'])
+        ->name('reception.tickets.index')
+        ->middleware('role:reception');
+    Route::get('reception/tickets/export', [ReceptionTicketController::class, 'export'])
+        ->name('reception.tickets.export')
+        ->middleware('role:reception');
+    Route::get('reception/tickets/{ticket}', [ReceptionTicketController::class, 'show'])
+        ->name('reception.tickets.show')
+        ->middleware('role:reception');
+    Route::get('reception/destinations/{destination}', [ReceptionTicketController::class, 'destination'])
+        ->name('reception.destinations.show')
+        ->middleware('role:reception');
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index')->middleware('role:admin|head-office-director|commercial-director|ceo');
 
