@@ -1,6 +1,26 @@
 <x-app-layout>
     <x-slot name="pageTitle">Reception Dashboard</x-slot>
 
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <p class="text-xs uppercase tracking-widest text-gray-400">Approved Tickets</p>
+            <p class="text-3xl font-bold text-gray-800 mt-2">{{ $approvedTotal }}</p>
+            <p class="text-xs text-gray-500 mt-1">All fully approved</p>
+        </div>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <p class="text-xs uppercase tracking-widest text-gray-400">Archived (Processed)</p>
+            <p class="text-3xl font-bold text-emerald-600 mt-2">{{ $archivedTotal }}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ $archivedRatio }}% of approved</p>
+            <a href="{{ route('reception.tickets.archived') }}"
+                class="inline-block mt-3 text-xs font-semibold text-emerald-700 hover:text-emerald-800">View archived tickets</a>
+        </div>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <p class="text-xs uppercase tracking-widest text-gray-400">Pending Processing</p>
+            <p class="text-3xl font-bold text-indigo-600 mt-2">{{ $pendingProcessing }}</p>
+            <p class="text-xs text-gray-500 mt-1">Ready to process</p>
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <h2 class="text-base font-semibold text-gray-700 mb-4">Approved Tickets Per Month</h2>

@@ -84,6 +84,7 @@
                                     $badge = [
                                         'pending_pm' => 'bg-yellow-100 text-yellow-800',
                                         'pending_commercial' => 'bg-purple-100 text-purple-800',
+                                        'pending_ceo' => 'bg-indigo-100 text-indigo-800',
                                     ][$r->status] ?? 'bg-gray-100 text-gray-700';
                                 @endphp
                                 <span class="px-2.5 py-1 rounded-full text-xs font-semibold {{ $badge }}">
@@ -284,6 +285,7 @@
                                             $map = [
                                                 'pending_pm' => ['label' => 'Pending PM', 'color' => 'bg-yellow-100 text-yellow-800'],
                                                 'pending_commercial' => ['label' => 'Pending Commercial', 'color' => 'bg-purple-100 text-purple-800'],
+                                                'pending_ceo' => ['label' => 'Pending CEO', 'color' => 'bg-indigo-100 text-indigo-800'],
                                                 'approved' => ['label' => 'Approved', 'color' => 'bg-green-100 text-green-800'],
                                                 'rejected' => ['label' => 'Rejected', 'color' => 'bg-red-100 text-red-800'],
                                             ];

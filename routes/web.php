@@ -52,6 +52,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('reception/tickets', [ReceptionTicketController::class, 'index'])
         ->name('reception.tickets.index')
         ->middleware('role:reception');
+    Route::get('reception/tickets/archived', [ReceptionTicketController::class, 'archived'])
+        ->name('reception.tickets.archived')
+        ->middleware('role:reception');
+    Route::post('reception/tickets/process', [ReceptionTicketController::class, 'process'])
+        ->name('reception.tickets.process')
+        ->middleware('role:reception');
     Route::get('reception/tickets/export', [ReceptionTicketController::class, 'export'])
         ->name('reception.tickets.export')
         ->middleware('role:reception');

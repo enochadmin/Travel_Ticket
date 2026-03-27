@@ -123,9 +123,41 @@ class DashboardController extends Controller
 
         } elseif ($user->hasRole('project-manager')) {
             $pmProjectId = $user->managedProject?->id ?? $user->project_id;
+            $data['pmProject'] = $pmProjectId ? Project::find($pmProjectId) : null;
+
             $data['teamTotal'] = TravelRequest::where('project_id', $pmProjectId ?? -1)->count();
             $data['pendingPm'] = TravelRequest::where('project_id', $pmProjectId ?? -1)->where('status', 'pending_pm')->count();
             $data['approved'] = TravelRequest::where('project_id', $pmProjectId ?? -1)->where('status', 'approved')->count();
+            $data['rejected'] = TravelRequest::where('project_id', $pmProjectId ?? -1)->where('status', 'rejected')->count();
+            $data['pendingCommercial'] = TravelRequest::where('project_id', $pmProjectId ?? -1)
+                ->whereIn('status', ['pending_commercial', 'pending_hod'])
+                ->count();
+            $data['pendingCeo'] = TravelRequest::where('project_id', $pmProjectId ?? -1)
+                ->where('status', 'pending_ceo')
+                ->count();
+            $data['archived'] = TravelRequest::where('project_id', $pmProjectId ?? -1)
+                ->whereNotNull('archived_at')
+                ->count();
+
+            $data['pmStatusChartLabels'] = ['Approved', 'Rejected', 'Pending (PM)', 'Pending (Commercial)', 'Pending (CEO)'];
+            $data['pmStatusChartData'] = [
+                $data['approved'],
+                $data['rejected'],
+                $data['pendingPm'],
+                $data['pendingCommercial'],
+                $data['pendingCeo'],
+            ];
+
+            $data['pmProjectReportLabels'] = ['Approved', 'Rejected', 'Pending (PM)', 'Pending (Commercial)', 'Pending (CEO)', 'Processed (Archived)'];
+            $data['pmProjectReportData'] = [
+                $data['approved'],
+                $data['rejected'],
+                $data['pendingPm'],
+                $data['pendingCommercial'],
+                $data['pendingCeo'],
+                $data['archived'],
+            ];
+
             $data['pmQueue'] = TravelRequest::with(['user', 'project'])
                 ->where('project_id', $pmProjectId ?? -1)
                 ->where('status', 'pending_pm')
@@ -134,7 +166,9 @@ class DashboardController extends Controller
         } else {
             // Regular user / requester
             $data['myTotal'] = TravelRequest::where('user_id', $user->id)->count();
-            $data['myPending'] = TravelRequest::where('user_id', $user->id)->whereIn('status', ['pending_pm', 'pending_commercial', 'pending_hod'])->count();
+            $data['myPending'] = TravelRequest::where('user_id', $user->id)
+                ->whereIn('status', ['pending_pm', 'pending_commercial', 'pending_hod', 'pending_ceo'])
+                ->count();
             $data['myApproved'] = TravelRequest::where('user_id', $user->id)->where('status', 'approved')->count();
             $data['myRejected'] = TravelRequest::where('user_id', $user->id)->where('status', 'rejected')->count();
             $data['myRequests'] = TravelRequest::with('project')

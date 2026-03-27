@@ -41,7 +41,12 @@
         </div>
 
         <div class="flex items-center gap-3">
-            <a href="{{ route('reception.tickets.index', request()->query()) }}"
+            @php
+                $backRoute = request()->query('from') === 'archived'
+                    ? route('reception.tickets.archived', request()->query())
+                    : route('reception.tickets.index', request()->query());
+            @endphp
+            <a href="{{ $backRoute }}"
                 class="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200">
                 Back to Tickets
             </a>

@@ -200,13 +200,22 @@
                     <span class="sidebar-text">Dashboard</span>
                 </a>
                 <a href="{{ route('reception.tickets.index') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('reception.tickets.*') ? 'active' : '' }}">
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('reception.tickets.index', 'reception.tickets.show') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     <span class="sidebar-text">Approved Tickets</span>
+                </a>
+                <a href="{{ route('reception.tickets.archived') }}"
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('reception.tickets.archived') ? 'active' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20 13V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6m16 0v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4m16 0H4m4 4h8" />
+                    </svg>
+                    <span class="sidebar-text">Archived (Processed) Tickets</span>
                 </a>
                 @endhasrole
 

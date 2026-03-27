@@ -86,6 +86,7 @@
                             <th class="px-6 py-3">Project</th>
                             <th class="px-6 py-3">Destination / Purpose</th>
                             <th class="px-6 py-3">Travel Date</th>
+                            <th class="px-6 py-3">Archived</th>
                             <th class="px-6 py-3">Status</th>
                         </tr>
                     </thead>
@@ -96,6 +97,7 @@
                                     'pending_pm' => 'bg-yellow-100 text-yellow-800',
                                     'pending_hod' => 'bg-purple-100 text-purple-800',
                                     'pending_commercial' => 'bg-purple-100 text-purple-800',
+                                    'pending_ceo' => 'bg-indigo-100 text-indigo-800',
                                     'approved' => 'bg-green-100 text-green-800',
                                     'rejected' => 'bg-red-100 text-red-800',
                                 ];
@@ -109,6 +111,14 @@
                                     <br><span class="text-xs text-gray-400">{{ $record->purpose }}</span>
                                 </td>
                                 <td class="px-6 py-4 text-gray-500">{{ $record->travel_date }}</td>
+                                <td class="px-6 py-4 text-gray-500">
+                                    @if($record->archived_at)
+                                        <span class="text-xs font-semibold text-emerald-700">Yes</span>
+                                        <span class="text-xs text-gray-400">({{ $record->archived_at->format('M d, Y') }})</span>
+                                    @else
+                                        <span class="text-xs text-gray-400">No</span>
+                                    @endif
+                                </td>
                                 <td class="px-6 py-4">
                                     <span
                                         class="px-2.5 py-1 rounded-full text-xs font-semibold {{ $statusMap[$record->status] ?? 'bg-gray-100 text-gray-700' }}">

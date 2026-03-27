@@ -29,7 +29,7 @@ class TravelRequestController extends Controller
                 // Can see all requests that are at the commercial-director stage, or already approved/rejected,
                 // plus any they created themselves.
                 $query->where(function ($q) use ($user) {
-                    $q->whereIn('status', ['pending_commercial', 'pending_hod', 'approved', 'rejected'])
+                    $q->whereIn('status', ['pending_commercial', 'pending_hod', 'pending_ceo', 'approved', 'rejected'])
                         ->orWhere('user_id', $user->id);
                 });
             }
@@ -46,8 +46,76 @@ class TravelRequestController extends Controller
             $query->where('user_id', $user->id);
         }
 
-        $travelRequests = $query->latest()->paginate(10);
-        return view('travel_requests.index', compact('travelRequests'));
+        // Filters
+        $status = $request->query('status');
+        $flightType = $request->query('flight_type');
+        $projectId = $request->query('project_id');
+        $dateFrom = $request->query('date_from');
+        $dateTo = $request->query('date_to');
+        $keyword = trim((string) $request->query('keyword', ''));
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        if ($projectId) {
+            $query->where('project_id', $projectId);
+        }
+
+        if ($flightType) {
+            $query->where('flight_type', $flightType);
+        }
+
+        if ($dateFrom) {
+            $query->whereDate('travel_date', '>=', $dateFrom);
+        }
+
+        if ($dateTo) {
+            $query->whereDate('travel_date', '<=', $dateTo);
+        }
+
+        if ($keyword !== '') {
+            $query->where(function ($q) use ($keyword) {
+                $q->where('destination', 'like', '%' . $keyword . '%')
+                    ->orWhere('origin', 'like', '%' . $keyword . '%')
+                    ->orWhere('purpose', 'like', '%' . $keyword . '%')
+                    ->orWhere('remarks', 'like', '%' . $keyword . '%')
+                    ->orWhereHas('user', function ($u) use ($keyword) {
+                        $u->where('name', 'like', '%' . $keyword . '%')
+                            ->orWhere('email', 'like', '%' . $keyword . '%');
+                    })
+                    ->orWhereHas('project', function ($p) use ($keyword) {
+                        $p->where('name', 'like', '%' . $keyword . '%');
+                    });
+            });
+        }
+
+        $projects = collect();
+        if ($user->hasAnyRole(['admin', 'ceo', 'head-office-director', 'commercial-director'])) {
+            $projects = Project::orderBy('name')->get();
+        } elseif ($user->hasRole('project-manager')) {
+            $pmProjectId = $user->managedProject?->id ?? $user->project_id;
+            if ($pmProjectId) {
+                $projects = Project::where('id', $pmProjectId)->get();
+            }
+        } else {
+            if ($user->project_id) {
+                $projects = Project::where('id', $user->project_id)->get();
+            }
+        }
+
+        $filters = [
+            'status' => $status,
+            'project_id' => $projectId,
+            'flight_type' => $flightType,
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
+            'keyword' => $keyword,
+            'view' => $viewType,
+        ];
+
+        $travelRequests = $query->latest()->paginate(10)->withQueryString();
+        return view('travel_requests.index', compact('travelRequests', 'projects', 'filters'));
     }
 
     public function create(Request $request)
@@ -100,6 +168,7 @@ class TravelRequestController extends Controller
             'destination' => 'required|string|max:255',
             'origin' => 'required|string|max:255',
             'passenger_count' => 'required|integer|min:1',
+            'flight_type' => 'required|in:national,international',
             'travel_date' => 'required|date',
             'return_date' => 'nullable|date|after_or_equal:travel_date',
             'purpose' => 'required|string',
@@ -131,6 +200,7 @@ class TravelRequestController extends Controller
         $travelRequest->project_id = $request->project_id;
         $travelRequest->origin = $validated['origin'];
         $travelRequest->passenger_count = $validated['passenger_count'];
+        $travelRequest->flight_type = $validated['flight_type'];
         // If the requester is a project manager, we skip the PM approval stage.
         if (Auth::user()->hasRole('project-manager')) {
             $travelRequest->status = 'pending_commercial';
@@ -196,6 +266,7 @@ class TravelRequestController extends Controller
             'destination' => 'required|string|max:255',
             'origin' => 'required|string|max:255',
             'passenger_count' => 'required|integer|min:1',
+            'flight_type' => 'required|in:national,international',
             'travel_date' => 'required|date',
             'return_date' => 'nullable|date|after_or_equal:travel_date',
             'purpose' => 'required|string',
@@ -256,19 +327,53 @@ class TravelRequestController extends Controller
 
         // Commercial Director (or Admin) approval
         if ($user->hasRole('commercial-director') && in_array($travelRequest->status, ['pending_commercial', 'pending_hod'], true)) {
+            $nextStatus = $travelRequest->flight_type === 'international' ? 'pending_ceo' : 'approved';
+
             $travelRequest->update([
-                'status' => 'approved',
-                // reusing hod_id or should we add commercial_id? We can reuse hod_id or just leave it out for now since the column is hod_id.
-                // Or if we run a migration we could add it. For now, reusing hod_id or skipping tracking who approved it.
+                'status' => $nextStatus,
                 'hod_id' => $user->id,
             ]);
+
+            if ($nextStatus === 'pending_ceo') {
+                $ceos = User::role('ceo')->get();
+                foreach ($ceos as $ceo) {
+                    $ceo->notify(new TicketStatusUpdated($travelRequest, 'International ticket for ' . $travelRequest->destination . ' needs CEO approval.', 'warning'));
+                }
+                return redirect()->back()->with('success', 'Approved by Commercial Director. Forwarded to CEO.');
+            }
 
             // Notify Requester
             if ($travelRequest->user) {
                 $travelRequest->user->notify(new TicketStatusUpdated($travelRequest, 'Your ticket for ' . $travelRequest->destination . ' has been FINALLY APPROVED.', 'success'));
             }
 
+            // Notify Reception users
+            $receptions = \App\Models\User::role('reception')->get();
+            foreach ($receptions as $reception) {
+                $reception->notify(new TicketStatusUpdated($travelRequest, 'A ticket for ' . $travelRequest->destination . ' has been approved and is ready for processing.', 'info'));
+            }
+
             return redirect()->back()->with('success', 'Approved by Commercial Director. Request is fully approved.');
+        }
+
+        // CEO approval (International only)
+        if ($user->hasRole('ceo') && $travelRequest->status === 'pending_ceo') {
+            $travelRequest->update([
+                'status' => 'approved',
+            ]);
+
+            // Notify Requester
+            if ($travelRequest->user) {
+                $travelRequest->user->notify(new TicketStatusUpdated($travelRequest, 'Your international ticket for ' . $travelRequest->destination . ' has been APPROVED by the CEO.', 'success'));
+            }
+
+            // Notify Reception users
+            $receptions = \App\Models\User::role('reception')->get();
+            foreach ($receptions as $reception) {
+                $reception->notify(new TicketStatusUpdated($travelRequest, 'An international ticket for ' . $travelRequest->destination . ' has been approved and is ready for processing.', 'info'));
+            }
+
+            return redirect()->back()->with('success', 'Approved by CEO. Request is fully approved.');
         }
 
         abort(403, 'Unauthorized action or invalid status.');
@@ -314,6 +419,20 @@ class TravelRequestController extends Controller
             }
 
             return redirect()->back()->with('success', 'Request rejected by Commercial Director.');
+        }
+
+        // CEO Rejection (International only)
+        if ($user->hasRole('ceo') && $travelRequest->status === 'pending_ceo') {
+            $travelRequest->update([
+                'status' => 'rejected',
+                'rejection_reason' => $reason,
+            ]);
+
+            if ($travelRequest->user) {
+                $travelRequest->user->notify(new TicketStatusUpdated($travelRequest, 'Your international ticket for ' . $travelRequest->destination . ' was REJECTED by the CEO. Reason: ' . $reason, 'error'));
+            }
+
+            return redirect()->back()->with('success', 'Request rejected by CEO.');
         }
 
         abort(403, 'Unauthorized action or invalid status.');

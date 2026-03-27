@@ -6,11 +6,17 @@ use App\Models\ReceptionTicket;
 use App\Models\Project;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class ReceptionTicketController extends Controller
 {
     public function dashboard()
     {
+        $approvedTotal = ReceptionTicket::where('status', 'approved')->count();
+        $archivedTotal = ReceptionTicket::whereNotNull('archived_at')->count();
+        $pendingProcessing = max($approvedTotal - $archivedTotal, 0);
+        $archivedRatio = $approvedTotal > 0 ? round(($archivedTotal / $approvedTotal) * 100) : 0;
+
         $approved = ReceptionTicket::with('project')
             ->where('status', 'approved')
             ->get(['travel_date', 'project_id']);
@@ -47,6 +53,10 @@ class ReceptionTicketController extends Controller
         $projectData = $topProjects->pluck('total');
 
         return view('reception.dashboard', [
+            'approvedTotal' => $approvedTotal,
+            'archivedTotal' => $archivedTotal,
+            'pendingProcessing' => $pendingProcessing,
+            'archivedRatio' => $archivedRatio,
             'monthlyCounts' => $monthlyCounts,
             'projectCounts' => $projectCounts,
             'destinationCounts' => $destinationCounts,
@@ -65,6 +75,35 @@ class ReceptionTicketController extends Controller
         $tickets = $query->latest()->paginate(15)->withQueryString();
 
         return view('reception.tickets.index', compact('tickets', 'projects'));
+    }
+
+    public function archived(Request $request)
+    {
+        $query = $this->filteredArchivedQuery($request);
+
+        $projects = Project::orderBy('name')->get();
+        $tickets = $query->latest('archived_at')->paginate(15)->withQueryString();
+
+        return view('reception.tickets.archived', compact('tickets', 'projects'));
+    }
+
+    public function process(Request $request)
+    {
+        $validated = $request->validate([
+            'ticket_ids' => 'required|array',
+            'ticket_ids.*' => 'integer|exists:travel_requests,id',
+        ]);
+
+        $count = ReceptionTicket::where('status', 'approved')
+            ->whereNull('archived_at')
+            ->whereIn('id', $validated['ticket_ids'])
+            ->update([
+                'archived_at' => now(),
+                'archived_by' => Auth::id(),
+            ]);
+
+        return redirect()->route('reception.tickets.index')
+            ->with('success', $count . ' ticket(s) processed and archived.');
     }
 
     public function show(ReceptionTicket $ticket)
@@ -137,7 +176,8 @@ class ReceptionTicketController extends Controller
     private function filteredApprovedQuery(Request $request)
     {
         $query = ReceptionTicket::with(['user', 'project', 'pm', 'hod'])
-            ->where('status', 'approved');
+            ->where('status', 'approved')
+            ->whereNull('archived_at');
 
         if ($request->filled('project_id')) {
             $query->where('project_id', $request->project_id);
@@ -149,6 +189,38 @@ class ReceptionTicketController extends Controller
 
         if ($request->filled('date_to')) {
             $query->whereDate('travel_date', '<=', $request->date_to);
+        }
+
+        if ($request->filled('destination')) {
+            $query->where('destination', 'like', '%' . $request->destination . '%');
+        }
+
+        if ($request->filled('requester')) {
+            $requester = $request->requester;
+            $query->whereHas('user', function ($q) use ($requester) {
+                $q->where('name', 'like', '%' . $requester . '%')
+                    ->orWhere('email', 'like', '%' . $requester . '%');
+            });
+        }
+
+        return $query;
+    }
+
+    private function filteredArchivedQuery(Request $request)
+    {
+        $query = ReceptionTicket::with(['user', 'project', 'pm', 'hod', 'archivedBy'])
+            ->whereNotNull('archived_at');
+
+        if ($request->filled('project_id')) {
+            $query->where('project_id', $request->project_id);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('archived_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('archived_at', '<=', $request->date_to);
         }
 
         if ($request->filled('destination')) {

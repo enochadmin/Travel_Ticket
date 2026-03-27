@@ -786,12 +786,13 @@
     <div class="space-y-8">
 
         {{-- Stat Cards --}}
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-5">
             @php
                 $pmCards = [
                     ['label' => 'Team Total', 'value' => $teamTotal, 'from' => '#6366f1', 'to' => '#818cf8', 'icon' => 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z'],
                     ['label' => 'Awaiting My Review', 'value' => $pendingPm, 'from' => '#f59e0b', 'to' => '#fbbf24', 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'],
                     ['label' => 'Approved', 'value' => $approved, 'from' => '#10b981', 'to' => '#34d399', 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
+                    ['label' => 'Rejected', 'value' => $rejected, 'from' => '#ef4444', 'to' => '#f87171', 'icon' => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z'],
                 ];
             @endphp
             @foreach($pmCards as $card)
@@ -809,6 +810,47 @@
                     </div>
                 </div>
             @endforeach
+        </div>
+
+        {{-- PM Charts --}}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <h2 class="text-base font-semibold text-gray-700 mb-4">Team Ticket Status (PM View)</h2>
+                <div class="relative" style="height:260px;">
+                    <canvas id="pmStatusChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-base font-semibold text-gray-700">
+                        Project Report
+                        @if(!empty($pmProject?->name))
+                            <span class="text-xs text-gray-400 font-normal">({{ $pmProject->name }})</span>
+                        @endif
+                    </h2>
+                </div>
+                <div class="relative" style="height:260px;">
+                    <canvas id="pmProjectReportChart"></canvas>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mt-4 text-xs text-gray-600">
+                    <div class="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                        <span>Pending (Commercial)</span>
+                        <span class="font-semibold">{{ $pendingCommercial }}</span>
+                    </div>
+                    <div class="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                        <span>Pending (CEO)</span>
+                        <span class="font-semibold">{{ $pendingCeo }}</span>
+                    </div>
+                    <div class="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                        <span>Processed (Archived)</span>
+                        <span class="font-semibold">{{ $archived }}</span>
+                    </div>
+                    <div class="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                        <span>Team Total</span>
+                        <span class="font-semibold">{{ $teamTotal }}</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         {{-- PM Approval Queue --}}
@@ -873,6 +915,66 @@
             @endif
         </div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const statusCtx = document.getElementById('pmStatusChart');
+            if (statusCtx) {
+                const statusLabels = {!! json_encode($pmStatusChartLabels) !!};
+                const statusData = {!! json_encode($pmStatusChartData) !!};
+                new Chart(statusCtx.getContext('2d'), {
+                    type: 'pie',
+                    data: {
+                        labels: statusLabels,
+                        datasets: [{
+                            data: statusData,
+                            backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#8b5cf6', '#6366f1'],
+                            borderColor: '#ffffff',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { font: { family: "'Inter', sans-serif" } } },
+                            tooltip: { backgroundColor: 'rgba(17, 24, 39, 0.9)', padding: 10, cornerRadius: 6 }
+                        }
+                    }
+                });
+            }
+
+            const reportCtx = document.getElementById('pmProjectReportChart');
+            if (reportCtx) {
+                const labels = {!! json_encode($pmProjectReportLabels) !!};
+                const data = {!! json_encode($pmProjectReportData) !!};
+                new Chart(reportCtx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Tickets',
+                            data: data,
+                            backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#8b5cf6', '#6366f1', '#14b8a6'],
+                            borderRadius: 6,
+                            borderSkipped: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { backgroundColor: 'rgba(17, 24, 39, 0.9)', padding: 10, cornerRadius: 6 }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: '#f3f4f6', drawBorder: false }, ticks: { color: '#6b7280' } },
+                            x: { ticks: { color: '#4b5563', font: { weight: '600' } }, grid: { display: false, drawBorder: false } }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
     @endhasrole
 
     {{-- ============= REQUESTER (regular user) DASHBOARD ============= --}}
@@ -1007,6 +1109,7 @@
                                 'pending_pm' => 'bg-yellow-100 text-yellow-700',
                                 'pending_commercial' => 'bg-purple-100 text-purple-700',
                                 'pending_hod' => 'bg-blue-100 text-blue-700',
+                                'pending_ceo' => 'bg-indigo-100 text-indigo-700',
                             ];
                         @endphp
                         <div class="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition">

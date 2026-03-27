@@ -19,6 +19,7 @@
             'pending_commercial' => ['label' => 'Pending Commercial Director', 'color' => 'bg-purple-100 text-purple-800'],
             // legacy status kept for backward compatibility
             'pending_hod' => ['label' => 'Pending Commercial Director', 'color' => 'bg-purple-100 text-purple-800'],
+            'pending_ceo' => ['label' => 'Pending CEO', 'color' => 'bg-indigo-100 text-indigo-800'],
             'approved' => ['label' => 'Approved', 'color' => 'bg-green-100 text-green-800'],
             'rejected' => ['label' => 'Rejected', 'color' => 'bg-red-100 text-red-800'],
         ];
@@ -66,6 +67,7 @@
                         ['label' => 'Origin (Starting Place)', 'value' => $travelRequest->origin],
                         ['label' => 'Destination', 'value' => $travelRequest->destination],
                         ['label' => 'Number of Passengers', 'value' => $travelRequest->passenger_count],
+                        ['label' => 'Flight Type', 'value' => ucfirst($travelRequest->flight_type ?? 'national')],
                         ['label' => 'Travel Date', 'value' => $travelRequest->travel_date],
                         ['label' => 'Return Date', 'value' => $travelRequest->return_date ?? 'Not specified'],
                         ['label' => 'Purpose', 'value' => $travelRequest->purpose],
@@ -89,7 +91,7 @@
             @endif
 
             {{-- Approval Trail (shown when ticket is past PM stage) --}}
-            @if($travelRequest->pm_id && in_array($travelRequest->status, ['pending_commercial', 'approved', 'rejected']))
+            @if($travelRequest->pm_id && in_array($travelRequest->status, ['pending_commercial', 'pending_ceo', 'approved', 'rejected']))
                 <div class="px-6 py-4 border-t border-indigo-100 bg-indigo-50">
                     <p class="text-xs text-indigo-600 font-bold uppercase tracking-wider mb-3">📋 Approval History</p>
                     <div class="relative ml-2">
@@ -192,6 +194,19 @@
                     @click="rejectAction='{{ route('travel-requests.reject', $travelRequest) }}'; rejectModal=true"
                     class="px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition">✗
                     Reject as Commercial Director</button>
+            @endif
+
+            @if(Auth::user()->hasRole('ceo') && $travelRequest->status === 'pending_ceo')
+                <form action="{{ route('travel-requests.approve', $travelRequest) }}" method="POST">
+                    @csrf @method('PATCH')
+                    <button
+                        class="px-5 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm font-semibold transition">âœ“
+                        Approve as CEO</button>
+                </form>
+                <button type="button"
+                    @click="rejectAction='{{ route('travel-requests.reject', $travelRequest) }}'; rejectModal=true"
+                    class="px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition">âœ—
+                    Reject as CEO</button>
             @endif
 
             <a href="{{ route('travel-requests.index') }}"

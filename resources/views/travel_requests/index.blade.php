@@ -45,6 +45,82 @@
                 </a>
             </div>
 
+            {{-- Filters --}}
+            <form method="GET" action="{{ route('travel-requests.index') }}" class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                @if(!empty($filters['view']))
+                    <input type="hidden" name="view" value="{{ $filters['view'] }}">
+                @endif
+                <div class="grid grid-cols-1 md:grid-cols-7 gap-3">
+                    <div class="md:col-span-1">
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Status</label>
+                        <select name="status" class="w-full rounded-lg border-gray-200 text-sm">
+                            <option value="">All</option>
+                            @php
+                                $statusOptions = [
+                                    'pending_pm' => 'Pending PM',
+                                    'pending_commercial' => 'Pending Commercial',
+                                    'pending_hod' => 'Pending HOD',
+                                    'pending_ceo' => 'Pending CEO',
+                                    'approved' => 'Approved',
+                                    'rejected' => 'Rejected',
+                                ];
+                            @endphp
+                            @foreach($statusOptions as $value => $label)
+                                <option value="{{ $value }}" {{ ($filters['status'] ?? '') === $value ? 'selected' : '' }}>
+                                    {{ $label }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">From</label>
+                        <input type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}"
+                            class="w-full rounded-lg border-gray-200 text-sm">
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">To</label>
+                        <input type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}"
+                            class="w-full rounded-lg border-gray-200 text-sm">
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Project</label>
+                        <select name="project_id" class="w-full rounded-lg border-gray-200 text-sm">
+                            <option value="">All</option>
+                            @foreach($projects ?? [] as $project)
+                                <option value="{{ $project->id }}" {{ (string) ($filters['project_id'] ?? '') === (string) $project->id ? 'selected' : '' }}>
+                                    {{ $project->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Flight Type</label>
+                        <select name="flight_type" class="w-full rounded-lg border-gray-200 text-sm">
+                            <option value="">All</option>
+                            <option value="national" {{ ($filters['flight_type'] ?? '') === 'national' ? 'selected' : '' }}>National</option>
+                            <option value="international" {{ ($filters['flight_type'] ?? '') === 'international' ? 'selected' : '' }}>International</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Keyword</label>
+                        <input type="text" name="keyword" value="{{ $filters['keyword'] ?? '' }}"
+                            placeholder="Destination, requester, project..."
+                            class="w-full rounded-lg border-gray-200 text-sm">
+                    </div>
+                    <div class="md:col-span-1 flex items-end gap-2">
+                        <button type="submit"
+                            class="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold text-white px-4 py-2.5 rounded-xl transition"
+                            style="background: linear-gradient(135deg,#4f46e5,#6366f1);">
+                            Search
+                        </button>
+                        <a href="{{ route('travel-requests.index', array_filter(['view' => $filters['view'] ?? null])) }}"
+                            class="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold text-gray-700 px-4 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition">
+                            Reset
+                        </a>
+                    </div>
+                </div>
+            </form>
+
             {{-- Table --}}
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
@@ -54,6 +130,7 @@
                             <th class="px-6 py-3">Requester</th>
                             <th class="px-6 py-3">Project</th>
                             <th class="px-6 py-3">Destination</th>
+                            <th class="px-6 py-3">Flight Type</th>
                             <th class="px-6 py-3">Travel Date</th>
                             <th class="px-6 py-3">Status</th>
                             <th class="px-6 py-3 text-right">Actions</th>
@@ -66,6 +143,7 @@
                                     'pending_pm' => 'bg-yellow-100 text-yellow-800',
                                     'pending_commercial' => 'bg-purple-100 text-purple-800',
                                     'pending_hod' => 'bg-blue-100 text-blue-800',
+                                    'pending_ceo' => 'bg-indigo-100 text-indigo-800',
                                     'approved' => 'bg-green-100 text-green-800',
                                     'rejected' => 'bg-red-100 text-red-800',
                                 ];
@@ -75,6 +153,7 @@
                                 <td class="px-6 py-4 font-semibold text-gray-800">{{ $request->user->name }}</td>
                                 <td class="px-6 py-4 text-gray-500">{{ optional($request->project)->name ?? 'N/A' }}</td>
                                 <td class="px-6 py-4 text-gray-700">{{ $request->destination }}</td>
+                                <td class="px-6 py-4 text-gray-500">{{ ucfirst($request->flight_type ?? 'national') }}</td>
                                 <td class="px-6 py-4 text-gray-500">{{ $request->travel_date }}</td>
                                 <td class="px-6 py-4">
                                     <span
@@ -99,7 +178,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-6 py-12 text-center text-gray-400">
+                                <td colspan="8" class="px-6 py-12 text-center text-gray-400">
                                     <p class="text-3xl mb-2">✈️</p>
                                     No travel requests found.
                                 </td>

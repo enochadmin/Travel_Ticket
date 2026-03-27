@@ -14,6 +14,7 @@ class TravelRequest extends Model
         'destination',
         'origin',
         'passenger_count',
+        'flight_type',
         'travel_date',
         'return_date',
         'purpose',
@@ -23,10 +24,13 @@ class TravelRequest extends Model
         'remarks',
         'rejection_reason',
         'pm_approved_at',
+        'archived_at',
+        'archived_by',
     ];
 
     protected $casts = [
         'pm_approved_at' => 'datetime',
+        'archived_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
@@ -47,5 +51,10 @@ class TravelRequest extends Model
     public function hod(): BelongsTo
     {
         return $this->belongsTo(User::class, 'hod_id');
+    }
+
+    public function archivedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'archived_by');
     }
 }
