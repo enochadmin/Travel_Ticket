@@ -46,6 +46,10 @@ class UserController extends Controller
 
         $user->assignRole($validated['role']);
 
+        if (!empty($validated['project_id'])) {
+            $user->projects()->syncWithoutDetaching([$validated['project_id']]);
+        }
+
         return redirect()->route('users.index')->with('success', 'User created successfully.');
     }
 
@@ -81,6 +85,10 @@ class UserController extends Controller
 
         // Sync role (removes old, adds new)
         $user->syncRoles([$validated['role']]);
+
+        if (!empty($validated['project_id'])) {
+            $user->projects()->syncWithoutDetaching([$validated['project_id']]);
+        }
 
         return redirect()->route('users.index')->with('success', 'User updated successfully.');
     }

@@ -147,6 +147,10 @@
 
             {{-- Project Members --}}
             <div class="px-6 py-5 border-t border-gray-50 bg-white" x-data="{ showAddMember: false }">
+                @php
+                    $selectedUserIds = collect(old('user_ids', []))->map(fn($id) => (int) $id)->all();
+                    $avatarColors = ['#4f46e5', '#0891b2', '#059669', '#d97706', '#be123c', '#7c3aed', '#2563eb', '#0f766e'];
+                @endphp
                 <div class="flex items-center justify-between mb-4">
                     <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
@@ -154,17 +158,17 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
-                        Project Members ({{ $project->users->count() }})
+                        Project Members ({{ $project->members->count() }})
                     </p>
 
                     @if(!empty($canManageMembers) && $canManageMembers)
                         <button @click="showAddMember = !showAddMember"
-                            class="text-xs font-semibold bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 transition-transform"
+                            class="text-sm font-semibold bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 shadow-sm hover:shadow transition flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 transition-transform"
                                 :class="{'rotate-45': showAddMember}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                             </svg>
-                            Add New Member
+                            Add members
                         </button>
                     @endif
                 </div>
@@ -175,11 +179,65 @@
                         <form method="POST" action="{{ route('projects.members.store', $project) }}"
                             class="mb-5 bg-gray-50 p-4 rounded-xl border border-gray-100">
                             @csrf
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-800">Select members to assign</p>
+                                    <p class="text-xs text-gray-400 mt-0.5">Choose one or more users, then assign them to this project.</p>
+                                </div>
+                                <button type="submit"
+                                    class="px-4 py-2 rounded-xl text-white text-sm font-semibold transition bg-indigo-600 hover:bg-indigo-700 shadow-sm">
+                                    Assign selected
+                                </button>
+                            </div>
+
+                            @error('user_ids')<p class="text-red-500 text-xs mb-2">{{ $message }}</p>@enderror
+                            @error('user_ids.*')<p class="text-red-500 text-xs mb-2">{{ $message }}</p>@enderror
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
+                                @forelse(($availableUsers ?? collect()) as $u)
+                                    @php
+                                        $parts = collect(explode(' ', trim($u->name)))->filter();
+                                        $initials = $parts->map(fn($part) => \Illuminate\Support\Str::substr($part, 0, 1))->take(2)->implode('');
+                                        $role = ucfirst(str_replace('-', ' ', $u->roles->first()?->name ?? 'user'));
+                                        $color = $avatarColors[$loop->index % count($avatarColors)];
+                                    @endphp
+                                    <label class="relative flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 cursor-pointer transition hover:border-indigo-200 hover:bg-white shadow-sm">
+                                        <input type="checkbox" name="user_ids[]" value="{{ $u->id }}"
+                                            class="peer sr-only" {{ in_array((int) $u->id, $selectedUserIds, true) ? 'checked' : '' }}>
+                                        <span class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-sm ring-2 ring-white"
+                                            style="background:{{ $color }};">
+                                            {{ strtoupper($initials ?: \Illuminate\Support\Str::substr($u->name, 0, 1)) }}
+                                        </span>
+                                        <span class="min-w-0 flex-1">
+                                            <span class="block text-sm font-semibold text-gray-800 truncate">{{ $u->name }}</span>
+                                            <span class="block text-xs text-gray-400 truncate">{{ $u->email }}</span>
+                                            <span class="mt-1 inline-flex max-w-full items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600">
+                                                {{ $role }}
+                                                <span class="mx-1 text-gray-300">/</span>
+                                                {{ $u->project ? 'Currently: ' . $u->project->name : 'Unassigned' }}
+                                            </span>
+                                        </span>
+                                        <span class="w-5 h-5 rounded-full border border-gray-300 bg-white flex items-center justify-center text-white transition peer-checked:bg-indigo-600 peer-checked:border-indigo-600">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd"
+                                                    d="M16.704 5.29a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3.25-3.25a1 1 0 111.414-1.414l2.543 2.543 6.543-6.543a1 1 0 011.414 0z"
+                                                    clip-rule="evenodd" />
+                                            </svg>
+                                        </span>
+                                    </label>
+                                @empty
+                                    <div class="sm:col-span-2 rounded-xl border border-dashed border-gray-200 bg-white px-4 py-5 text-center">
+                                        <p class="text-sm font-semibold text-gray-600">No available users to add.</p>
+                                        <p class="text-xs text-gray-400 mt-1">Everyone eligible is already assigned to this project.</p>
+                                    </div>
+                                @endforelse
+                            </div>
+
+                            <div class="hidden">
                                 <div class="sm:col-span-2">
                                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">Select members to
                                         assign</label>
-                                    <select name="user_ids[]" multiple
+                                    <select name="legacy_user_ids[]" multiple disabled
                                         class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition @error('user_ids') border-red-400 @enderror">
                                         @foreach(($availableUsers ?? collect()) as $u)
                                             <option value="{{ $u->id }}">
@@ -207,13 +265,18 @@
                 @endif
 
                 {{-- Member Grid --}}
-                @if($project->users->count() > 0)
+                @if($project->members->count() > 0)
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                        @foreach($project->users as $member)
+                        @foreach($project->members as $member)
+                            @php
+                                $parts = collect(explode(' ', trim($member->name)))->filter();
+                                $initials = $parts->map(fn($part) => \Illuminate\Support\Str::substr($part, 0, 1))->take(2)->implode('');
+                                $color = $avatarColors[$loop->index % count($avatarColors)];
+                            @endphp
                             <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50/50">
-                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs"
-                                    style="background:#818cf8;">
-                                    {{ strtoupper(substr($member->name, 0, 1)) }}
+                                <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-sm ring-2 ring-white"
+                                    style="background:{{ $color }};">
+                                    {{ strtoupper($initials ?: \Illuminate\Support\Str::substr($member->name, 0, 1)) }}
                                 </div>
                                 <div class="min-w-0 flex-1">
                                     <p class="text-sm font-semibold text-gray-800 truncate">{{ $member->name }}</p>

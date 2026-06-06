@@ -47,7 +47,7 @@
                             <select name="discipline"
                                 class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition @error('discipline') border-red-400 @enderror">
                                 <option value="">— Select Discipline —</option>
-                                @foreach(['Infrastructure', 'Water', 'Building'] as $d)
+                                @foreach(['Infrastructure', 'Water', 'Building', 'Head-Office'] as $d)
                                     <option value="{{ $d }}" {{ old('discipline') === $d ? 'selected' : '' }}>{{ $d }}
                                     </option>
                                 @endforeach
@@ -128,6 +128,72 @@
                                 class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition @error('end_date') border-red-400 @enderror">
                             @error('end_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
+                    </div>
+                </div>
+
+                {{-- Team Members --}}
+                <div>
+                    @php
+                        $selectedUserIds = collect(old('user_ids', []))->map(fn($id) => (int) $id)->all();
+                        $avatarColors = ['#4f46e5', '#0891b2', '#059669', '#d97706', '#be123c', '#7c3aed', '#2563eb', '#0f766e'];
+                    @endphp
+
+                    <div class="flex items-center justify-between gap-3 mb-3">
+                        <div>
+                            <h3 class="text-xs font-bold text-indigo-600 uppercase tracking-widest">Team Members</h3>
+                            <p class="text-xs text-gray-400 mt-1">Select the users who should belong to this project.</p>
+                        </div>
+                        <span class="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                            </svg>
+                            Add members
+                        </span>
+                    </div>
+
+                    @error('user_ids')<p class="text-red-500 text-xs mb-2">{{ $message }}</p>@enderror
+                    @error('user_ids.*')<p class="text-red-500 text-xs mb-2">{{ $message }}</p>@enderror
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        @forelse(($availableUsers ?? collect()) as $user)
+                            @php
+                                $parts = collect(explode(' ', trim($user->name)))->filter();
+                                $initials = $parts->map(fn($part) => \Illuminate\Support\Str::substr($part, 0, 1))->take(2)->implode('');
+                                $role = ucfirst(str_replace('-', ' ', $user->roles->first()?->name ?? 'user'));
+                                $color = $avatarColors[$loop->index % count($avatarColors)];
+                            @endphp
+                            <label class="relative flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 cursor-pointer transition hover:border-indigo-200 hover:bg-indigo-50/40 shadow-sm">
+                                <input type="checkbox" name="user_ids[]" value="{{ $user->id }}"
+                                    class="peer sr-only" {{ in_array((int) $user->id, $selectedUserIds, true) ? 'checked' : '' }}>
+                                <span class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-sm ring-2 ring-white"
+                                    style="background:{{ $color }};">
+                                    {{ strtoupper($initials ?: \Illuminate\Support\Str::substr($user->name, 0, 1)) }}
+                                </span>
+                                <span class="min-w-0 flex-1">
+                                    <span class="block text-sm font-semibold text-gray-800 truncate">{{ $user->name }}</span>
+                                    <span class="block text-xs text-gray-400 truncate">{{ $user->email }}</span>
+                                    <span class="mt-1 inline-flex max-w-full items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600">
+                                        {{ $role }}
+                                        <span class="mx-1 text-gray-300">/</span>
+                                        {{ $user->project ? 'Currently: ' . $user->project->name : 'Unassigned' }}
+                                    </span>
+                                </span>
+                                <span class="w-5 h-5 rounded-full border border-gray-300 bg-white flex items-center justify-center text-white transition peer-checked:bg-indigo-600 peer-checked:border-indigo-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd"
+                                            d="M16.704 5.29a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3.25-3.25a1 1 0 111.414-1.414l2.543 2.543 6.543-6.543a1 1 0 011.414 0z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </span>
+                            </label>
+                        @empty
+                            <div class="sm:col-span-2 rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-center">
+                                <p class="text-sm font-semibold text-gray-600">No users available to add.</p>
+                                <p class="text-xs text-gray-400 mt-1">Create users first, then assign them to projects.</p>
+                            </div>
+                        @endforelse
                     </div>
                 </div>
 

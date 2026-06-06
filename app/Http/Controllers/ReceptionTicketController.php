@@ -19,7 +19,7 @@ class ReceptionTicketController extends Controller
 
         $approved = ReceptionTicket::with('project')
             ->where('status', 'approved')
-            ->get(['travel_date', 'project_id']);
+            ->get(['travel_date', 'project_id', 'destination']);
 
         $monthlyCounts = $approved
             ->groupBy(function ($ticket) {
@@ -45,12 +45,31 @@ class ReceptionTicketController extends Controller
             ->filter(fn($count, $destination) => $destination !== '')
             ->sortDesc();
 
-        $monthlyLabels = $monthlyCounts->keys()->values();
+        $monthlyLabels = $monthlyCounts
+            ->keys()
+            ->map(fn($month) => Carbon::createFromFormat('Y-m', $month)->format('M Y'))
+            ->values();
         $monthlyData = $monthlyCounts->values();
 
         $topProjects = $projectCounts->take(8)->values();
         $projectLabels = $topProjects->pluck('name');
         $projectData = $topProjects->pluck('total');
+
+        $latestMonthKey = $monthlyCounts->keys()->last();
+        $latestMonthTotal = $latestMonthKey ? $monthlyCounts->get($latestMonthKey) : 0;
+        $latestMonthLabel = $latestMonthKey
+            ? Carbon::createFromFormat('Y-m', $latestMonthKey)->format('F Y')
+            : 'No data yet';
+
+        $busiestMonthKey = $monthlyCounts->sortDesc()->keys()->first();
+        $busiestMonthTotal = $busiestMonthKey ? $monthlyCounts->get($busiestMonthKey) : 0;
+        $busiestMonthLabel = $busiestMonthKey
+            ? Carbon::createFromFormat('Y-m', $busiestMonthKey)->format('F Y')
+            : 'No data yet';
+
+        $topProject = $projectCounts->first();
+        $topDestinationName = $destinationCounts->keys()->first();
+        $topDestinationTotal = $topDestinationName ? $destinationCounts->get($topDestinationName) : 0;
 
         return view('reception.dashboard', [
             'approvedTotal' => $approvedTotal,
@@ -64,6 +83,13 @@ class ReceptionTicketController extends Controller
             'monthlyData' => $monthlyData,
             'projectLabels' => $projectLabels,
             'projectData' => $projectData,
+            'latestMonthLabel' => $latestMonthLabel,
+            'latestMonthTotal' => $latestMonthTotal,
+            'busiestMonthLabel' => $busiestMonthLabel,
+            'busiestMonthTotal' => $busiestMonthTotal,
+            'topProject' => $topProject,
+            'topDestinationName' => $topDestinationName,
+            'topDestinationTotal' => $topDestinationTotal,
         ]);
     }
 

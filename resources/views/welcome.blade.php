@@ -5,275 +5,331 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ config('app.name', 'EEC Travel') }}</title>
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet">
-
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap');
-        
+        body { font-family: 'Instrument Sans', sans-serif; }
+
         :root {
-            --primary: #0ea5e9;   /* Sky blue - modern & trustworthy */
-            --accent: #eab308;    /* Gold accent (Ethiopian flag inspiration) */
+            --primary: #0ea5e9;
+            --accent: #facc15;
         }
-        
+
         .hero-bg {
-            background-image: linear-gradient(rgba(15, 23, 42, 0.72), rgba(15, 23, 42, 0.78)), 
-                             url('{{ asset('images/landing-bg.jpg') }}');
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85)),
+                        url('{{ asset('images/landing-bg.jpg') }}');
             background-size: cover;
             background-position: center;
-            background-attachment: fixed;
         }
 
-        .nav-link {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .nav-link:hover {
-            color: #eab308;
-            transform: translateY(-1px);
+        .nav-blur {
+            backdrop-filter: blur(12px);
+            background: rgba(0,0,0,0.6);
         }
 
-        .hero-title {
-            font-size: clamp(2.5rem, 5vw, 4.5rem);
-            line-height: 1.05;
-            letter-spacing: -0.04em;
+        .card-hover:hover {
+            transform: translateY(-10px);
+            transition: 0.3s ease;
         }
 
-        .feature-card {
-            transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
-        }
-        
-        .feature-card:hover {
-            transform: translateY(-12px);
-            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.8s ease;
         }
 
-        .cta-button {
-            position: relative;
-            overflow: hidden;
+        .fade-in.show {
+            opacity: 1;
+            transform: translateY(0);
         }
-        
-        .cta-button::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 40%;
-            height: 400%;
-            background: linear-gradient(
-                120deg,
-                transparent,
-                rgba(255,255,255,0.4),
-                transparent
-            );
-            transform: skewX(-25deg);
-            animation: shine 4s infinite;
+        .theme-toggle {
+            width: 36px;
+            height: 36px;
+            border-radius: 9999px;
+            border: 1px solid rgba(255,255,255,0.25);
+            background: rgba(255,255,255,0.08);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
         }
 
-        @keyframes shine {
-            0% { transform: translateX(-150%) skewX(-25deg); }
-            20% { transform: translateX(300%) skewX(-25deg); }
-            100% { transform: translateX(300%) skewX(-25deg); }
+        .theme-toggle svg {
+            width: 18px;
+            height: 18px;
         }
-    </style>
+
+        .theme-toggle .sun { display: none; }
+        .light-mode .theme-toggle .sun { display: block; }
+        .light-mode .theme-toggle .moon { display: none; }
+
+        .light-mode {
+            background: #f8fafc;
+            color: #0f172a;
+        }
+
+        .light-mode .hero-bg {
+            background: linear-gradient(rgba(255,255,255,0.7), rgba(255,255,255,0.9)),
+                        url('{{ asset('images/landing-bg.jpg') }}');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .light-mode .nav-blur {
+            background: rgba(255,255,255,0.75);
+        }
+
+        .light-mode .bg-black { background: #f8fafc !important; }
+        .light-mode .bg-zinc-900 { background: #e2e8f0 !important; }
+        .light-mode .bg-zinc-800 { background: #f1f5f9 !important; }
+        .light-mode .text-gray-400 { color: #475569 !important; }
+        .light-mode .text-gray-300 { color: #334155 !important; }
+        .light-mode .text-white { color: #0f172a !important; }
+        .light-mode .border { border-color: #94a3b8 !important; }
+        .light-mode .theme-toggle {
+            background: rgba(15,23,42,0.08);
+            border-color: rgba(15,23,42,0.2);
+        }    </style>
 </head>
-<body class="bg-zinc-950 text-white font-sans">
 
-    <!-- Top Navigation -->
-    <nav class="fixed top-0 left-0 right-0 z-50 bg-zinc-950/80 backdrop-blur-lg border-b border-white/10">
-        <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <img src="{{ asset('images/eec-logo.png') }}" alt="EEC Logo" class="h-9 w-auto">
-                <div>
-                    <span class="font-semibold text-2xl tracking-tighter">EEC</span>
-                    <span class="text-sky-400 font-medium text-xl">TRAVEL</span>
-                </div>
-            </div>
+<body class="bg-black text-white">
 
-            <div class="flex items-center gap-8 text-sm font-medium">
-                <a href="#features" class="nav-link text-zinc-300 hover:text-white">Features</a>
-                <a href="#how" class="nav-link text-zinc-300 hover:text-white">How it Works</a>
-                <a href="#contact" class="nav-link text-zinc-300 hover:text-white">Contact</a>
-                
-                @auth
-                    <a href="{{ url('/dashboard') }}" 
-                       class="px-8 py-3 bg-white text-zinc-900 rounded-2xl font-semibold hover:bg-amber-400 transition-all">
-                        Go to Dashboard
-                    </a>
-                @else
-                    <a href="{{ url('/login') }}" 
-                       class="px-8 py-3 border border-white/70 hover:border-white rounded-2xl font-semibold transition-all">
-                        Log in
-                    </a>
-                    
-                    @if (Route::has('register'))
-                        <a href="{{ route('register') }}" 
-                           class="px-8 py-3 bg-sky-500 hover:bg-sky-600 rounded-2xl font-semibold transition-all">
-                            Register
-                        </a>
-                    @endif
-                @endauth
-            </div>
-        </div>
-    </nav>
-
-    <!-- HERO SECTION -->
-    <section class="hero-bg min-h-screen flex items-center pt-20">
-        <div class="max-w-5xl mx-auto px-6 text-center">
-            <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-6 py-2 rounded-3xl text-sm font-medium mb-8 border border-white/20">
-                <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                Ethiopian Engineering Corporation
-            </div>
-
-            <h1 class="hero-title font-bold tracking-tighter leading-none mb-6">
-                Travel Requests.<br>
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-amber-300 to-white">Approved Faster.</span>
-            </h1>
-
-            <p class="max-w-2xl mx-auto text-xl text-zinc-300 leading-relaxed mb-12">
-                The official ticket management system for EEC staff.<br>
-                Submit, track, and approve travel requests with complete transparency.
-            </p>
-
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-5">
-                @auth
-                    <a href="{{ url('/dashboard') }}" 
-                       class="cta-button px-12 py-5 bg-white text-zinc-950 rounded-3xl font-semibold text-lg shadow-2xl hover:shadow-sky-500/30 transition-all flex items-center gap-3 group">
-                        Open Dashboard
-                        <span class="text-2xl group-active:rotate-45 transition">→</span>
-                    </a>
-                @else
-                    <a href="{{ url('/login') }}" 
-                       class="cta-button px-12 py-5 bg-white text-zinc-950 rounded-3xl font-semibold text-lg shadow-2xl hover:shadow-sky-500/30 transition-all flex items-center gap-3">
-                        Log in to Start
-                    </a>
-                    
-                    @if (Route::has('register'))
-                        <a href="{{ route('register') }}" 
-                           class="px-12 py-5 border-2 border-white/70 hover:border-white text-lg font-semibold rounded-3xl transition-all">
-                            Create Account
-                        </a>
-                    @endif
-                @endauth
-            </div>
-
-            <div class="mt-16 flex items-center justify-center gap-8 text-xs text-zinc-400">
-                <div class="flex items-center gap-2">
-                    <i class="bi bi-shield-check text-emerald-400"></i>
-                    Secure & Encrypted
-                </div>
-                <div class="flex items-center gap-2">
-                    <i class="bi bi-clock-history text-amber-400"></i>
-                    Real-time Tracking
-                </div>
-                <div class="flex items-center gap-2">
-                    <i class="bi bi-globe text-sky-400"></i>
-                    For All EEC Staff
-                </div>
-            </div>
+<!-- NAVBAR -->
+<nav id="navbar" class="fixed w-full z-50 transition-all">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+        
+        <div class="flex items-center gap-2">
+            <img src="{{ asset('images/eec-logo.png') }}" class="h-8">
+            <span class="font-bold text-xl">EEC Travel</span>
         </div>
 
-        <!-- Scroll indicator -->
-        <div class="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-zinc-400 text-xs tracking-widest">
-            <span>SCROLL TO EXPLORE</span>
-            <div class="w-px h-12 bg-gradient-to-b from-transparent via-zinc-400 to-transparent"></div>
-        </div>
-    </section>
+        <!-- Desktop -->
+        <div class="hidden md:flex gap-8 items-center">
+            <a href="#features">Features</a>
+            <a href="#how">How it works</a>
 
-    <!-- FEATURES SECTION -->
-    <section id="features" class="py-28 bg-zinc-900">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="text-center mb-16">
-                <span class="uppercase text-sky-400 text-sm font-semibold tracking-[3px]">POWERFUL FEATURES</span>
-                <h2 class="text-5xl font-bold mt-3 tracking-tight">Everything you need in one place</h2>
-            </div>
-
-            <div class="grid md:grid-cols-3 gap-8">
-                <!-- Feature 1 -->
-                <div class="feature-card bg-zinc-800/70 border border-white/10 rounded-3xl p-10">
-                    <div class="w-14 h-14 bg-sky-500/10 rounded-2xl flex items-center justify-center mb-8">
-                        <i class="bi bi-airplane-fill text-3xl text-sky-400"></i>
-                    </div>
-                    <h3 class="text-2xl font-semibold mb-4">Instant Travel Requests</h3>
-                    <p class="text-zinc-400 leading-relaxed">
-                        Submit domestic or international travel requests in under 60 seconds with smart forms and auto-fill.
-                    </p>
-                </div>
-
-                <!-- Feature 2 -->
-                <div class="feature-card bg-zinc-800/70 border border-white/10 rounded-3xl p-10">
-                    <div class="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center mb-8">
-                        <i class="bi bi-check2-circle text-3xl text-amber-400"></i>
-                    </div>
-                    <h3 class="text-2xl font-semibold mb-4">Smart Approval Workflow</h3>
-                    <p class="text-zinc-400 leading-relaxed">
-                        Multi-level approvals with automatic notifications, reminders, and escalation rules.
-                    </p>
-                </div>
-
-                <!-- Feature 3 -->
-                <div class="feature-card bg-zinc-800/70 border border-white/10 rounded-3xl p-10">
-                    <div class="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center mb-8">
-                        <i class="bi bi-graph-up text-3xl text-emerald-400"></i>
-                    </div>
-                    <h3 class="text-2xl font-semibold mb-4">Live Dashboard & Reports</h3>
-                    <p class="text-zinc-400 leading-relaxed">
-                        Real-time visibility into all pending, approved, and completed trips with powerful analytics.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- TRUST BAR -->
-    <div class="bg-zinc-950 py-8 border-y border-white/10">
-        <div class="max-w-6xl mx-auto px-6 flex flex-wrap items-center justify-center gap-x-16 gap-y-6 opacity-70">
-            <img src="{{ asset('images/eec-logo.png') }}" class="h-7 grayscale" alt="EEC">
-            <div class="text-zinc-500 text-sm font-medium tracking-wider">ETHIOPIAN AIRLINES PARTNER</div>
-            <div class="text-zinc-500 text-sm font-medium tracking-wider">MINISTRY OF TRANSPORT</div>
-            <div class="text-zinc-500 text-sm font-medium tracking-wider">SECURE • RELIABLE • OFFICIAL</div>
-        </div>
-    </div>
-
-    <!-- FINAL CTA -->
-    <section class="py-28 bg-gradient-to-b from-zinc-900 to-zinc-950">
-        <div class="max-w-2xl mx-auto text-center px-6">
-            <h2 class="text-4xl font-bold mb-6">Ready to simplify EEC travel?</h2>
-            <p class="text-zinc-400 text-lg mb-10">
-                Join hundreds of EEC employees already using the most advanced ticket management platform in Ethiopia.
-            </p>
-            
             @auth
-                <a href="{{ url('/dashboard') }}" class="inline-block px-14 py-6 bg-gradient-to-r from-sky-500 to-amber-400 text-xl font-semibold rounded-3xl text-zinc-950 hover:scale-105 transition-transform">
-                    Go to My Dashboard
-                </a>
+                <a href="/dashboard" class="bg-white text-black px-6 py-2 rounded-xl">Dashboard</a>
             @else
-                <div class="flex flex-col sm:flex-row gap-5 justify-center">
-                    <a href="{{ url('/login') }}" 
-                       class="inline-block px-14 py-6 bg-white text-zinc-950 text-xl font-semibold rounded-3xl hover:bg-amber-300 transition-all">
-                        Log in Now
-                    </a>
-                    @if (Route::has('register'))
-                        <a href="{{ route('register') }}" 
-                           class="inline-block px-14 py-6 border-2 border-white text-xl font-semibold rounded-3xl hover:bg-white/10 transition-all">
-                            Create Free Account
-                        </a>
-                    @endif
-                </div>
+                <a href="/login">Login</a>
+                <a href="/register" class="bg-sky-500 px-6 py-2 rounded-xl">Register</a>
             @endauth
         </div>
-    </section>
+        <!-- Theme Toggle -->
+        <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+            <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
+            </svg>
+            <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+            </svg>
+        </button>
+        <!-- Mobile -->
+        <button onclick="toggleMenu()" class="md:hidden text-2xl">☰</button>
+    </div>
 
-    <!-- FOOTER -->
-    <footer class="bg-black py-16 border-t border-white/10">
-        <div class="max-w-7xl mx-auto px-6 text-center text-xs text-zinc-500">
-            <p>&copy; {{ date('Y') }} Ethiopian Engineering Corporation (EEC). All rights reserved.</p>
-            <p class="mt-2">Official Internal Ticket &amp; Travel Management System</p>
+    <!-- Mobile menu -->
+    <div id="mobileMenu" class="hidden flex-col bg-black px-6 pb-4 md:hidden">
+        <a href="#features" class="py-2">Features</a>
+        <a href="#how" class="py-2">How it works</a>
+
+        @auth
+            <a href="/dashboard" class="py-2">Dashboard</a>
+        @else
+            <a href="/login" class="py-2">Login</a>
+            <a href="/register" class="py-2">Register</a>
+        @endauth
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero-bg min-h-screen flex items-center text-center px-6">
+    <div class="max-w-4xl mx-auto">
+        
+        <h1 class="text-4xl md:text-6xl font-bold leading-tight">
+            Travel Requests <br>
+            <span class="text-sky-400">Made Simple</span>
+        </h1>
+
+        <p class="mt-6 text-lg text-gray-300">
+            Submit, track, and approve travel requests seamlessly across EEC.
+        </p>
+
+        <div class="mt-8 flex flex-col md:flex-row gap-4 justify-center">
+            <a href="/login" class="bg-white text-black px-8 py-4 rounded-xl font-semibold">
+                Get Started
+            </a>
+            <a href="#features" class="border px-8 py-4 rounded-xl">
+                Learn More
+            </a>
         </div>
-    </footer>
+    </div>
+</section>
+
+<!-- STATS -->
+<section class="py-16 bg-zinc-900 text-center">
+    <div class="max-w-6xl mx-auto grid md:grid-cols-3 gap-8">
+        <div>
+            <h2 class="text-4xl font-bold text-sky-400"> <span class="stat-count" data-target="1000" data-suffix="+">0</span> 
+        </h2>
+            <p class="text-gray-400">Employees</p>
+        </div>
+        <div>
+            <h2 class="text-4xl font-bold text-amber-400">  <span class="stat-count" data-target="1200" data-suffix="+">0</span>        
+        </h2>
+            <p class="text-gray-400">Requests Processed</p>
+        </div>
+        <div>
+            <h2 class="text-4xl font-bold text-green-400"> <span class="stat-count" data-target="99" data-suffix="%">0</span> 
+        </h2>
+            <p class="text-gray-400">Approval Accuracy</p>
+        </div>
+    </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features" class="py-20 px-6">
+    <div class="max-w-7xl mx-auto text-center">
+        <h2 class="text-4xl font-bold mb-12">Features</h2>
+
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="bg-zinc-800 p-8 rounded-2xl card-hover">
+                ✈️
+                <h3 class="text-xl font-semibold mt-4">Fast Requests</h3>
+                <p class="text-gray-400 mt-2">Submit requests in seconds</p>
+            </div>
+
+            <div class="bg-zinc-800 p-8 rounded-2xl card-hover">
+                ✅
+                <h3 class="text-xl font-semibold mt-4">Approvals</h3>
+                <p class="text-gray-400 mt-2">Smart approval workflows</p>
+            </div>
+
+            <div class="bg-zinc-800 p-8 rounded-2xl card-hover">
+                📊
+                <h3 class="text-xl font-semibold mt-4">Reports</h3>
+                <p class="text-gray-400 mt-2">Real-time analytics</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" class="py-20 bg-zinc-900 px-6">
+    <div class="max-w-6xl mx-auto text-center">
+        <h2 class="text-4xl font-bold mb-12">How It Works</h2>
+
+        <div class="grid md:grid-cols-3 gap-10">
+            <div>
+                <h3 class="text-xl font-semibold">1. Submit</h3>
+                <p class="text-gray-400 mt-2">Create travel request</p>
+            </div>
+
+            <div>
+                <h3 class="text-xl font-semibold">2. Approve</h3>
+                <p class="text-gray-400 mt-2">Managers review instantly</p>
+            </div>
+
+            <div>
+                <h3 class="text-xl font-semibold">3. Travel</h3>
+                <p class="text-gray-400 mt-2">Get tickets & go</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="py-20 text-center">
+    <h2 class="text-3xl font-bold">Start your journey today</h2>
+
+    <div class="mt-6">
+        <a href="/register" class="bg-sky-500 px-10 py-4 rounded-xl text-lg">
+            Create Account
+        </a>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="py-10 text-center text-gray-500 text-sm">
+    © {{ date('Y') }} EEC Travel System
+</footer>
+
+<!-- JS -->
+<script>
+    function toggleMenu() {
+        document.getElementById('mobileMenu').classList.toggle('hidden');
+    }
+
+    function setTheme(isLight) {
+        document.body.classList.toggle('light-mode', isLight);
+        localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'light') setTheme(true);
+
+        const themeToggle = document.getElementById('themeToggle');
+        themeToggle.addEventListener('click', () => {
+            const isLight = document.body.classList.contains('light-mode');
+            setTheme(!isLight);
+        });
+    });
+    // navbar blur on scroll
+    window.addEventListener('scroll', function () {
+        let nav = document.getElementById('navbar');
+        if (window.scrollY > 50) {
+            nav.classList.add('nav-blur');
+        } else {
+            nav.classList.remove('nav-blur');
+        }
+    });
+
+    // scroll animation
+    const elements = document.querySelectorAll('.fade-in');
+    window.addEventListener('scroll', () => {
+        elements.forEach(el => {
+            if (el.getBoundingClientRect().top < window.innerHeight - 50) {
+                el.classList.add('show');
+            }
+        });
+    });
+
+    function animateCount(el) {
+        const target = parseInt(el.dataset.target, 10);
+        const suffix = el.dataset.suffix || '';
+        const duration = 1600;
+        const startTime = performance.now();
+
+        function update(now) {
+            const progress = Math.min((now - startTime) / duration, 1);
+            const current = Math.floor(progress * target);
+            el.textContent = current.toLocaleString() + suffix;
+            if (progress < 1) requestAnimationFrame(update);
+        }
+
+        requestAnimationFrame(update);
+    }
+
+    const statCounters = document.querySelectorAll('.stat-count');
+    const statObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                animateCount(entry.target);
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.6 });
+
+    statCounters.forEach(counter => statObserver.observe(counter));
+</script>
 
 </body>
 </html>
+
+
+
+
+

@@ -20,7 +20,9 @@ class ProjectController extends Controller
         }
 
         if ($user->hasRole('project-manager')) {
-            return ($project->manager_id === $user->id) || ($user->project_id === $project->id);
+            return ($project->manager_id === $user->id)
+                || ($user->project_id === $project->id)
+                || $user->projects()->whereKey($project->id)->exists();
         }
 
         return false;
@@ -44,7 +46,12 @@ class ProjectController extends Controller
     public function create()
     {
         $managers = User::role('project-manager')->orderBy('name')->get();
-        return view('projects.create', compact('managers'));
+        $availableUsers = User::with(['roles', 'project'])
+            ->whereDoesntHave('roles', fn($q) => $q->where('name', 'admin'))
+            ->orderBy('name')
+            ->get();
+
+        return view('projects.create', compact('managers', 'availableUsers'));
     }
 
     public function store(Request $request)
@@ -55,17 +62,33 @@ class ProjectController extends Controller
             'description' => 'nullable|string',
             'location' => 'nullable|string|max:255',
             'region' => 'nullable|string|max:255',
-            'discipline' => 'nullable|string|in:Infrastructure,Water,Building',
+            'discipline' => 'nullable|string|in:Infrastructure,Water,Building,Head-Office',
             'manager_id' => 'nullable|exists:users,id',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'status' => 'required|string|in:active,on-hold,completed,cancelled',
+            'user_ids' => 'nullable|array',
+            'user_ids.*' => 'integer|exists:users,id',
         ]);
 
-        $project = Project::create($validated);
+        $project = Project::create(collect($validated)->except('user_ids')->all());
+        $memberIds = collect($validated['user_ids'] ?? [])->unique();
 
         if (!empty($validated['manager_id'])) {
             User::whereKey($validated['manager_id'])->update(['project_id' => $project->id]);
+            $memberIds->push((int) $validated['manager_id']);
+        }
+
+        $assignableIds = User::whereIn('id', $memberIds->unique()->values())
+            ->whereDoesntHave('roles', fn($q) => $q->where('name', 'admin'))
+            ->pluck('id');
+
+        if ($assignableIds->isNotEmpty()) {
+            $project->members()->syncWithoutDetaching($assignableIds->all());
+
+            User::whereIn('id', $assignableIds)
+                ->whereNull('project_id')
+                ->update(['project_id' => $project->id]);
         }
 
         return redirect()->route('projects.index')->with('success', 'Project created successfully.');
@@ -79,7 +102,7 @@ class ProjectController extends Controller
             abort(403, 'Unauthorized access to this project.');
         }
 
-        $project->load(['manager', 'users.roles', 'travelRequests.user']);
+        $project->load(['manager', 'members.roles', 'members.project', 'travelRequests.user']);
 
         $requestsBase = TravelRequest::query()->where('project_id', $project->id);
         $stats = [
@@ -102,9 +125,7 @@ class ProjectController extends Controller
         $availableUsers = collect();
         if ($canManageMembers) {
             $availableUsers = User::with(['roles', 'project'])
-                ->where(function ($q) use ($project) {
-                    $q->whereNull('project_id')->orWhere('project_id', '!=', $project->id);
-                })
+                ->whereDoesntHave('projects', fn($q) => $q->whereKey($project->id))
                 ->orderBy('name')
                 ->get();
         }
@@ -137,6 +158,7 @@ class ProjectController extends Controller
 
         if (!empty($validated['manager_id'])) {
             User::whereKey($validated['manager_id'])->update(['project_id' => $project->id]);
+            $project->members()->syncWithoutDetaching([$validated['manager_id']]);
         }
 
         return redirect()->route('projects.index')->with('success', 'Project updated successfully.');
@@ -161,7 +183,11 @@ class ProjectController extends Controller
             ->whereDoesntHave('roles', fn($q) => $q->where('name', 'admin'))
             ->pluck('id');
 
-        User::whereIn('id', $assignableIds)->update(['project_id' => $project->id]);
+        $project->members()->syncWithoutDetaching($assignableIds->all());
+
+        User::whereIn('id', $assignableIds)
+            ->whereNull('project_id')
+            ->update(['project_id' => $project->id]);
 
         return back()->with('success', 'Members added successfully.');
     }
@@ -173,7 +199,7 @@ class ProjectController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        if ((int) $user->project_id !== (int) $project->id) {
+        if (!$user->projects()->whereKey($project->id)->exists()) {
             abort(404);
         }
 
@@ -181,7 +207,11 @@ class ProjectController extends Controller
             return back()->with('error', 'Cannot remove the assigned Project Manager. Change the manager first.');
         }
 
-        $user->update(['project_id' => null]);
+        $project->members()->detach($user->id);
+
+        if ((int) $user->project_id === (int) $project->id) {
+            $user->update(['project_id' => null]);
+        }
 
         return back()->with('success', 'Member removed successfully.');
     }

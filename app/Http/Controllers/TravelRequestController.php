@@ -11,6 +11,41 @@ use Illuminate\Support\Facades\Auth;
 
 class TravelRequestController extends Controller
 {
+    private function notifyCommercialDirectors(TravelRequest $travelRequest, string $message, string $type = 'warning'): void
+    {
+        $directors = User::role('commercial-director')->get();
+        foreach ($directors as $director) {
+            $director->notify(new TicketStatusUpdated($travelRequest, $message, $type));
+        }
+    }
+
+    private function notifyProjectManager(TravelRequest $travelRequest, string $message, string $type = 'warning'): void
+    {
+        $travelRequest->loadMissing('project.manager', 'user');
+        $pm = $travelRequest->project?->manager;
+
+        if ($pm) {
+            $pm->notify(new TicketStatusUpdated($travelRequest, $message, $type));
+        }
+    }
+
+    private function requestableProjectsFor(User $user)
+    {
+        $projectIds = collect([$user->project_id]);
+
+        if ($user->hasRole('project-manager') && $user->managedProject) {
+            $projectIds->push($user->managedProject->id);
+        }
+
+        $projectIds = $projectIds
+            ->merge($user->projects()->pluck('projects.id'))
+            ->filter()
+            ->unique()
+            ->values();
+
+        return Project::whereIn('id', $projectIds)->orderBy('name')->get();
+    }
+
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -93,15 +128,8 @@ class TravelRequestController extends Controller
         $projects = collect();
         if ($user->hasAnyRole(['admin', 'ceo', 'head-office-director', 'commercial-director'])) {
             $projects = Project::orderBy('name')->get();
-        } elseif ($user->hasRole('project-manager')) {
-            $pmProjectId = $user->managedProject?->id ?? $user->project_id;
-            if ($pmProjectId) {
-                $projects = Project::where('id', $pmProjectId)->get();
-            }
         } else {
-            if ($user->project_id) {
-                $projects = Project::where('id', $user->project_id)->get();
-            }
+            $projects = $this->requestableProjectsFor($user);
         }
 
         $filters = [
@@ -129,22 +157,26 @@ class TravelRequestController extends Controller
         $projects = collect();
 
         $isPrivileged = $user->hasAnyRole(['admin', 'head-office-director', 'commercial-director', 'ceo']);
-        $allowedProjectId = $user->hasRole('project-manager')
-            ? ($user->managedProject?->id ?? $user->project_id)
-            : $user->project_id;
 
-        // Restricted users (regular + PM) can only raise for their assigned/managed project.
+        // Restricted users (regular + PM) can only raise for projects they belong to.
         if (!$isPrivileged) {
-            if (!$allowedProjectId) {
+            $allowedProjects = $this->requestableProjectsFor($user);
+
+            if ($allowedProjects->isEmpty()) {
                 return redirect()->route('travel-requests.index')
                     ->with('error', 'You are not assigned to a project yet. Please contact an admin to add you to a project.');
             }
 
-            if ($project_id && (int) $project_id !== (int) $allowedProjectId) {
+            if ($project_id && !$allowedProjects->contains('id', (int) $project_id)) {
                 abort(403, 'Unauthorized project selection.');
             }
 
-            $preselectedProject = Project::findOrFail($allowedProjectId);
+            if ($allowedProjects->count() === 1) {
+                $preselectedProject = $allowedProjects->first();
+            } else {
+                $projects = $allowedProjects;
+            }
+
             return view('travel_requests.create', compact('preselectedProject', 'projects'));
         }
 
@@ -177,20 +209,19 @@ class TravelRequestController extends Controller
 
         $user = Auth::user();
         $isPrivileged = $user->hasAnyRole(['admin', 'head-office-director', 'commercial-director', 'ceo']);
-        $allowedProjectId = $user->hasRole('project-manager')
-            ? ($user->managedProject?->id ?? $user->project_id)
-            : $user->project_id;
 
         if (!$isPrivileged) {
-            if (!$allowedProjectId) {
+            $allowedProjectIds = $this->requestableProjectsFor($user)->pluck('id');
+
+            if ($allowedProjectIds->isEmpty()) {
                 return back()->withErrors([
                     'project_id' => 'You are not assigned to a project yet. Please contact an admin.',
                 ])->withInput();
             }
 
-            if ((int) $validated['project_id'] !== (int) $allowedProjectId) {
+            if (!$allowedProjectIds->contains((int) $validated['project_id'])) {
                 return back()->withErrors([
-                    'project_id' => 'You can only request travel for your assigned project.',
+                    'project_id' => 'You can only request travel for a project you are a member of.',
                 ])->withInput();
             }
         }
@@ -201,13 +232,64 @@ class TravelRequestController extends Controller
         $travelRequest->origin = $validated['origin'];
         $travelRequest->passenger_count = $validated['passenger_count'];
         $travelRequest->flight_type = $validated['flight_type'];
+        // If the requester is CEO, auto-approve and notify PM/Commercial as info + Reception to process.
+        if ($user->hasRole('ceo')) {
+            $travelRequest->status = 'approved';
+            $travelRequest->save();
+
+            $travelRequest->load('project');
+            $pm = $travelRequest->project?->manager;
+            if ($pm) {
+                $pm->notify(new TicketStatusUpdated(
+                    $travelRequest,
+                    'CEO requested a ticket for ' . $travelRequest->destination . '. It is already approved (info only).',
+                    'info'
+                ));
+            }
+
+            $commercialManagers = User::role('commercial-director')->get();
+            foreach ($commercialManagers as $director) {
+                $director->notify(new TicketStatusUpdated(
+                    $travelRequest,
+                    'CEO requested a ticket for ' . $travelRequest->destination . '. It is already approved (info only).',
+                    'info'
+                ));
+            }
+
+            $receptions = User::role('reception')->get();
+            foreach ($receptions as $reception) {
+                $reception->notify(new TicketStatusUpdated(
+                    $travelRequest,
+                    'CEO ticket for ' . $travelRequest->destination . ' is approved and ready for processing.',
+                    'info'
+                ));
+            }
+
+            return redirect()->route('travel-requests.index')->with('success', 'CEO request auto-approved and sent to Reception.');
+        }
+
         // If the requester is a project manager, we skip the PM approval stage.
-        if (Auth::user()->hasRole('project-manager')) {
+        if ($user->hasRole('project-manager')) {
             $travelRequest->status = 'pending_commercial';
         } else {
             $travelRequest->status = 'pending_pm';
         }
         $travelRequest->save();
+
+        if ($travelRequest->status === 'pending_pm') {
+            $this->notifyProjectManager(
+                $travelRequest,
+                $user->name . ' submitted a new ticket for ' . $travelRequest->destination . ' awaiting your approval.',
+                'warning'
+            );
+        } elseif ($travelRequest->status === 'pending_commercial') {
+            $this->notifyCommercialDirectors(
+                $travelRequest,
+                'New ticket for ' . $travelRequest->destination . ' from PM ' . $user->name . ' awaits your approval.',
+                'warning'
+            );
+        }
+
         return redirect()->route('travel-requests.index')->with('success', 'Travel request submitted successfully.');
     }
 
@@ -316,11 +398,12 @@ class TravelRequestController extends Controller
                 $travelRequest->user->notify(new TicketStatusUpdated($travelRequest, 'Your ticket for ' . $travelRequest->destination . ' was approved by your PM and sent to the Director.', 'info'));
             }
 
-            // Notify Directors
-            $directors = User::role(['commercial-director', 'head-office-director'])->get();
-            foreach ($directors as $director) {
-                $director->notify(new TicketStatusUpdated($travelRequest, 'New ticket for ' . $travelRequest->destination . ' awaits your approval.', 'warning'));
-            }
+            // Notify Commercial Directors
+            $this->notifyCommercialDirectors(
+                $travelRequest,
+                'New ticket for ' . $travelRequest->destination . ' was approved by PM and awaits your approval.',
+                'warning'
+            );
 
             return redirect()->back()->with('success', 'Approved by PM, forwarded to Commercial Director.');
         }

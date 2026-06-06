@@ -7,6 +7,14 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'TravelPass') }}</title>
 
+    <script>
+        (function () {
+            if (localStorage.getItem('theme') === 'dark') {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
@@ -82,35 +90,10 @@
             justify-content: center;
         }
 
-        html.dark body {
-            background: #0f172a;
-            color: #e2e8f0;
-        }
-
-        html.dark .top-bar-shadow {
-            box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
-        }
-
-        html.dark header {
-            background: #0b1220;
-            color: #e2e8f0;
-        }
-
-        html.dark .bg-white { background-color: #0b1220 !important; }
-        html.dark .bg-gray-50 { background-color: #0f172a !important; }
-        html.dark .text-gray-900 { color: #f1f5f9 !important; }
-        html.dark .text-gray-800 { color: #e2e8f0 !important; }
-        html.dark .text-gray-700 { color: #cbd5f5 !important; }
-        html.dark .text-gray-600 { color: #b6c2d6 !important; }
-        html.dark .text-gray-500 { color: #94a3b8 !important; }
-        html.dark .border-gray-100 { border-color: #1f2937 !important; }
-        html.dark .border-gray-200 { border-color: #1f2937 !important; }
-        html.dark .divide-gray-50 > :not([hidden]) ~ :not([hidden]) { border-color: #1f2937 !important; }
-        html.dark .hover\:bg-gray-50:hover { background-color: #111827 !important; }
     </style>
 </head>
 
-<body class="bg-gray-50 text-gray-800 antialiased">
+<body class="bg-gray-50 dark:bg-slate-900 text-gray-800 dark:text-slate-200 antialiased">
 
     <div id="app-shell" class="flex min-h-screen" data-sidebar-collapsed="false">
 
@@ -347,23 +330,23 @@
         <div class="flex-1 flex flex-col min-w-0">
 
             {{-- Top bar --}}
-            <header class="bg-white top-bar-shadow px-8 py-4 flex items-center justify-between sticky top-0 z-10">
+            <header class="bg-white dark:bg-slate-950 top-bar-shadow px-8 py-4 flex items-center justify-between sticky top-0 z-10 border-b border-transparent dark:border-slate-800">
                 <div>
                     @isset($pageTitle)
-                        <h1 class="text-xl font-bold text-gray-800">{{ $pageTitle }}</h1>
+                        <h1 class="text-xl font-bold text-gray-800 dark:text-slate-100">{{ $pageTitle }}</h1>
                     @else
-                        <h1 class="text-xl font-bold text-gray-800">{{ config('app.name') }}</h1>
+                        <h1 class="text-xl font-bold text-gray-800 dark:text-slate-100">{{ config('app.name') }}</h1>
                     @endisset
                 </div>
                 <div class="flex items-center gap-3">
-                    <span class="text-sm text-gray-500">{{ now()->format('l, M d Y') }}</span>
+                    <span class="text-sm text-gray-500 dark:text-slate-400">{{ now()->format('l, M d Y') }}</span>
 
                     {{-- Notification Bell --}}
                     @auth
                         @php $unreadCount = Auth::user()->unreadNotifications->count(); @endphp
                         <div x-data="{ bellOpen: false }" class="relative">
                             <button @click="bellOpen = !bellOpen"
-                                class="relative p-2 rounded-full text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 focus:outline-none transition">
+                                class="relative p-2 rounded-full text-gray-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950 focus:outline-none transition">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -377,12 +360,12 @@
 
                             {{-- Bell Dropdown --}}
                             <div x-show="bellOpen" @click.outside="bellOpen = false" x-transition
-                                class="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden"
+                                class="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-700 z-50 overflow-hidden"
                                 style="display: none;">
 
                                 <div
-                                    class="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50">
-                                    <p class="text-sm font-bold text-gray-800">Notifications <span
+                                    class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
+                                    <p class="text-sm font-bold text-gray-800 dark:text-slate-100">Notifications <span
                                             class="text-indigo-600">({{ $unreadCount }} new)</span></p>
                                     @if($unreadCount > 0)
                                         <form method="POST" action="{{ route('notifications.markAllRead') }}">
@@ -402,7 +385,7 @@
                                             $nIcon = ['success' => 'text-green-500', 'error' => 'text-red-500', 'warning' => 'text-yellow-500', 'info' => 'text-blue-500'][$nType] ?? 'text-gray-400';
                                         @endphp
                                         <a href="{{ route('notifications.read', $notif->id) }}"
-                                            class="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition {{ $notif->read_at ? 'opacity-60' : '' }} {{ $nBorder }}">
+                                            class="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition {{ $notif->read_at ? 'opacity-60' : '' }} {{ $nBorder }}">
                                             <span class="{{ $nIcon }} mt-0.5 flex-shrink-0">
                                                 @if($nType === 'success')<svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                         viewBox="0 0 24 24">
@@ -426,7 +409,7 @@
                                                 @endif
                                             </span>
                                             <div class="min-w-0 flex-1">
-                                                <p class="text-xs font-semibold text-gray-800 leading-snug">
+                                                <p class="text-xs font-semibold text-gray-800 dark:text-slate-100 leading-snug">
                                                     {{ $notif->data['message'] ?? 'Notification' }}
                                                 </p>
                                                 <p class="text-xs text-gray-400 mt-0.5">
@@ -449,9 +432,14 @@
                     @endauth
 
                     <button type="button" data-theme-toggle
-                        class="p-2 rounded-full text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 focus:outline-none transition"
+                        class="p-2 rounded-full text-gray-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950 focus:outline-none transition"
                         aria-label="Toggle dark mode">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+                        <svg data-theme-icon="moon" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                        <svg data-theme-icon="sun" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M12 3v2m0 14v2m9-9h-2M5 12H3m14.95 6.95-1.414-1.414M7.464 7.464 6.05 6.05m11.9 0-1.414 1.414M7.464 16.536 6.05 17.95M12 7a5 5 0 100 10 5 5 0 000-10z" />
@@ -461,7 +449,7 @@
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit"
-                            class="p-2 rounded-full text-gray-500 hover:text-red-600 hover:bg-red-50 focus:outline-none transition"
+                            class="p-2 rounded-full text-gray-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 focus:outline-none transition"
                             aria-label="Sign out">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
@@ -476,7 +464,7 @@
             </header>
 
             {{-- Page content --}}
-            <main class="flex-1 p-8">
+            <main class="flex-1 p-8 dark:bg-slate-900">
                 {{ $slot }}
             </main>
         </div>
@@ -484,21 +472,6 @@
 
     <script>
         (function () {
-            const root = document.documentElement;
-            const storedTheme = localStorage.getItem('theme');
-            if (storedTheme === 'dark') {
-                root.classList.add('dark');
-            }
-
-            const themeToggle = document.querySelector('[data-theme-toggle]');
-            if (themeToggle) {
-                themeToggle.addEventListener('click', () => {
-                    const isDark = root.classList.toggle('dark');
-                    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-                    window.dispatchEvent(new Event('themechange'));
-                });
-            }
-
             const shell = document.getElementById('app-shell');
             const sidebarToggle = document.getElementById('sidebar-toggle');
             if (shell && sidebarToggle) {

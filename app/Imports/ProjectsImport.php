@@ -48,6 +48,7 @@ class ProjectsImport implements ToModel, WithHeadingRow
 
         if ($managerId) {
             User::whereKey($managerId)->update(['project_id' => $project->id]);
+            $project->members()->syncWithoutDetaching([$managerId]);
         }
 
         return $project;
