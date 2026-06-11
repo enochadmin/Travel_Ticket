@@ -32,7 +32,19 @@
             <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
                 <div>
                     <h2 class="text-lg font-bold text-gray-800">Travel Requests</h2>
-                    <p class="text-xs text-gray-400 mt-0.5">All requests visible to your role</p>
+                    <p class="text-xs text-gray-400 mt-0.5">
+                        @hasrole('commercial-director')
+                            @if(($filters['view'] ?? '') === 'approved')
+                                Tickets you approved as Commercial Director
+                            @elseif(($filters['view'] ?? '') === 'personal')
+                                Your personal travel requests
+                            @else
+                                All travel requests across every project
+                            @endif
+                        @else
+                            All requests visible to your role
+                        @endhasrole
+                    </p>
                 </div>
                 <a href="{{ route('travel-requests.create') }}"
                     class="inline-flex items-center gap-2 text-sm font-semibold text-white px-4 py-2.5 rounded-xl transition"

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\ForcePasswordChangeController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
@@ -51,6 +52,12 @@ Route::middleware('auth')->group(function () {
         ->name('password.confirm');
 
     Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
+
+    Route::get('password/change-required', [ForcePasswordChangeController::class, 'create'])
+        ->name('password.change');
+
+    Route::post('password/change-required', [ForcePasswordChangeController::class, 'store'])
+        ->name('password.change.store');
 
     Route::put('password', [PasswordController::class, 'update'])->name('password.update');
 

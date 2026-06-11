@@ -24,6 +24,7 @@ use App\Http\Controllers\TravelRequestController;
 use App\Http\Controllers\ReportController;
 
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\CityController;
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('users/import', [UserController::class, 'import'])->name('users.import')->middleware('role:admin');
@@ -68,7 +69,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('reception.destinations.show')
         ->middleware('role:reception');
 
-    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index')->middleware('role:admin|head-office-director|commercial-director|ceo');
+    Route::prefix('reports')->name('reports.')->middleware('role:admin|head-office-director|commercial-director|ceo|project-manager')->group(function () {
+        Route::get('/', [ReportController::class, 'index'])->name('index');
+        Route::get('/most-traveled-cities', [ReportController::class, 'mostTraveledCities'])->name('most-traveled-cities')->middleware('role:admin|commercial-director|project-manager');
+        Route::get('/most-requested-projects', [ReportController::class, 'mostRequestedProjects'])->name('most-requested-projects')->middleware('role:admin|commercial-director|head-office-director|ceo');
+        Route::get('/export/travel-requests', [ReportController::class, 'exportTravelRequests'])->name('export.travel-requests');
+        Route::get('/export/most-traveled-cities', [ReportController::class, 'exportMostTraveledCities'])->name('export.most-traveled-cities')->middleware('role:admin|commercial-director|project-manager');
+        Route::get('/export/most-requested-projects', [ReportController::class, 'exportMostRequestedProjects'])->name('export.most-requested-projects')->middleware('role:admin|commercial-director|head-office-director|ceo');
+    });
+
+    Route::middleware('role:admin')->prefix('settings')->name('settings.')->group(function () {
+        Route::redirect('/', '/settings/cities')->name('index');
+        Route::resource('cities', CityController::class)->except(['show']);
+    });
 
     // Notification routes
     Route::get('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'read'])->name('notifications.read');

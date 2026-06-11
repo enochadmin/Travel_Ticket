@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Project extends Model
 {
@@ -33,6 +34,23 @@ class Project extends Model
         return $this->belongsTo(User::class, 'manager_id');
     }
 
+    public function resolveManager(): ?User
+    {
+        if ($this->manager_id) {
+            $manager = $this->relationLoaded('manager') ? $this->manager : $this->manager()->first();
+            if ($manager) {
+                return $manager;
+            }
+        }
+
+        return User::role('project-manager')
+            ->where(function (Builder $query) {
+                $query->where('project_id', $this->id)
+                    ->orWhereHas('managedProject', fn (Builder $managed) => $managed->where('projects.id', $this->id));
+            })
+            ->first();
+    }
+
     /** Staff assigned to this project */
     public function users(): HasMany
     {
@@ -47,5 +65,26 @@ class Project extends Model
     public function travelRequests(): HasMany
     {
         return $this->hasMany(TravelRequest::class);
+    }
+
+    public function scopeHeadOffice(Builder $query): Builder
+    {
+        return $query->where(function ($q) {
+            foreach (['name', 'region', 'location', 'project_code'] as $column) {
+                $q->orWhereRaw("LOWER({$column}) LIKE ?", ['%head office%']);
+            }
+        });
+    }
+
+    public function isHeadOffice(): bool
+    {
+        foreach (['name', 'region', 'location', 'project_code'] as $field) {
+            $value = $this->{$field};
+            if ($value && str_contains(strtolower((string) $value), 'head office')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

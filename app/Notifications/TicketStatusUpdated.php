@@ -2,52 +2,57 @@
 
 namespace App\Notifications;
 
+use App\Models\TravelRequest;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use App\Models\TravelRequest;
 
 class TicketStatusUpdated extends Notification
 {
     use Queueable;
 
-    public $travelRequest;
-    public $message;
-    public $type;
-
-    /**
-     * Create a new notification instance.
-     */
-    public function __construct(TravelRequest $travelRequest, string $message, string $type = 'info')
-    {
-        $this->travelRequest = $travelRequest;
-        $this->message = $message;
-        $this->type = $type;
+    public function __construct(
+        public TravelRequest $travelRequest,
+        public string $message,
+        public string $type = 'info'
+    ) {
     }
 
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @return array<int, string>
-     */
     public function via(object $notifiable): array
     {
-        return ['database']; // Only saving to the database for the bell icon
+        $channels = ['database'];
+
+        if ($notifiable instanceof User && $notifiable->hasRole('commercial-director')) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
     }
 
-    /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
-     */
+    public function toMail(object $notifiable): MailMessage
+    {
+        $this->travelRequest->loadMissing(['user', 'project']);
+
+        return (new MailMessage)
+            ->subject('Travel Ticket: ' . $this->travelRequest->destination)
+            ->greeting('Hello ' . $notifiable->name . ',')
+            ->line($this->message)
+            ->line('Requester: ' . ($this->travelRequest->user?->name ?? 'N/A'))
+            ->line('Project: ' . ($this->travelRequest->project?->name ?? 'N/A'))
+            ->line('Route: ' . $this->travelRequest->origin . ' → ' . $this->travelRequest->destination)
+            ->line('Travel date: ' . $this->travelRequest->travel_date)
+            ->action('View ticket', route('travel-requests.show', $this->travelRequest))
+            ->line('This message was sent by ' . config('app.name') . '.');
+    }
+
     public function toArray(object $notifiable): array
     {
         return [
             'ticket_id' => $this->travelRequest->id,
             'destination' => $this->travelRequest->destination,
             'message' => $this->message,
-            'type' => $this->type, // e.g., 'success', 'warning', 'error', 'info'
+            'type' => $this->type,
         ];
     }
 }

@@ -27,22 +27,9 @@
                     @error('email')<p class="text-red-500 text-xs mt-1.5">{{ $message }}</p>@enderror
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Password <span
-                                class="text-red-500">*</span></label>
-                        <input type="password" name="password" required
-                            class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition @error('password') border-red-400 @enderror">
-                        @error('password')<p class="text-red-500 text-xs mt-1.5">{{ $message }}</p>@enderror
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Confirm Password <span
-                                class="text-red-500">*</span></label>
-                        <input type="password" name="password_confirmation" required
-                            class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition @error('password_confirmation') border-red-400 @enderror">
-                        @error('password_confirmation')<p class="text-red-500 text-xs mt-1.5">{{ $message }}</p>
-                        @enderror
-                    </div>
+                <div class="rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+                    A temporary password of <strong>password</strong> will be assigned automatically.
+                    The user must change it on first login.
                 </div>
 
                 <hr class="border-gray-100 my-4">

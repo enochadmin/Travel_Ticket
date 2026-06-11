@@ -23,20 +23,28 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping
             'ID',
             'Name',
             'Email',
-            'Role',
+            'Role ID',
+            'Role Name',
+            'Project ID',
             'Assigned Project',
-            'Created At'
+            'Must Change Password',
+            'Created At',
         ];
     }
 
     public function map($user): array
     {
+        $role = $user->roles->first();
+
         return [
             $user->id,
             $user->name,
             $user->email,
-            $user->roles->first()?->name ?? 'user',
+            $role?->id,
+            $role?->name ?? 'user',
+            $user->project_id,
             optional($user->project)->name ?? 'None',
+            $user->must_change_password ? 'Yes' : 'No',
             $user->created_at->format('Y-m-d H:i:s'),
         ];
     }

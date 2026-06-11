@@ -90,64 +90,7 @@
                 </div>
             @endif
 
-            {{-- Approval Trail (shown when ticket is past PM stage) --}}
-            @if($travelRequest->pm_id && in_array($travelRequest->status, ['pending_commercial', 'pending_ceo', 'approved', 'rejected']))
-                <div class="px-6 py-4 border-t border-indigo-100 bg-indigo-50">
-                    <p class="text-xs text-indigo-600 font-bold uppercase tracking-wider mb-3">📋 Approval History</p>
-                    <div class="relative ml-2">
-                        {{-- Step 1: Requester --}}
-                        <div class="flex items-start gap-3 mb-4">
-                            <div
-                                class="w-7 h-7 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <p class="text-sm font-semibold text-gray-800">{{ $travelRequest->user->name }} <span
-                                        class="text-xs font-normal text-gray-400">(Requester)</span></p>
-                                <p class="text-xs text-gray-500">Submitted on
-                                    {{ $travelRequest->created_at->format('M d, Y \a\t h:i A') }}</p>
-                            </div>
-                        </div>
-
-                        {{-- Connector line --}}
-                        <div class="absolute left-3 top-7 w-px bg-indigo-200" style="height: calc(100% - 2.5rem);"></div>
-
-                        {{-- Step 2: PM Approval --}}
-                        <div class="flex items-start gap-3">
-                            <div
-                                class="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M5 13l4 4L19 7" />
-                                </svg>
-                            </div>
-                            <div>
-                                <p class="text-sm font-semibold text-gray-800">
-                                    {{ optional($travelRequest->pm)->name ?? 'Project Manager' }}
-                                    <span class="text-xs font-normal text-gray-400">(Project Manager)</span>
-                                </p>
-                                <div class="flex items-center gap-1.5 mt-0.5">
-                                    <span
-                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[11px] font-semibold">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        Approved
-                                    </span>
-                                    @if($travelRequest->pm_approved_at)
-                                        <span
-                                            class="text-xs text-gray-400">{{ $travelRequest->pm_approved_at->format('M d, Y \a\t h:i A') }}</span>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endif
+            @include('travel_requests._approval_history')
 
             {{-- Rejection Reason (visible to everyone on the ticket) --}}
             @if($travelRequest->status === 'rejected' && $travelRequest->rejection_reason)

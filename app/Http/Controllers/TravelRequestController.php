@@ -5,28 +5,54 @@ namespace App\Http\Controllers;
 use App\Models\TravelRequest;
 use App\Models\Project;
 use App\Models\User;
+use App\Models\City;
 use App\Notifications\TicketStatusUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\Rule;
 
 class TravelRequestController extends Controller
 {
     private function notifyCommercialDirectors(TravelRequest $travelRequest, string $message, string $type = 'warning'): void
     {
+        $travelRequest->loadMissing('project', 'user');
         $directors = User::role('commercial-director')->get();
+
         foreach ($directors as $director) {
             $director->notify(new TicketStatusUpdated($travelRequest, $message, $type));
+        }
+
+        if ($directors->isEmpty()) {
+            $fallbackEmail = config('travel.commercial_director_email');
+            if ($fallbackEmail) {
+                Notification::route('mail', $fallbackEmail)
+                    ->notify(new TicketStatusUpdated($travelRequest, $message, $type));
+            }
         }
     }
 
     private function notifyProjectManager(TravelRequest $travelRequest, string $message, string $type = 'warning'): void
     {
-        $travelRequest->loadMissing('project.manager', 'user');
-        $pm = $travelRequest->project?->manager;
+        $travelRequest->loadMissing('project', 'user');
+        $pm = $travelRequest->project?->resolveManager();
 
         if ($pm) {
             $pm->notify(new TicketStatusUpdated($travelRequest, $message, $type));
         }
+    }
+
+    private function citiesForSelect(?string ...$includeNames)
+    {
+        $cities = City::active()->ordered()->get();
+
+        foreach (array_filter($includeNames) as $name) {
+            if (!$cities->contains('name', $name)) {
+                $cities->push(new City(['name' => $name, 'region' => null, 'is_active' => false]));
+            }
+        }
+
+        return $cities->sortBy('name')->values();
     }
 
     private function requestableProjectsFor(User $user)
@@ -55,18 +81,11 @@ class TravelRequestController extends Controller
         $query = TravelRequest::with(['user', 'project']);
         $viewType = $request->query('view');
 
-        if ($user->hasRole('admin') || $user->hasRole('ceo') || $user->hasRole('head-office-director')) {
-            // Can see all (ceo is view only, admin/hod have actions if needed, though hod is deprecated in new flow)
-        } elseif ($user->hasRole('commercial-director')) {
-            if ($viewType === 'personal') {
+        if ($user->hasAnyRole(['admin', 'ceo', 'head-office-director', 'commercial-director'])) {
+            if ($user->hasRole('commercial-director') && $viewType === 'personal') {
                 $query->where('user_id', $user->id);
-            } else {
-                // Can see all requests that are at the commercial-director stage, or already approved/rejected,
-                // plus any they created themselves.
-                $query->where(function ($q) use ($user) {
-                    $q->whereIn('status', ['pending_commercial', 'pending_hod', 'pending_ceo', 'approved', 'rejected'])
-                        ->orWhere('user_id', $user->id);
-                });
+            } elseif ($user->hasRole('commercial-director') && $viewType === 'approved') {
+                $query->where('hod_id', $user->id);
             }
         } elseif ($user->hasRole('project-manager')) {
             if ($viewType === 'personal') {
@@ -90,7 +109,17 @@ class TravelRequestController extends Controller
         $keyword = trim((string) $request->query('keyword', ''));
 
         if ($status) {
-            $query->where('status', $status);
+            if ($status === 'pending') {
+                // Handle "pending" as a special filter for all pending statuses
+                $query->whereIn('status', [
+                    'pending_pm',
+                    'pending_commercial',
+                    'pending_hod',
+                    'pending_ceo',
+                ]);
+            } else {
+                $query->where('status', $status);
+            }
         }
 
         if ($projectId) {
@@ -177,7 +206,9 @@ class TravelRequestController extends Controller
                 $projects = $allowedProjects;
             }
 
-            return view('travel_requests.create', compact('preselectedProject', 'projects'));
+            $cities = $this->citiesForSelect(old('origin'), old('destination'));
+
+            return view('travel_requests.create', compact('preselectedProject', 'projects', 'cities'));
         }
 
         // Privileged roles can select any project (or use a preselected one)
@@ -187,7 +218,9 @@ class TravelRequestController extends Controller
             $projects = Project::orderBy('name')->get();
         }
 
-        return view('travel_requests.create', compact('preselectedProject', 'projects'));
+        $cities = $this->citiesForSelect(old('origin'), old('destination'));
+
+        return view('travel_requests.create', compact('preselectedProject', 'projects', 'cities'));
     }
 
     public function store(Request $request)
@@ -197,8 +230,8 @@ class TravelRequestController extends Controller
         }
         $validated = $request->validate([
             'project_id' => 'required|exists:projects,id',
-            'destination' => 'required|string|max:255',
-            'origin' => 'required|string|max:255',
+            'destination' => ['required', 'string', 'max:255', Rule::exists('cities', 'name')->where('is_active', true)],
+            'origin' => ['required', 'string', 'max:255', Rule::exists('cities', 'name')->where('is_active', true)],
             'passenger_count' => 'required|integer|min:1',
             'flight_type' => 'required|in:national,international',
             'travel_date' => 'required|date',
@@ -238,7 +271,7 @@ class TravelRequestController extends Controller
             $travelRequest->save();
 
             $travelRequest->load('project');
-            $pm = $travelRequest->project?->manager;
+            $pm = $travelRequest->project?->resolveManager();
             if ($pm) {
                 $pm->notify(new TicketStatusUpdated(
                     $travelRequest,
@@ -275,6 +308,7 @@ class TravelRequestController extends Controller
             $travelRequest->status = 'pending_pm';
         }
         $travelRequest->save();
+        $travelRequest->load('project');
 
         if ($travelRequest->status === 'pending_pm') {
             $this->notifyProjectManager(
@@ -309,6 +343,8 @@ class TravelRequestController extends Controller
             abort(403);
         }
 
+        $travelRequest->load(['user.roles', 'project', 'pm', 'hod']);
+
         return view('travel_requests.show', compact('travelRequest'));
     }
 
@@ -328,7 +364,12 @@ class TravelRequestController extends Controller
             abort(403, 'Cannot edit this request after PM approval.');
         }
 
-        return view('travel_requests.edit', compact('travelRequest'));
+        $cities = $this->citiesForSelect(
+            old('origin', $travelRequest->origin),
+            old('destination', $travelRequest->destination)
+        );
+
+        return view('travel_requests.edit', compact('travelRequest', 'cities'));
     }
 
     public function update(Request $request, TravelRequest $travelRequest)
@@ -345,8 +386,8 @@ class TravelRequestController extends Controller
         }
 
         $validated = $request->validate([
-            'destination' => 'required|string|max:255',
-            'origin' => 'required|string|max:255',
+            'destination' => ['required', 'string', 'max:255', Rule::exists('cities', 'name')->where('is_active', true)],
+            'origin' => ['required', 'string', 'max:255', Rule::exists('cities', 'name')->where('is_active', true)],
             'passenger_count' => 'required|integer|min:1',
             'flight_type' => 'required|in:national,international',
             'travel_date' => 'required|date',
@@ -415,6 +456,7 @@ class TravelRequestController extends Controller
             $travelRequest->update([
                 'status' => $nextStatus,
                 'hod_id' => $user->id,
+                'hod_approved_at' => now(),
             ]);
 
             if ($nextStatus === 'pending_ceo') {

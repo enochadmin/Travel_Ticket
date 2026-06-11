@@ -133,45 +133,7 @@
                     }
                 @endphp
 
-                {{-- Dashboard (all except reception) --}}
-                @unlessrole('reception')
-                <a href="{{ route('dashboard') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                    <span class="sidebar-text">Dashboard</span>
-                </a>
-                @endunlessrole
-
-                {{-- Travel Requests (admin / director / ceo) --}}
-                @hasanyrole('admin|head-office-director|commercial-director|ceo')
-                <a href="{{ route('travel-requests.index') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('travel-requests.*') && !request()->query('view') ? 'active' : '' }}">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                    <span class="sidebar-text">Travel Requests</span>
-                </a>
-                @endhasanyrole
-
-                {{-- Travel History (regular users) --}}
-                @unlessrole('admin|head-office-director|commercial-director|ceo|project-manager')
-                <a href="{{ route('travel-requests.index', ['view' => 'personal']) }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('travel-requests.*') ? 'active' : '' }}">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                    <span class="sidebar-text">Travel History</span>
-                </a>
-                @endunlessrole
-
+                {{-- Reception navigation (Dashboard first) --}}
                 @hasrole('reception')
                 <a href="{{ route('reception.dashboard') }}"
                     class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('reception.dashboard') ? 'active' : '' }}">
@@ -198,9 +160,89 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M20 13V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6m16 0v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4m16 0H4m4 4h8" />
                     </svg>
-                    <span class="sidebar-text">Archived (Processed) Tickets</span>
+                    <span class="sidebar-text">Archived Tickets</span>
                 </a>
                 @endhasrole
+
+                {{-- Dashboard (all except reception) --}}
+                @unlessrole('reception')
+                <a href="{{ route('dashboard') }}"
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+                @endunlessrole
+
+                {{-- Travel Requests (admin / director / ceo) --}}
+                @hasanyrole('admin|head-office-director|ceo')
+                <a href="{{ route('travel-requests.index') }}"
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('travel-requests.*') && !request()->query('view') ? 'active' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <span class="sidebar-text">Travel Requests</span>
+                </a>
+                @endhasanyrole
+
+                {{-- Commercial Director: Travel + History --}}
+                @hasrole('commercial-director')
+                <a href="{{ route('travel-requests.index') }}"
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('travel-requests.*') && !request()->query('view') ? 'active' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <span class="sidebar-text">Travel Requests</span>
+                </a>
+                <div x-data="{ historyOpen: {{ request()->routeIs('travel-requests.*') && request()->query('view') ? 'true' : 'false' }} }"
+                    class="space-y-1">
+                    <button @click="historyOpen = !historyOpen"
+                        class="w-full sidebar-link flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium hover:bg-white/10 transition">
+                        <div class="flex items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span class="sidebar-text">History</span>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 transition-transform duration-200 sidebar-text"
+                            :class="{ 'rotate-180': historyOpen }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div x-show="historyOpen" x-collapse style="display: none;" class="pl-11 space-y-1 sidebar-text">
+                        <a href="{{ route('travel-requests.index', ['view' => 'personal']) }}"
+                            class="block px-3 py-2 rounded-lg text-indigo-300 hover:text-white hover:bg-white/10 text-sm transition {{ request()->query('view') === 'personal' ? 'text-white bg-white/10' : '' }}">
+                            My Travel History
+                        </a>
+                        <a href="{{ route('travel-requests.index', ['view' => 'approved']) }}"
+                            class="block px-3 py-2 rounded-lg text-indigo-300 hover:text-white hover:bg-white/10 text-sm transition {{ request()->query('view') === 'approved' ? 'text-white bg-white/10' : '' }}">
+                            Approved History
+                        </a>
+                    </div>
+                </div>
+                @endhasrole
+
+                {{-- Travel History (regular users) --}}
+                @unlessrole('admin|head-office-director|commercial-director|ceo|project-manager')
+                <a href="{{ route('travel-requests.index', ['view' => 'personal']) }}"
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('travel-requests.*') ? 'active' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <span class="sidebar-text">Travel History</span>
+                </a>
+                @endunlessrole
 
                 {{-- History Dropdown (Project Manager) --}}
                 @hasrole('project-manager')
@@ -277,22 +319,32 @@
                 </a>
                 @endhasrole
 
-                {{-- Reports (admin / director / hod / ceo) --}}
-                @hasanyrole('admin|head-office-director|commercial-director|ceo')
-                <a href="{{ route('reports.index') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+                {{-- Reports dropdown --}}
+                @hasanyrole('admin|head-office-director|commercial-director|ceo|project-manager')
+                @include('layouts.partials.reports-sidebar')
+                @endhasanyrole
+
+                {{-- Settings (admin) --}}
+                @hasrole('admin')
+                <div class="pt-4 pb-1 px-3">
+                    <span class="text-indigo-400 text-xs font-semibold uppercase tracking-widest sidebar-text">Settings</span>
+                </div>
+                <a href="{{ route('settings.cities.index') }}"
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('settings.*') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    <span class="sidebar-text">Reports</span>
+                    <span class="sidebar-text">Cities</span>
                 </a>
-                @endhasanyrole
+                @endhasrole
 
                 {{-- Divider + label --}}
                 <div class="pt-4 pb-1 px-3">
-                    <span class="text-indigo-400 text-xs font-semibold uppercase tracking-widest">Account</span>
+                    <span class="text-indigo-400 text-xs font-semibold uppercase tracking-widest sidebar-text">Account</span>
                 </div>
 
                 {{-- Profile --}}

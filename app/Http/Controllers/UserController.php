@@ -32,7 +32,6 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
             'role' => 'required|exists:roles,name',
             'project_id' => 'nullable|exists:projects,id',
         ]);
@@ -40,8 +39,9 @@ class UserController extends Controller
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => bcrypt($validated['password']),
+            'password' => 'password',
             'project_id' => $validated['project_id'],
+            'must_change_password' => true,
         ]);
 
         $user->assignRole($validated['role']);
@@ -78,7 +78,8 @@ class UserController extends Controller
         ];
 
         if (!empty($validated['password'])) {
-            $userData['password'] = bcrypt($validated['password']);
+            $userData['password'] = $validated['password'];
+            $userData['must_change_password'] = false;
         }
 
         $user->update($userData);
@@ -112,7 +113,7 @@ class UserController extends Controller
 
         Excel::import(new UsersImport, $request->file('file'));
 
-        return back()->with('success', 'Users imported successfully!');
+        return back()->with('success', 'Users imported successfully! New users must log in with the default password "password" and will be prompted to change it.');
     }
 
     public function export()

@@ -34,13 +34,14 @@
                     </div>
                 @endif
 
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Select your Origin (Starting Place) <span class="text-red-500">*</span></label>
-                    <input type="text" name="origin" value="{{ old('origin') }}" required
-                        class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition @error('origin') border-red-400 @enderror"
-                        placeholder="e.g. Addis Ababa, Ethiopia">
-                    @error('origin')<p class="text-red-500 text-xs mt-1.5">{{ $message }}</p>@enderror
-                </div>
+                <x-city-search-select
+                    name="origin"
+                    label="Origin (Starting Place)"
+                    :cities="$cities"
+                    :value="old('origin')"
+                    :required="true"
+                    placeholder="Search origin city..."
+                />
 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">Number of Passengers <span class="text-red-500">*</span></label>
@@ -50,14 +51,14 @@
                     @error('passenger_count')<p class="text-red-500 text-xs mt-1.5">{{ $message }}</p>@enderror
                 </div>
 
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Destination <span
-                            class="text-red-500">*</span></label>
-                    <input type="text" name="destination" value="{{ old('destination') }}" required
-                        class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition @error('destination') border-red-400 @enderror"
-                        placeholder="e.g. Addis Ababa, Ethiopia">
-                    @error('destination')<p class="text-red-500 text-xs mt-1.5">{{ $message }}</p>@enderror
-                </div>
+                <x-city-search-select
+                    name="destination"
+                    label="Destination"
+                    :cities="$cities"
+                    :value="old('destination')"
+                    :required="true"
+                    placeholder="Search destination city..."
+                />
 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">Flight Type <span

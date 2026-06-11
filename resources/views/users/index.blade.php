@@ -65,8 +65,10 @@
                                 class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg border border-gray-100">
                                 <div class="bg-white px-6 py-5">
                                     <h3 class="text-lg font-bold text-gray-900 mb-2">Import Users via Excel</h3>
-                                    <p class="text-sm text-gray-500 mb-4">Upload an Excel (.xlsx) file to bulk create or
-                                        update users. Note that empty required fields will be ignored.</p>
+                                    <p class="text-sm text-gray-500 mb-4">Upload an Excel (.xlsx) file using the template columns:
+                                        <strong>name</strong>, <strong>email</strong>, <strong>project_id</strong> (optional),
+                                        and <strong>role_id</strong>. New users receive the default password
+                                        <strong>password</strong> and must change it on first login.</p>
 
                                     {{-- Download Template Action --}}
                                     <div

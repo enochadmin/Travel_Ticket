@@ -105,12 +105,18 @@ class DashboardController extends Controller
             ];
 
         } elseif ($user->hasRole('commercial-director')) {
-            $data['pendingCommercial'] = TravelRequest::whereIn('status', ['pending_commercial', 'pending_hod'])->count();
             $data['approved'] = TravelRequest::where('status', 'approved')->count();
             $data['rejected'] = TravelRequest::where('status', 'rejected')->count();
-            $data['commercialQueue'] = TravelRequest::with(['user', 'project'])
-                ->whereIn('status', ['pending_commercial', 'pending_hod'])
-                ->latest()->take(10)->get();
+            $data['pending'] = TravelRequest::whereIn('status', [
+                'pending_pm',
+                'pending_commercial',
+                'pending_hod',
+                'pending_ceo',
+            ])->count();
+            $data['totalRequests'] = TravelRequest::count();
+            $data['dashboardTitle'] = 'Organization Overview';
+            $data['dashboardSubtitle'] = 'Summary of all travel requests across the organization.';
+            $data['summaryChartId'] = 'commercialSummaryChart';
 
         } elseif ($user->hasRole('head-office-director')) {
             // Kept for backward compat, though commercial-director is replacing it
@@ -123,45 +129,24 @@ class DashboardController extends Controller
 
         } elseif ($user->hasRole('project-manager')) {
             $pmProjectId = $user->managedProject?->id ?? $user->project_id;
-            $data['pmProject'] = $pmProjectId ? Project::find($pmProjectId) : null;
+            $data['pmProject'] = $pmProjectId
+                ? Project::find($pmProjectId)
+                : null;
 
-            $data['teamTotal'] = TravelRequest::where('project_id', $pmProjectId ?? -1)->count();
-            $data['pendingPm'] = TravelRequest::where('project_id', $pmProjectId ?? -1)->where('status', 'pending_pm')->count();
-            $data['approved'] = TravelRequest::where('project_id', $pmProjectId ?? -1)->where('status', 'approved')->count();
-            $data['rejected'] = TravelRequest::where('project_id', $pmProjectId ?? -1)->where('status', 'rejected')->count();
-            $data['pendingCommercial'] = TravelRequest::where('project_id', $pmProjectId ?? -1)
-                ->whereIn('status', ['pending_commercial', 'pending_hod'])
-                ->count();
-            $data['pendingCeo'] = TravelRequest::where('project_id', $pmProjectId ?? -1)
-                ->where('status', 'pending_ceo')
-                ->count();
-            $data['archived'] = TravelRequest::where('project_id', $pmProjectId ?? -1)
-                ->whereNotNull('archived_at')
-                ->count();
+            $projectQuery = fn () => TravelRequest::where('project_id', $pmProjectId ?? -1);
 
-            $data['pmStatusChartLabels'] = ['Approved', 'Rejected', 'Pending (PM)', 'Pending (Commercial)', 'Pending (CEO)'];
-            $data['pmStatusChartData'] = [
-                $data['approved'],
-                $data['rejected'],
-                $data['pendingPm'],
-                $data['pendingCommercial'],
-                $data['pendingCeo'],
-            ];
-
-            $data['pmProjectReportLabels'] = ['Approved', 'Rejected', 'Pending (PM)', 'Pending (Commercial)', 'Pending (CEO)', 'Processed (Archived)'];
-            $data['pmProjectReportData'] = [
-                $data['approved'],
-                $data['rejected'],
-                $data['pendingPm'],
-                $data['pendingCommercial'],
-                $data['pendingCeo'],
-                $data['archived'],
-            ];
-
-            $data['pmQueue'] = TravelRequest::with(['user', 'project'])
-                ->where('project_id', $pmProjectId ?? -1)
-                ->where('status', 'pending_pm')
-                ->latest()->take(10)->get();
+            $data['approved'] = $projectQuery()->where('status', 'approved')->count();
+            $data['rejected'] = $projectQuery()->where('status', 'rejected')->count();
+            $data['pending'] = $projectQuery()->whereIn('status', [
+                'pending_pm',
+                'pending_commercial',
+                'pending_hod',
+                'pending_ceo',
+            ])->count();
+            $data['totalRequests'] = $projectQuery()->count();
+            $data['dashboardTitle'] = $data['pmProject']?->name ?? 'My Project';
+            $data['dashboardSubtitle'] = 'Summary of travel requests for your project team.';
+            $data['summaryChartId'] = 'pmSummaryChart';
 
         } else {
             // Regular user / requester

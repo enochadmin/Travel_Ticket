@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\ReceptionTicket;
 use App\Models\Project;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class ReceptionTicketController extends Controller
@@ -15,81 +14,19 @@ class ReceptionTicketController extends Controller
         $approvedTotal = ReceptionTicket::where('status', 'approved')->count();
         $archivedTotal = ReceptionTicket::whereNotNull('archived_at')->count();
         $pendingProcessing = max($approvedTotal - $archivedTotal, 0);
-        $archivedRatio = $approvedTotal > 0 ? round(($archivedTotal / $approvedTotal) * 100) : 0;
 
-        $approved = ReceptionTicket::with('project')
+        $recentPending = ReceptionTicket::with(['user', 'project'])
             ->where('status', 'approved')
-            ->get(['travel_date', 'project_id', 'destination']);
-
-        $monthlyCounts = $approved
-            ->groupBy(function ($ticket) {
-                return Carbon::parse($ticket->travel_date)->format('Y-m');
-            })
-            ->map(fn($group) => $group->count())
-            ->sortKeys();
-
-        $projectCounts = $approved
-            ->groupBy('project_id')
-            ->map(function ($group) {
-                $projectName = $group->first()->project?->name ?? 'N/A';
-                return ['name' => $projectName, 'total' => $group->count()];
-            })
-            ->sortByDesc('total')
-            ->values();
-
-        $destinationCounts = $approved
-            ->groupBy(function ($ticket) {
-                return trim((string) $ticket->destination);
-            })
-            ->map(fn($group) => $group->count())
-            ->filter(fn($count, $destination) => $destination !== '')
-            ->sortDesc();
-
-        $monthlyLabels = $monthlyCounts
-            ->keys()
-            ->map(fn($month) => Carbon::createFromFormat('Y-m', $month)->format('M Y'))
-            ->values();
-        $monthlyData = $monthlyCounts->values();
-
-        $topProjects = $projectCounts->take(8)->values();
-        $projectLabels = $topProjects->pluck('name');
-        $projectData = $topProjects->pluck('total');
-
-        $latestMonthKey = $monthlyCounts->keys()->last();
-        $latestMonthTotal = $latestMonthKey ? $monthlyCounts->get($latestMonthKey) : 0;
-        $latestMonthLabel = $latestMonthKey
-            ? Carbon::createFromFormat('Y-m', $latestMonthKey)->format('F Y')
-            : 'No data yet';
-
-        $busiestMonthKey = $monthlyCounts->sortDesc()->keys()->first();
-        $busiestMonthTotal = $busiestMonthKey ? $monthlyCounts->get($busiestMonthKey) : 0;
-        $busiestMonthLabel = $busiestMonthKey
-            ? Carbon::createFromFormat('Y-m', $busiestMonthKey)->format('F Y')
-            : 'No data yet';
-
-        $topProject = $projectCounts->first();
-        $topDestinationName = $destinationCounts->keys()->first();
-        $topDestinationTotal = $topDestinationName ? $destinationCounts->get($topDestinationName) : 0;
+            ->whereNull('archived_at')
+            ->orderBy('travel_date')
+            ->take(6)
+            ->get();
 
         return view('reception.dashboard', [
             'approvedTotal' => $approvedTotal,
             'archivedTotal' => $archivedTotal,
             'pendingProcessing' => $pendingProcessing,
-            'archivedRatio' => $archivedRatio,
-            'monthlyCounts' => $monthlyCounts,
-            'projectCounts' => $projectCounts,
-            'destinationCounts' => $destinationCounts,
-            'monthlyLabels' => $monthlyLabels,
-            'monthlyData' => $monthlyData,
-            'projectLabels' => $projectLabels,
-            'projectData' => $projectData,
-            'latestMonthLabel' => $latestMonthLabel,
-            'latestMonthTotal' => $latestMonthTotal,
-            'busiestMonthLabel' => $busiestMonthLabel,
-            'busiestMonthTotal' => $busiestMonthTotal,
-            'topProject' => $topProject,
-            'topDestinationName' => $topDestinationName,
-            'topDestinationTotal' => $topDestinationTotal,
+            'recentPending' => $recentPending,
         ]);
     }
 

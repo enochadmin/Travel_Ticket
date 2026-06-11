@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TravelRequest extends Model
@@ -24,12 +24,14 @@ class TravelRequest extends Model
         'remarks',
         'rejection_reason',
         'pm_approved_at',
+        'hod_approved_at',
         'archived_at',
         'archived_by',
     ];
 
     protected $casts = [
         'pm_approved_at' => 'datetime',
+        'hod_approved_at' => 'datetime',
         'archived_at' => 'datetime',
     ];
 
@@ -56,5 +58,10 @@ class TravelRequest extends Model
     public function archivedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'archived_by');
+    }
+
+    public function scopeForHeadOffice(Builder $query): Builder
+    {
+        return $query->whereHas('project', fn (Builder $q) => $q->headOffice());
     }
 }
