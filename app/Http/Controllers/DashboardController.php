@@ -128,7 +128,7 @@ class DashboardController extends Controller
                 ->latest()->take(10)->get();
 
         } elseif ($user->hasRole('project-manager')) {
-            $pmProjectId = $user->managedProject?->id ?? $user->project_id;
+            $pmProjectId = $user->approverProjectId();
             $data['pmProject'] = $pmProjectId
                 ? Project::find($pmProjectId)
                 : null;

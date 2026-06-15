@@ -25,7 +25,7 @@
         ];
         $s = $statusMap[$travelRequest->status] ?? ['label' => $travelRequest->status, 'color' => 'bg-gray-100 text-gray-700'];
         $pmProjectId = Auth::user()->hasRole('project-manager')
-            ? (Auth::user()->managedProject?->id ?? Auth::user()->project_id)
+            ? Auth::user()->approverProjectId()
             : null;
     @endphp
 

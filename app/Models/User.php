@@ -70,4 +70,32 @@ class User extends Authenticatable
     {
         return $this->hasOne(Project::class, 'manager_id');
     }
+
+    /** Project this user may approve tickets for (manager_id only). */
+    public function approverProjectId(): ?int
+    {
+        return $this->managedProject?->id;
+    }
+
+    public function isApproverForProject(int $projectId): bool
+    {
+        return $this->approverProjectId() === $projectId;
+    }
+
+    public function memberProjectIds()
+    {
+        return $this->projects()
+            ->pluck('projects.id')
+            ->when($this->project_id, fn ($ids) => $ids->push($this->project_id))
+            ->unique()
+            ->filter()
+            ->values();
+    }
+
+    public function syncPrimaryProjectMembership(?int $projectId): void
+    {
+        if ($projectId) {
+            $this->projects()->syncWithoutDetaching([$projectId]);
+        }
+    }
 }

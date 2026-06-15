@@ -21,7 +21,6 @@ class ProjectController extends Controller
 
         if ($user->hasRole('project-manager')) {
             return ($project->manager_id === $user->id)
-                || ($user->project_id === $project->id)
                 || $user->projects()->whereKey($project->id)->exists();
         }
 
@@ -39,7 +38,15 @@ class ProjectController extends Controller
 
     public function index()
     {
-        $projects = Project::with('manager')->latest()->paginate(10);
+        $projects = Project::with('manager')
+            ->withCount([
+                'travelRequests as requested_tickets_count',
+                'travelRequests as approved_tickets_count' => function ($query) {
+                    $query->where('status', 'approved');
+                }
+            ])
+            ->latest()
+            ->paginate(10);
         return view('projects.index', compact('projects'));
     }
 

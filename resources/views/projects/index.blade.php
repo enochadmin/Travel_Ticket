@@ -112,6 +112,73 @@
                 </div>
             </div>
 
+            {{-- Cards or Table View --}}
+            @hasanyrole('commercial-director|ceo')
+                <div class="p-6 bg-gray-50/50">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        @forelse ($projects as $project)
+                            @php
+                                $statusMap = [
+                                    'active' => 'bg-green-100 text-green-700',
+                                    'on-hold' => 'bg-yellow-100 text-yellow-700',
+                                    'completed' => 'bg-blue-100 text-blue-700',
+                                    'cancelled' => 'bg-red-100 text-red-700',
+                                ];
+                                $disciplineColor = [
+                                    'Infrastructure' => 'bg-indigo-100 text-indigo-700',
+                                    'Water' => 'bg-cyan-100 text-cyan-700',
+                                    'Building' => 'bg-orange-100 text-orange-700',
+                                ];
+                            @endphp
+                            <a href="{{ route('projects.show', $project) }}" class="block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition group flex flex-col h-full">
+                                <div class="p-5 border-b border-gray-50" style="background:linear-gradient(90deg,#f5f3ff,#fff)">
+                                    <div class="flex items-start justify-between mb-2">
+                                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold {{ $disciplineColor[$project->discipline] ?? 'bg-gray-100 text-gray-600' }}">
+                                            {{ $project->discipline ?? 'Project' }}
+                                        </span>
+                                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold {{ $statusMap[$project->status] ?? 'bg-gray-100 text-gray-700' }}">
+                                            {{ ucwords(str_replace('-', ' ', $project->status)) }}
+                                        </span>
+                                    </div>
+                                    <h3 class="text-lg font-bold text-gray-800 group-hover:text-indigo-600 transition">{{ $project->name }}</h3>
+                                    @if($project->project_code)
+                                        <p class="text-xs text-gray-400 mt-1">{{ $project->project_code }}</p>
+                                    @endif
+                                </div>
+                                
+                                <div class="p-5 grid grid-cols-2 gap-4 flex-grow">
+                                    <div class="bg-indigo-50/50 rounded-xl p-3 border border-indigo-50 flex flex-col justify-center">
+                                        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Requested Tickets</p>
+                                        <p class="text-2xl font-extrabold text-indigo-600">{{ $project->requested_tickets_count ?? 0 }}</p>
+                                    </div>
+                                    <div class="bg-green-50/50 rounded-xl p-3 border border-green-50 flex flex-col justify-center">
+                                        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Approved Tickets</p>
+                                        <p class="text-2xl font-extrabold text-green-600">{{ $project->approved_tickets_count ?? 0 }}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="px-5 py-4 border-t border-gray-50 bg-gray-50/30 flex items-center justify-between text-sm mt-auto">
+                                    <div class="flex items-center gap-2 text-gray-500">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                        <span class="truncate max-w-[120px]" title="{{ $project->location }}">{{ $project->location ?? 'N/A' }}</span>
+                                    </div>
+                                    <div class="font-medium text-indigo-600 group-hover:underline">
+                                        View Details →
+                                    </div>
+                                </div>
+                            </a>
+                        @empty
+                            <div class="col-span-full py-12 text-center text-gray-400 bg-white rounded-2xl border border-gray-100">
+                                <p class="text-3xl mb-2">📂</p>
+                                No projects yet. <a href="{{ route('projects.create') }}" class="text-indigo-600 hover:underline">Create the first one →</a>
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+            @else
             {{-- Table --}}
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
@@ -207,6 +274,7 @@
                     </tbody>
                 </table>
             </div>
+            @endhasanyrole
 
             @if($projects->hasPages())
                 <div class="px-6 py-4 border-t border-gray-100">

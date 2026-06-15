@@ -2,28 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
-use App\Models\User;
 use App\Models\Project;
-use Spatie\Permission\Models\Role;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\UsersExport;
 use App\Imports\UsersImport;
 use App\Exports\UsersTemplateExport;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with(['roles', 'project'])->paginate(15);
+        $users = User::with(['roles', 'project', 'managedProject'])->paginate(15);
+
         return view('users.index', compact('users'));
     }
 
     public function create()
     {
         $roles = Role::all();
-        $projects = Project::all();
+        $projects = Project::with('manager')->orderBy('name')->get();
+
         return view('users.create', compact('roles', 'projects'));
     }
 
@@ -36,6 +38,8 @@ class UserController extends Controller
             'project_id' => 'nullable|exists:projects,id',
         ]);
 
+        $this->guardProjectManagerAssignment($validated['role'], $validated['project_id'] ?? null);
+
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
@@ -45,10 +49,7 @@ class UserController extends Controller
         ]);
 
         $user->assignRole($validated['role']);
-
-        if (!empty($validated['project_id'])) {
-            $user->projects()->syncWithoutDetaching([$validated['project_id']]);
-        }
+        $user->syncPrimaryProjectMembership($validated['project_id'] ?? null);
 
         return redirect()->route('users.index')->with('success', 'User created successfully.');
     }
@@ -56,7 +57,7 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $roles = Role::all();
-        $projects = Project::all();
+        $projects = Project::with('manager')->orderBy('name')->get();
 
         return view('users.edit', compact('user', 'roles', 'projects'));
     }
@@ -71,37 +72,38 @@ class UserController extends Controller
             'project_id' => 'nullable|exists:projects,id',
         ]);
 
+        $this->guardProjectManagerAssignment(
+            $validated['role'],
+            $validated['project_id'] ?? null,
+            $user
+        );
+
         $userData = [
             'name' => $validated['name'],
             'email' => $validated['email'],
             'project_id' => $validated['project_id'],
         ];
 
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $userData['password'] = $validated['password'];
             $userData['must_change_password'] = false;
         }
 
         $user->update($userData);
-
-        // Sync role (removes old, adds new)
         $user->syncRoles([$validated['role']]);
-
-        if (!empty($validated['project_id'])) {
-            $user->projects()->syncWithoutDetaching([$validated['project_id']]);
-        }
+        $user->syncPrimaryProjectMembership($validated['project_id'] ?? null);
 
         return redirect()->route('users.index')->with('success', 'User updated successfully.');
     }
 
     public function destroy(User $user)
     {
-        // Prevent deleting the currently logged-in admin or a super-admin (if implemented)
         if (auth()->id() === $user->id) {
             return redirect()->route('users.index')->with('error', 'You cannot delete yourself.');
         }
 
         $user->delete();
+
         return redirect()->route('users.index')->with('success', 'User deleted successfully.');
     }
 
@@ -124,5 +126,26 @@ class UserController extends Controller
     public function downloadTemplate()
     {
         return Excel::download(new UsersTemplateExport, 'users_template.xlsx');
+    }
+
+    private function guardProjectManagerAssignment(string $role, ?int $projectId, ?User $user = null): void
+    {
+        if ($role !== 'project-manager' || ! $projectId) {
+            return;
+        }
+
+        $project = Project::find($projectId);
+
+        if (! $project?->manager_id) {
+            return;
+        }
+
+        if ($user && (int) $project->manager_id === (int) $user->id) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'project_id' => 'There is a Project manager already assigned.',
+        ]);
     }
 }

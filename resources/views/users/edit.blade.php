@@ -61,16 +61,20 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Assigned Project <span
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Project membership <span
                             class="text-gray-400 font-normal">(Optional)</span></label>
-                    <p class="text-xs text-gray-500 mb-2">If PM, this determines which project they manage. If User,
-                        this is their home project.</p>
+                    <p class="text-xs text-gray-500 mb-2">For travel request access only — not for approval. To assign who approves tickets, set the Project Manager on the project page.</p>
+                    @if($user->managedProject)
+                        <p class="text-xs text-indigo-700 mb-2 rounded-lg bg-indigo-50 border border-indigo-100 px-3 py-2">
+                            This user approves tickets for <strong>{{ $user->managedProject->name }}</strong> (assigned on the project).
+                        </p>
+                    @endif
                     <select name="project_id"
                         class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition @error('project_id') border-red-400 @enderror">
-                        <option value="">-- No Project Assigned --</option>
+                        <option value="">-- No project --</option>
                         @foreach($projects as $project)
-                            <option value="{{ $project->id }}" {{ ($user->project_id === $project->id) ? 'selected' : '' }}>
-                                {{ $project->name }}
+                            <option value="{{ $project->id }}" {{ old('project_id', $user->project_id) == $project->id ? 'selected' : '' }}>
+                                {{ $project->name }}@if($project->manager) (PM: {{ $project->manager->name }})@endif
                             </option>
                         @endforeach
                     </select>

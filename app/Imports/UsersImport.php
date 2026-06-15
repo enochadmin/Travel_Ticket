@@ -2,6 +2,7 @@
 
 namespace App\Imports;
 
+use App\Models\Project;
 use App\Models\User;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
@@ -19,7 +20,15 @@ class UsersImport implements ToModel, WithHeadingRow
         $isNew = ! $user->exists;
 
         $user->name = trim($row['name']);
-        $user->project_id = $this->nullableInt($row['project_id'] ?? null);
+
+        $role = $this->resolveRole($row);
+        $projectId = $this->nullableInt($row['project_id'] ?? null);
+
+        if ($this->projectAssignmentBlocked($role?->name, $projectId, $user)) {
+            $projectId = null;
+        }
+
+        $user->project_id = $projectId;
 
         if ($isNew) {
             $user->password = 'password';
@@ -28,7 +37,6 @@ class UsersImport implements ToModel, WithHeadingRow
 
         $user->save();
 
-        $role = $this->resolveRole($row);
         if ($role) {
             $user->syncRoles([$role->name]);
         }
@@ -38,6 +46,21 @@ class UsersImport implements ToModel, WithHeadingRow
         }
 
         return $user;
+    }
+
+    private function projectAssignmentBlocked(?string $roleName, ?int $projectId, User $user): bool
+    {
+        if ($roleName !== 'project-manager' || ! $projectId) {
+            return false;
+        }
+
+        $project = Project::find($projectId);
+
+        if (! $project?->manager_id) {
+            return false;
+        }
+
+        return (int) $project->manager_id !== (int) $user->id;
     }
 
     private function resolveRole(array $row): ?Role

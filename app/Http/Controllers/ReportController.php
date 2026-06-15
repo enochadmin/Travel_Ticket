@@ -152,7 +152,7 @@ class ReportController extends Controller
         $user = Auth::user();
 
         if ($user->hasRole('project-manager')) {
-            $projectId = $user->managedProject?->id ?? $user->project_id;
+            $projectId = $user->approverProjectId();
             $query->where('project_id', $projectId ?? -1);
         }
 
@@ -333,7 +333,7 @@ class ReportController extends Controller
         $user = Auth::user();
 
         if ($user->hasRole('project-manager')) {
-            $projectId = $user->managedProject?->id ?? $user->project_id;
+            $projectId = $user->approverProjectId();
 
             return $projectId
                 ? Project::where('id', $projectId)->orderBy('name')->get()

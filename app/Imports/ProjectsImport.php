@@ -21,7 +21,7 @@ class ProjectsImport implements ToModel, WithHeadingRow
             if ($manager) {
                 $managerId = $manager->id;
                 // Give role if not has it
-                if (!$manager->hasRole('project-manager') && !$manager->hasAnyRole(['admin', 'ceo', 'head-office-director', 'commercial-director'])) {
+                if (!$manager->hasRole('project-manager') && !$manager->hasAnyRole(['admin', 'ceo', 'head-office-manager', 'head-office-director', 'commercial-director'])) {
                     $manager->assignRole('project-manager');
                 }
             }

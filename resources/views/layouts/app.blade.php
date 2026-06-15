@@ -129,7 +129,7 @@
                 @php
                     $myProjectId = null;
                     if (auth()->check() && auth()->user()->hasRole('project-manager')) {
-                        $myProjectId = auth()->user()->managedProject?->id ?? auth()->user()->project_id;
+                        $myProjectId = auth()->user()->approverProjectId();
                     }
                 @endphp
 

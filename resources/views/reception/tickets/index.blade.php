@@ -1,145 +1,202 @@
 <x-app-layout>
     <x-slot name="pageTitle">Reception Tickets</x-slot>
 
-    <div class="space-y-6">
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <form method="GET" action="{{ route('reception.tickets.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div class="space-y-8">
+        <!-- Filters -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
+            <div class="flex items-center justify-between mb-6">
                 <div>
-                    <label class="text-xs text-gray-500 font-semibold">Date From</label>
+                    <h2 class="text-2xl font-semibold text-slate-900">Approved Tickets</h2>
+                    <p class="text-slate-600 text-sm mt-1">Filter and manage fully approved travel requests</p>
+                </div>
+                <a href="{{ route('reception.tickets.export', request()->query()) }}"
+                   class="inline-flex items-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-sm font-semibold transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v-4m0 0l4 4m-4-4l4-4m12 4v4m0 0l-4-4m4 4l-4 4" />
+                    </svg>
+                    Download CSV
+                </a>
+            </div>
+
+            <form method="GET" action="{{ route('reception.tickets.index') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2">Date From</label>
                     <input type="date" name="date_from" value="{{ request('date_from') }}"
-                        class="mt-1 w-full rounded-lg border-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                           class="w-full rounded-2xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4">
                 </div>
                 <div>
-                    <label class="text-xs text-gray-500 font-semibold">Date To</label>
+                    <label class="block text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2">Date To</label>
                     <input type="date" name="date_to" value="{{ request('date_to') }}"
-                        class="mt-1 w-full rounded-lg border-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                           class="w-full rounded-2xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4">
                 </div>
                 <div>
-                    <label class="text-xs text-gray-500 font-semibold">Project</label>
-                    <select name="project_id" class="mt-1 w-full rounded-lg border-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                    <label class="block text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2">Project</label>
+                    <select name="project_id" 
+                            class="w-full rounded-2xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4">
                         <option value="">All Projects</option>
                         @foreach($projects as $project)
-                            <option value="{{ $project->id }}" @selected(request('project_id') == $project->id)>{{ $project->name }}</option>
+                            <option value="{{ $project->id }}" @selected(request('project_id') == $project->id)>
+                                {{ $project->name }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <label class="text-xs text-gray-500 font-semibold">Requester</label>
+                    <label class="block text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2">Requester</label>
                     <input type="text" name="requester" value="{{ request('requester') }}" placeholder="Name or email"
-                        class="mt-1 w-full rounded-lg border-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                           class="w-full rounded-2xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4">
                 </div>
                 <div>
-                    <label class="text-xs text-gray-500 font-semibold">Destination</label>
-                    <input type="text" name="destination" value="{{ request('destination') }}" placeholder="Destination"
-                        class="mt-1 w-full rounded-lg border-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                    <label class="block text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2">Destination</label>
+                    <input type="text" name="destination" value="{{ request('destination') }}" placeholder="Destination city"
+                           class="w-full rounded-2xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4">
                 </div>
 
-                <div class="md:col-span-5 flex items-center gap-3 pt-2">
-                    <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700">
+                <div class="lg:col-span-5 flex items-center gap-4 pt-2">
+                    <button type="submit"
+                            class="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-2xl transition">
                         Apply Filters
                     </button>
-                    <a href="{{ route('reception.tickets.index') }}" class="text-sm text-gray-500 hover:text-gray-700">
-                        Clear
-                    </a>
-                    <a href="{{ route('reception.tickets.export', request()->query()) }}"
-                        class="ml-auto px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700">
-                        Download CSV
+                    <a href="{{ route('reception.tickets.index') }}"
+                       class="px-6 py-3.5 text-slate-500 hover:text-slate-700 font-medium transition">
+                        Clear Filters
                     </a>
                 </div>
             </form>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h2 class="text-base font-semibold text-gray-700">Fully Approved Tickets</h2>
-                <span class="text-xs text-gray-500">Total: {{ $tickets->total() }}</span>
+        <!-- Tickets Table -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div class="flex items-center gap-3">
+                    <h2 class="text-xl font-semibold text-slate-900">Fully Approved Tickets</h2>
+                    <span class="px-3 py-1 bg-emerald-100 text-emerald-700 text-sm font-medium rounded-2xl">
+                        {{ $tickets->total() }} total
+                    </span>
+                </div>
             </div>
+
             <form method="POST" action="{{ route('reception.tickets.process') }}" id="process-form">
                 @csrf
+                
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
-                        <thead class="bg-gray-50 text-gray-500 uppercase text-xs font-semibold">
-                            <tr>
-                                <th class="px-6 py-3 text-left">
-                                    <input type="checkbox" id="select-all"
-                                        class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                                </th>
-                                <th class="px-6 py-3 text-left">Requester</th>
-                                <th class="px-6 py-3 text-left">Project</th>
-                                <th class="px-6 py-3 text-left">Starting Place</th>
-                                <th class="px-6 py-3 text-left">Destination</th>
-                                <th class="px-6 py-3 text-left">Travel Date</th>
-                                <th class="px-6 py-3 text-left">Return Date</th>
-                                <th class="px-6 py-3 text-left">Approved By</th>
-                                <th class="px-6 py-3 text-left">Actions</th>
+                        <thead class="bg-slate-50">
+                                    <tr>
+                                        <th class="px-6 py-5 text-left font-semibold text-slate-600">No.</th>
+                                        <th class="px-8 py-5 text-left w-10">
+                                            <input type="checkbox" id="select-all"
+                                                class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                        </th>
+                                <th class="px-6 py-5 text-left font-semibold text-slate-600">Requester</th>
+                                <th class="px-6 py-5 text-left font-semibold text-slate-600">Project</th>
+                                <th class="px-6 py-5 text-left font-semibold text-slate-600">Route</th>
+                                <th class="px-6 py-5 text-left font-semibold text-slate-600">Travel Date</th>
+                                <th class="px-6 py-5 text-left font-semibold text-slate-600">Return</th>
+                                <th class="px-6 py-5 text-left font-semibold text-slate-600">Approvals</th>
+                                <th class="px-8 py-5 text-right font-semibold text-slate-600">Action</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-50">
+                        <tbody class="divide-y divide-slate-100">
+                        @php $start = ($tickets->currentPage() - 1) * $tickets->perPage(); @endphp
                         @forelse($tickets as $ticket)
-                            <tr class="hover:bg-gray-50 transition">
-                                <td class="px-6 py-4">
+                            <tr class="hover:bg-slate-50 transition group">
+                                <td class="px-6 py-5 text-slate-700">{{ $start + $loop->iteration }}</td>
+                                <td class="px-8 py-5">
                                     <input type="checkbox" name="ticket_ids[]" value="{{ $ticket->id }}"
-                                        class="ticket-checkbox rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                        class="ticket-checkbox rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                                         data-label="{{ $ticket->destination }} ({{ $ticket->user?->name ?? 'Unknown' }})">
                                 </td>
-                                    <td class="px-6 py-4">
-                                        <p class="font-semibold text-gray-800">{{ $ticket->user?->name }}</p>
-                                        <p class="text-xs text-gray-500">{{ $ticket->user?->email }}</p>
-                                    </td>
-                                    <td class="px-6 py-4 text-gray-700">{{ $ticket->project?->name ?? 'N/A' }}</td>
-                                    <td class="px-6 py-4 text-gray-700">{{ $ticket->origin }}</td>
-                                    <td class="px-6 py-4 text-gray-700">
-                                        <p>{{ $ticket->destination }}</p>
-                                        <p class="text-xs text-gray-500">{{ \Illuminate\Support\Str::limit($ticket->purpose, 60) }}</p>
-                                    </td>
-                                    <td class="px-6 py-4 text-gray-700">{{ $ticket->travel_date }}</td>
-                                    <td class="px-6 py-4 text-gray-700">{{ $ticket->return_date ?? '—' }}</td>
-                                    <td class="px-6 py-4 text-gray-700">
-                                        <span class="text-xs text-gray-500">PM:</span> {{ $ticket->pm?->name ?? '—' }}<br>
-                                        <span class="text-xs text-gray-500">Director:</span> {{ $ticket->hod?->name ?? '—' }}
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <a href="{{ route('reception.tickets.show', $ticket) }}"
-                                            class="text-xs text-indigo-600 hover:underline font-medium">View details</a>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="9" class="px-6 py-10 text-center text-gray-400">No approved tickets found.</td>
-                                </tr>
-                            @endforelse
+                                <td class="px-6 py-5">
+                                    <div class="font-semibold text-slate-900">{{ $ticket->user?->name }}</div>
+                                    <div class="text-xs text-slate-500">{{ $ticket->user?->email }}</div>
+                                </td>
+                                <td class="px-6 py-5 text-slate-700 font-medium">
+                                    {{ $ticket->project?->name ?? '—' }}
+                                </td>
+                                <td class="px-6 py-5">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-medium text-slate-800">{{ $ticket->origin }}</span>
+                                        <span class="text-slate-400">→</span>
+                                        <span class="font-medium text-slate-800">{{ $ticket->destination }}</span>
+                                    </div>
+                                    @if($ticket->purpose)
+                                        <p class="text-xs text-slate-500 mt-1 line-clamp-1">
+                                            {{ \Illuminate\Support\Str::limit($ticket->purpose, 65) }}
+                                        </p>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-5 text-slate-700">
+                                    {{ $ticket->travel_date ? \Carbon\Carbon::parse($ticket->travel_date)->format('d M Y') : '—' }}
+                                </td>
+                                <td class="px-6 py-5 text-slate-700">
+                                    {{ $ticket->return_date ? \Carbon\Carbon::parse($ticket->return_date)->format('d M Y') : '—' }}
+                                </td>
+                                <td class="px-6 py-5">
+                                    <div class="text-xs">
+                                        <span class="text-emerald-600">PM:</span> 
+                                        <span class="font-medium">{{ $ticket->pm?->name ?? '—' }}</span>
+                                    </div>
+                                    <div class="text-xs mt-1">
+                                        <span class="text-emerald-600">Director:</span> 
+                                        <span class="font-medium">{{ $ticket->hod?->name ?? '—' }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-8 py-5 text-right">
+                                    <a href="{{ route('reception.tickets.show', $ticket) }}"
+                                       class="inline-flex items-center justify-center px-5 py-2 text-sm font-semibold text-indigo-600 hover:bg-indigo-50 rounded-2xl transition">
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="9" class="px-8 py-16 text-center">
+                                    <div class="mx-auto w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4">
+                                        ✈️
+                                    </div>
+                                    <p class="text-slate-400 font-medium">No approved tickets found</p>
+                                </td>
+                            </tr>
+                        @endforelse
                         </tbody>
                     </table>
                 </div>
-                <div class="px-6 py-4 border-t border-gray-100 flex items-center gap-3">
+
+                <!-- Bulk Actions -->
+                <div class="px-8 py-6 border-t border-slate-100 bg-slate-50 flex items-center gap-4">
                     <button type="submit" id="process-btn"
-                        class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700">
-                        Process Selected
+                        class="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-2xl transition flex items-center gap-2">
+                        <span>Process Selected Tickets</span>
                     </button>
-                    <span class="text-xs text-gray-500">Processed tickets will be archived.</span>
+                    <p class="text-sm text-slate-500">Selected tickets will be archived after processing.</p>
                 </div>
             </form>
-            <div class="px-6 py-4 border-t border-gray-100">
+
+            <!-- Pagination -->
+            <div class="px-8 py-5 border-t border-slate-100">
                 {{ $tickets->links() }}
             </div>
         </div>
     </div>
 
-    <div id="process-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4"
-        style="background: rgba(0,0,0,0.5);">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
-            <h3 class="text-lg font-bold text-gray-800 mb-2">Process Selected Tickets?</h3>
-            <p class="text-sm text-gray-500 mb-4">These tickets will be archived and removed from the approved list.</p>
-            <div class="max-h-56 overflow-auto border border-gray-100 rounded-lg p-3 bg-gray-50 text-sm text-gray-700">
-                <ul id="process-list" class="list-disc pl-5 space-y-1"></ul>
+    <!-- Process Confirmation Modal -->
+    <div id="process-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8" @click.outside="modal.classList.add('hidden')">
+            <h3 class="text-2xl font-semibold text-slate-900">Process Selected Tickets?</h3>
+            <p class="mt-2 text-slate-600">These tickets will be marked as processed and moved to archive.</p>
+
+            <div class="mt-6 max-h-60 overflow-auto bg-slate-50 border border-slate-100 rounded-2xl p-5 text-sm">
+                <ul id="process-list" class="space-y-2 text-slate-700"></ul>
             </div>
-            <div class="flex gap-3 mt-5">
+
+            <div class="flex gap-3 mt-8">
                 <button type="button" id="confirm-process"
-                    class="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition">
-                    Confirm
+                    class="flex-1 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-2xl transition">
+                    Yes, Process Tickets
                 </button>
                 <button type="button" id="cancel-process"
-                    class="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-50 transition">
+                    class="flex-1 py-4 border border-slate-300 text-slate-700 font-semibold rounded-2xl hover:bg-slate-50 transition">
                     Cancel
                 </button>
             </div>
@@ -156,27 +213,29 @@
         const confirmBtn = document.getElementById('confirm-process');
         const cancelBtn = document.getElementById('cancel-process');
 
+        // Select All
         if (selectAll) {
             selectAll.addEventListener('change', (e) => {
-                boxes.forEach((box) => {
-                    box.checked = e.target.checked;
-                });
+                boxes.forEach(box => box.checked = e.target.checked);
             });
         }
 
+        // Process Form
         if (processBtn && form) {
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
-                const selected = Array.from(boxes).filter((b) => b.checked);
+                const selected = Array.from(boxes).filter(b => b.checked);
+
                 if (selected.length === 0) {
-                    alert('Please select at least one ticket to process.');
+                    alert('Please select at least one ticket.');
                     return;
                 }
 
+                // Populate modal list
                 list.innerHTML = '';
-                selected.forEach((b) => {
+                selected.forEach(box => {
                     const li = document.createElement('li');
-                    li.textContent = b.dataset.label || ('Ticket #' + b.value);
+                    li.textContent = box.dataset.label || `Ticket #${box.value}`;
                     list.appendChild(li);
                 });
 
@@ -186,9 +245,7 @@
         }
 
         if (confirmBtn) {
-            confirmBtn.addEventListener('click', () => {
-                form.submit();
-            });
+            confirmBtn.addEventListener('click', () => form.submit());
         }
 
         if (cancelBtn) {

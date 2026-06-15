@@ -36,19 +36,16 @@ class Project extends Model
 
     public function resolveManager(): ?User
     {
-        if ($this->manager_id) {
-            $manager = $this->relationLoaded('manager') ? $this->manager : $this->manager()->first();
-            if ($manager) {
-                return $manager;
-            }
+        if (! $this->manager_id) {
+            return null;
         }
 
-        return User::role('project-manager')
-            ->where(function (Builder $query) {
-                $query->where('project_id', $this->id)
-                    ->orWhereHas('managedProject', fn (Builder $managed) => $managed->where('projects.id', $this->id));
-            })
-            ->first();
+        return $this->relationLoaded('manager') ? $this->manager : $this->manager()->first();
+    }
+
+    public function hasManager(): bool
+    {
+        return (bool) $this->manager_id;
     }
 
     /** Staff assigned to this project */
