@@ -25,6 +25,8 @@ use App\Http\Controllers\ReportController;
 
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CityController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SettingsSessionController;
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('users/import', [UserController::class, 'import'])->name('users.import')->middleware('role:admin');
@@ -81,6 +83,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('role:admin')->prefix('settings')->name('settings.')->group(function () {
         Route::redirect('/', '/settings/cities')->name('index');
         Route::resource('cities', CityController::class)->except(['show']);
+        
+        Route::resource('roles', RoleController::class);
+        
+        Route::get('sessions', [SettingsSessionController::class, 'show'])->name('session.show');
+        Route::delete('sessions/bulk', [SettingsSessionController::class, 'bulkDestroy'])->name('session.bulk-destroy');
+        Route::delete('sessions/{sessionId}', [SettingsSessionController::class, 'destroy'])->name('session.destroy');
     });
 
     // Notification routes
