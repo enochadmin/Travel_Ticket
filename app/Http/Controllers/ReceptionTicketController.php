@@ -69,6 +69,27 @@ class ReceptionTicketController extends Controller
             ->with('success', $count . ' ticket(s) processed and archived.');
     }
 
+    public function processAndBook(Request $request)
+    {
+        $validated = $request->validate([
+            'ticket_ids' => 'required|array',
+            'ticket_ids.*' => 'integer|exists:travel_requests,id',
+        ]);
+
+        $count = ReceptionTicket::where('status', 'approved')
+            ->whereNull('archived_at')
+            ->whereIn('id', $validated['ticket_ids'])
+            ->update([
+                'archived_at' => now(),
+                'archived_by' => Auth::id(),
+            ]);
+
+        $firstTicketId = $validated['ticket_ids'][0] ?? null;
+
+        return redirect()->route('reception.bookings.create', ['ticket_id' => $firstTicketId])
+            ->with('success', $count . ' ticket(s) processed and archived. Ready for booking.');
+    }
+
     public function show(ReceptionTicket $ticket)
     {
         if ($ticket->status !== 'approved') {

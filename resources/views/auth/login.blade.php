@@ -84,15 +84,7 @@
                 </div>
             </form>
 
-            <!-- Optional register link -->
-            @if (Route::has('register'))
-                <p class="mt-8 text-center text-sm text-gray-600">
-                    Don't have an account?
-                    <a href="{{ route('register') }}" class="text-sky-600 hover:text-sky-800 font-medium">
-                        Create one now
-                    </a>
-                </p>
-            @endif
+            <!-- Registration disabled for self-service -->
 
         </div>
     </div>
