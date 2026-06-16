@@ -22,6 +22,7 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReceptionTicketController;
 use App\Http\Controllers\TravelRequestController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ReceptionBookingController;
 
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CityController;
@@ -60,6 +61,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('role:reception');
     Route::post('reception/tickets/process', [ReceptionTicketController::class, 'process'])
         ->name('reception.tickets.process')
+        ->middleware('role:reception');
+    Route::post('reception/tickets/process-and-book', [ReceptionTicketController::class, 'processAndBook'])
+        ->name('reception.tickets.process_and_book')
+        ->middleware('role:reception');
+    Route::get('reception/bookings/create', [ReceptionBookingController::class, 'create'])
+        ->name('reception.bookings.create')
+        ->middleware('role:reception');
+    Route::post('reception/bookings', [ReceptionBookingController::class, 'store'])
+        ->name('reception.bookings.store')
         ->middleware('role:reception');
     Route::get('reception/tickets/export', [ReceptionTicketController::class, 'export'])
         ->name('reception.tickets.export')
