@@ -332,7 +332,7 @@ class TravelRequestController extends Controller
         if (
             ! $user->hasRole('admin') && ! $user->hasRole('ceo') && ! $user->hasRole('commercial-director') && ! $user->hasRole('head-office-director') &&
             ! ($user->hasRole('project-manager') && $pmProjectId && (int) $travelRequest->project_id === (int) $pmProjectId) &&
-            $travelRequest->user_id !== $user->id
+            $travelRequest->user_id != $user->id
         ) {
             abort(403);
         }
@@ -347,7 +347,7 @@ class TravelRequestController extends Controller
         if (Auth::user()->hasRole('reception')) {
             abort(403);
         }
-        if ($travelRequest->user_id !== Auth::id() || ($travelRequest->status !== 'pending_pm' && $travelRequest->status !== 'pending_commercial')) {
+        if ($travelRequest->user_id != Auth::id() || ($travelRequest->status !== 'pending_pm' && $travelRequest->status !== 'pending_commercial')) {
             abort(403, 'Cannot edit this request at this stage.');
         }
 
@@ -371,7 +371,7 @@ class TravelRequestController extends Controller
         if (Auth::user()->hasRole('reception')) {
             abort(403);
         }
-        if ($travelRequest->user_id !== Auth::id() || ($travelRequest->status !== 'pending_pm' && $travelRequest->status !== 'pending_commercial')) {
+        if ($travelRequest->user_id != Auth::id() || ($travelRequest->status !== 'pending_pm' && $travelRequest->status !== 'pending_commercial')) {
             abort(403, 'Cannot edit this request at this stage.');
         }
 
@@ -399,7 +399,7 @@ class TravelRequestController extends Controller
         if (Auth::user()->hasRole('reception')) {
             abort(403);
         }
-        if ($travelRequest->user_id !== Auth::id() || ($travelRequest->status !== 'pending_pm' && $travelRequest->status !== 'pending_commercial')) {
+        if ($travelRequest->user_id != Auth::id() || ($travelRequest->status !== 'pending_pm' && $travelRequest->status !== 'pending_commercial')) {
             abort(403, 'Cannot delete this request at this stage.');
         }
 
