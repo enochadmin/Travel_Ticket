@@ -79,7 +79,8 @@ class TravelRequestController extends Controller
             if ($user->hasRole('commercial-director') && $viewType === 'personal') {
                 $query->where('user_id', $user->id);
             } elseif ($user->hasRole('commercial-director') && $viewType === 'approved') {
-                $query->where('hod_id', $user->id);
+                // Show only tickets approved by PM (pending_commercial status)
+                $query->where('status', 'pending_commercial');
             }
         } elseif ($user->hasRole('project-manager')) {
             if ($viewType === 'personal') {

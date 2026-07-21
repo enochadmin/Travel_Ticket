@@ -250,6 +250,17 @@
                     </div>
                 </section>
 
+                @if($ticket->remarks)
+                <!-- Remarks -->
+                <section class="bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
+                    <span class="uppercase text-xs font-semibold tracking-widest text-teal-600">Remarks</span>
+                    <h2 class="text-2xl font-semibold text-slate-900 mt-1">Additional Notes</h2>
+                    <div class="mt-6 text-slate-600 leading-relaxed bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-7 min-h-[140px]">
+                        {{ $ticket->remarks }}
+                    </div>
+                </section>
+                @endif
+
                 <!-- Actions -->
                 <section class="bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
                     <span class="uppercase text-xs font-semibold tracking-widest text-teal-600">Actions</span>

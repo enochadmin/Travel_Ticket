@@ -21,6 +21,26 @@
                     <p class="text-xs text-gray-400 mt-0.5">Manage users, roles and project assignments</p>
                 </div>
 
+                {{-- Search Form --}}
+                <form method="GET" action="{{ route('users.index') }}" class="flex items-center gap-2">
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Search users..."
+                        class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <button type="submit"
+                        class="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        Search
+                    </button>
+                    @if(request('search'))
+                        <a href="{{ route('users.index') }}"
+                            class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">
+                            Clear
+                        </a>
+                    @endif
+                </form>
+
                 {{-- Actions Container --}}
                 <div class="flex items-center gap-3" x-data="{ showImportModal: false }">
                     {{-- Export Button --}}

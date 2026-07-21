@@ -102,11 +102,22 @@ class ReceptionTicketController extends Controller
 
     public function export(Request $request)
     {
-        $tickets = $this->filteredApprovedQuery($request)->get();
+        // Check if we should export archived tickets
+        $exportArchived = $request->filled('archived') && $request->archived === '1';
+        
+        if ($exportArchived) {
+            // Export archived tickets
+            $tickets = $this->filteredArchivedQuery($request)->get();
+            $filename = 'archived-tickets.csv';
+        } else {
+            // Export approved (non-archived) tickets
+            $tickets = $this->filteredApprovedQuery($request)->get();
+            $filename = 'approved-tickets.csv';
+        }
 
         $headers = [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="approved-tickets.csv"',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ];
 
         $callback = function () use ($tickets) {
@@ -120,6 +131,8 @@ class ReceptionTicketController extends Controller
                 'Return Date',
                 'Approved By (PM)',
                 'Approved By (Director)',
+                'Archived At',
+                'Archived By',
             ]);
 
             foreach ($tickets as $ticket) {
@@ -132,6 +145,8 @@ class ReceptionTicketController extends Controller
                     $ticket->return_date,
                     $ticket->pm?->name,
                     $ticket->hod?->name,
+                    $ticket->archived_at ? \Carbon\Carbon::parse($ticket->archived_at)->format('Y-m-d H:i') : '—',
+                    $ticket->archivedBy?->name ?? '—',
                 ]);
             }
 

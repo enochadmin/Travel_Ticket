@@ -14,9 +14,20 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with(['roles', 'project', 'managedProject'])->paginate(15);
+        $query = User::with(['roles', 'project', 'managedProject']);
+        
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('email', 'like', '%' . $search . '%');
+            });
+        }
+        
+        $users = $query->paginate(15)->withQueryString();
 
         return view('users.index', compact('users'));
     }
