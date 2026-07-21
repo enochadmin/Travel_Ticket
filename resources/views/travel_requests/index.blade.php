@@ -176,7 +176,7 @@
                                 <td class="px-6 py-4 text-right space-x-3">
                                     <a href="{{ route('travel-requests.show', $request) }}"
                                         class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">View</a>
-                                    @if($request->user_id === Auth::id() && $request->status === 'pending_pm')
+                                    @if($request->user_id === Auth::id() && Auth::user()->can('edit own ticket') && ($request->status === 'pending_pm' || $request->status === 'pending_commercial'))
                                         <a href="{{ route('travel-requests.edit', $request) }}"
                                             class="text-xs font-semibold text-gray-500 hover:text-gray-700">Edit</a>
                                         <form action="{{ route('travel-requests.destroy', $request) }}" method="POST"

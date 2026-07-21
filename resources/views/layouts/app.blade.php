@@ -71,6 +71,16 @@
             width: 5rem;
         }
 
+        @media (max-width: 767px) {
+            .sidebar {
+                width: 5rem;
+            }
+
+            #app-shell[data-sidebar-collapsed="false"] .sidebar {
+                width: 16rem;
+            }
+        }
+
         #app-shell[data-sidebar-collapsed="true"] .sidebar .sidebar-text,
         #app-shell[data-sidebar-collapsed="true"] .sidebar .sidebar-user-text {
             display: none;
@@ -396,7 +406,7 @@
         <div class="flex-1 flex flex-col min-w-0">
 
             {{-- Top bar --}}
-            <header class="bg-white dark:bg-slate-950 top-bar-shadow px-8 py-4 flex items-center justify-between sticky top-0 z-10 border-b border-transparent dark:border-slate-800">
+            <header class="bg-white dark:bg-slate-950 top-bar-shadow px-4 py-4 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-10 border-b border-transparent dark:border-slate-800">
                 <div>
                     @isset($pageTitle)
                         <h1 class="text-xl font-bold text-gray-800 dark:text-slate-100">{{ $pageTitle }}</h1>
@@ -530,7 +540,7 @@
             </header>
 
             {{-- Page content --}}
-            <main class="flex-1 p-8 dark:bg-slate-900">
+            <main class="flex-1 p-4 sm:p-6 lg:p-8 dark:bg-slate-900">
                 {{ $slot }}
             </main>
         </div>
@@ -540,12 +550,40 @@
         (function () {
             const shell = document.getElementById('app-shell');
             const sidebarToggle = document.getElementById('sidebar-toggle');
-            if (shell && sidebarToggle) {
+
+            const setSidebarState = (collapsed) => {
+                if (shell) {
+                    shell.dataset.sidebarCollapsed = collapsed ? 'true' : 'false';
+                }
+            };
+
+            const applyInitialState = () => {
+                if (!shell) {
+                    return;
+                }
+
+                if (window.innerWidth < 768) {
+                    setSidebarState(true);
+                } else {
+                    setSidebarState(false);
+                }
+            };
+
+            if (sidebarToggle) {
                 sidebarToggle.addEventListener('click', () => {
-                    const next = shell.dataset.sidebarCollapsed !== 'true';
-                    shell.dataset.sidebarCollapsed = next ? 'true' : 'false';
+                    const next = shell && shell.dataset.sidebarCollapsed !== 'true';
+                    setSidebarState(next ? true : false);
                 });
             }
+
+            applyInitialState();
+            window.addEventListener('resize', () => {
+                if (window.innerWidth < 768) {
+                    setSidebarState(true);
+                } else {
+                    setSidebarState(false);
+                }
+            });
         })();
     </script>
 

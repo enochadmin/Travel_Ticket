@@ -84,11 +84,12 @@
                             <th class="px-6 py-5 text-left font-semibold text-slate-600">No.</th>
                             <th class="px-8 py-5 text-left font-semibold text-slate-600">Requester</th>
                             <th class="px-6 py-5 text-left font-semibold text-slate-600">Project</th>
-                            <th class="px-6 py-5 text-left font-semibold text-slate-600">Route</th>
-                            <th class="px-6 py-5 text-left font-semibold text-slate-600">Travel Date</th>
-                            <th class="px-6 py-5 text-left font-semibold text-slate-600">Return</th>
-                            <th class="px-6 py-5 text-left font-semibold text-slate-600">Approvals</th>
-                            <th class="px-6 py-5 text-left font-semibold text-slate-600">Archived</th>
+                                <th class="px-6 py-5 text-left font-semibold text-slate-600">Route</th>
+                                <th class="px-6 py-5 text-left font-semibold text-slate-600">Travel Date</th>
+                                <th class="px-6 py-5 text-left font-semibold text-slate-600">Return</th>
+                                <th class="px-6 py-5 text-left font-semibold text-slate-600">Remarks</th>
+                                <th class="px-6 py-5 text-left font-semibold text-slate-600">Approvals</th>
+                                <th class="px-6 py-5 text-left font-semibold text-slate-600">Archived</th>
                             <th class="px-8 py-5 text-right font-semibold text-slate-600">Action</th>
                         </tr>
                     </thead>
@@ -122,6 +123,13 @@
                                 <td class="px-6 py-5 text-slate-700">
                                     {{ $ticket->return_date ? \Carbon\Carbon::parse($ticket->return_date)->format('d M Y') : '—' }}
                                 </td>
+                                <td class="px-6 py-5 text-slate-700">
+                                    @if($ticket->remarks)
+                                        <span class="text-xs">{{ \Illuminate\Support\Str::limit($ticket->remarks, 50) }}</span>
+                                    @else
+                                        <span class="text-slate-400">—</span>
+                                    @endif
+                                </td>
                                 <td class="px-6 py-5">
                                     <div class="text-xs">
                                         <span class="text-emerald-600">PM:</span> 
@@ -149,9 +157,9 @@
                                     </a>
                                 </td>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="9" class="px-8 py-20 text-center">
+                            @empty
+                                <tr>
+                                    <td colspan="10" class="px-8 py-20 text-center">
                                     <div class="mx-auto w-20 h-20 bg-slate-100 rounded-3xl flex items-center justify-center text-4xl mb-6">
                                         📦
                                     </div>

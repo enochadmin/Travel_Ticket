@@ -9,13 +9,22 @@
                     <h2 class="text-2xl font-semibold text-slate-900">Approved Tickets</h2>
                     <p class="text-slate-600 text-sm mt-1">Filter and manage fully approved travel requests</p>
                 </div>
-                <a href="{{ route('reception.tickets.export', request()->query()) }}"
-                   class="inline-flex items-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-sm font-semibold transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v-4m0 0l4 4m-4-4l4-4m12 4v4m0 0l-4-4m4 4l-4 4" />
-                    </svg>
-                    Download CSV
-                </a>
+                <div class="flex items-center gap-3">
+                    <a href="{{ route('reception.tickets.export', array_merge(request()->query(), ['archived' => '0'])) }}"
+                       class="inline-flex items-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-sm font-semibold transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v-4m0 0l4 4m-4-4l4-4m12 4v4m0 0l-4-4m4 4l-4 4" />
+                        </svg>
+                        Download Approved CSV
+                    </a>
+                    <a href="{{ route('reception.tickets.export', array_merge(request()->query(), ['archived' => '1'])) }}"
+                       class="inline-flex items-center gap-2 px-5 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-2xl text-sm font-semibold transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v-4m0 0l4 4m-4-4l4-4m12 4v4m0 0l-4-4m4 4l-4 4" />
+                        </svg>
+                        Download Archived CSV
+                    </a>
+                </div>
             </div>
 
             <form method="GET" action="{{ route('reception.tickets.index') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
@@ -93,6 +102,7 @@
                                 <th class="px-6 py-5 text-left font-semibold text-slate-600">Route</th>
                                 <th class="px-6 py-5 text-left font-semibold text-slate-600">Travel Date</th>
                                 <th class="px-6 py-5 text-left font-semibold text-slate-600">Return</th>
+                                <th class="px-6 py-5 text-left font-semibold text-slate-600">Remarks</th>
                                 <th class="px-6 py-5 text-left font-semibold text-slate-600">Approvals</th>
                                 <th class="px-8 py-5 text-right font-semibold text-slate-600">Action</th>
                             </tr>
@@ -131,6 +141,13 @@
                                 </td>
                                 <td class="px-6 py-5 text-slate-700">
                                     {{ $ticket->return_date ? \Carbon\Carbon::parse($ticket->return_date)->format('d M Y') : '—' }}
+                                </td>
+                                <td class="px-6 py-5 text-slate-700">
+                                    @if($ticket->remarks)
+                                        <span class="text-xs">{{ \Illuminate\Support\Str::limit($ticket->remarks, 50) }}</span>
+                                    @else
+                                        <span class="text-slate-400">—</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-5">
                                     <div class="text-xs">

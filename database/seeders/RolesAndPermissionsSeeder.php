@@ -17,6 +17,18 @@ class RolesAndPermissionsSeeder extends Seeder
             \Spatie\Permission\Models\Role::firstOrCreate(['name' => $role]);
         }
 
+        // Create permissions
+        $permissions = ['edit own ticket'];
+        foreach ($permissions as $permission) {
+            \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        // Assign 'edit own ticket' permission to user role
+        $userRole = \Spatie\Permission\Models\Role::where('name', 'user')->first();
+        if ($userRole) {
+            $userRole->givePermissionTo('edit own ticket');
+        }
+
         $admin = \App\Models\User::firstOrCreate([
             'email' => 'admin@admin.com',
         ], [
