@@ -348,13 +348,6 @@ class TravelRequestController extends Controller
         if (Auth::user()->hasRole('reception')) {
             abort(403);
         }
-        
-        // Check if user has permission to edit their own ticket
-        if (!Auth::user()->can('edit own ticket')) {
-            abort(403, 'You do not have permission to edit tickets.');
-        }
-        
-        // Only allow editing own tickets in pending status
         if ($travelRequest->user_id != Auth::id() || ($travelRequest->status !== 'pending_pm' && $travelRequest->status !== 'pending_commercial')) {
             abort(403, 'Cannot edit this request at this stage.');
         }
@@ -379,13 +372,6 @@ class TravelRequestController extends Controller
         if (Auth::user()->hasRole('reception')) {
             abort(403);
         }
-        
-        // Check if user has permission to edit their own ticket
-        if (!Auth::user()->can('edit own ticket')) {
-            abort(403, 'You do not have permission to edit tickets.');
-        }
-        
-        // Only allow editing own tickets in pending status
         if ($travelRequest->user_id != Auth::id() || ($travelRequest->status !== 'pending_pm' && $travelRequest->status !== 'pending_commercial')) {
             abort(403, 'Cannot edit this request at this stage.');
         }
