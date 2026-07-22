@@ -85,9 +85,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('index');
         Route::get('/most-traveled-cities', [ReportController::class, 'mostTraveledCities'])->name('most-traveled-cities')->middleware('role:admin|commercial-director|project-manager');
         Route::get('/most-requested-projects', [ReportController::class, 'mostRequestedProjects'])->name('most-requested-projects')->middleware('role:admin|commercial-director|head-office-director|ceo');
+        Route::get('/travel-trend-analysis', [ReportController::class, 'travelTrendAnalysis'])->name('travel-trend-analysis')->middleware('role:admin|commercial-director');
+        Route::get('/frequent-travelers', [ReportController::class, 'frequentTravelers'])->name('frequent-travelers')->middleware('role:admin|commercial-director');
         Route::get('/export/travel-requests', [ReportController::class, 'exportTravelRequests'])->name('export.travel-requests');
         Route::get('/export/most-traveled-cities', [ReportController::class, 'exportMostTraveledCities'])->name('export.most-traveled-cities')->middleware('role:admin|commercial-director|project-manager');
         Route::get('/export/most-requested-projects', [ReportController::class, 'exportMostRequestedProjects'])->name('export.most-requested-projects')->middleware('role:admin|commercial-director|head-office-director|ceo');
+        Route::get('/export/travel-trend-analysis', [ReportController::class, 'exportTravelTrendAnalysis'])->name('export.travel-trend-analysis')->middleware('role:admin|commercial-director');
+        Route::get('/export/frequent-travelers', [ReportController::class, 'exportFrequentTravelers'])->name('export.frequent-travelers')->middleware('role:admin|commercial-director');
     });
 
     Route::middleware('role:admin')->prefix('settings')->name('settings.')->group(function () {

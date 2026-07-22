@@ -118,6 +118,50 @@ class DashboardController extends Controller
             $data['dashboardSubtitle'] = 'Summary of all travel requests across the organization.';
             $data['summaryChartId'] = 'commercialSummaryChart';
 
+            // Add trend data (current month vs last month)
+            $now = now();
+            $currentMonth = TravelRequest::whereBetween('travel_date', [
+                $now->clone()->startOfMonth(),
+                $now->clone()->endOfMonth()
+            ])->count();
+            
+            $lastMonth = TravelRequest::whereBetween('travel_date', [
+                $now->clone()->subMonth()->startOfMonth(),
+                $now->clone()->subMonth()->endOfMonth()
+            ])->count();
+
+            $data['currentMonthRequests'] = $currentMonth;
+            $data['lastMonthRequests'] = $lastMonth;
+            $data['monthTrendPercent'] = $lastMonth > 0 
+                ? round((($currentMonth - $lastMonth) / $lastMonth) * 100, 2)
+                : ($currentMonth > 0 ? 100 : 0);
+
+            // Top travelers
+            $data['topTravelers'] = TravelRequest::selectRaw('user_id, COUNT(*) as trip_count')
+                ->groupBy('user_id')
+                ->orderByRaw('COUNT(*) DESC')
+                ->limit(5)
+                ->with('user')
+                ->get()
+                ->map(function ($item) {
+                    return (object) [
+                        'user_name' => optional($item->user)->name ?? 'Unknown',
+                        'trip_count' => $item->trip_count,
+                    ];
+                });
+
+            // Top destinations
+            $data['topDestinations'] = TravelRequest::selectRaw('destination, COUNT(*) as count')
+                ->whereNotNull('destination')
+                ->where('destination', '!=', '')
+                ->groupBy('destination')
+                ->orderByRaw('COUNT(*) DESC')
+                ->limit(10)
+                ->get();
+
+            $data['destinationChartLabels'] = $data['topDestinations']->pluck('destination')->toArray();
+            $data['destinationChartData'] = $data['topDestinations']->pluck('count')->toArray();
+
         } elseif ($user->hasRole('head-office-director')) {
             // Kept for backward compat, though commercial-director is replacing it
             $data['pendingHod'] = TravelRequest::where('status', 'pending_hod')->count();

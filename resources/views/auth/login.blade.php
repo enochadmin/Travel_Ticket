@@ -1,92 +1,108 @@
 <x-guest-layout>
+    <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-sky-50 px-4 py-12">
+        <div class="w-full max-w-lg">
 
-    <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-sky-50/40 px-4 sm:px-2 lg:px-2">
-        <div class="w-full max-w-md">
-
-            <!-- Logo / Brand -->
-            <div class="text-center mb-10">
-                <div class="flex justify-center items-center gap-3 mb-4">
-                    <img src="{{ asset('images/eec-logo.png') }}" alt="EEC Logo" class="h-10 w-auto">
-                    <div class="flex flex-col items-start leading-tight">
-                        <span class="font-semibold text-2xl tracking-tighter text-gray-900">EEC</span>
-                        <span class="text-sky-600 font-medium text-lg">TRAVEL</span>
-                    </div>
+            <!-- Header / Logo -->
+            <div class="text-center mb-16">
+                <div class="flex justify-center items-center mb-8">
+                    <img
+                        src="{{ asset('images/eec-logo.png') }}"
+                        alt="EEC Travel Logo"
+                        class="h-36 w-auto drop-shadow-md"
+                    >
                 </div>
-                <h2 class="text-2xl font-bold text-gray-900 tracking-tight">
-                    Sign in to your account
-                </h2>
-                <p class="mt-2 text-sm text-gray-600">
-                    Access your travel requests and approvals
+
+                <h1 class="text-4xl font-bold tracking-tight text-slate-900 mb-3">
+                     Ethiopian Engineering Corporation 
+                </h1>
+                <p class="text-slate-1200 text-xl font-bold">
+                    Travel Requests & Approvals
                 </p>
             </div>
 
             <!-- Session Status -->
-            <x-auth-session-status class="mb-6 text-center text-emerald-600 text-sm font-medium" :status="session('status')" />
+            <x-auth-session-status class="mb-8 text-center text-emerald-600 text-sm font-medium" :status="session('status')" />
 
-            <form method="POST" action="{{ route('login') }}" class="space-y-6 bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-gray-200/70">
-                @csrf
+            <!-- Login Card -->
+            <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
+                <div class="px-10 pt-10 pb-12">
+                    <form method="POST" action="{{ route('login') }}" class="space-y-7">
+                        @csrf
 
-                <!-- Email Address -->
-                <div>
-                    <x-input-label for="email" :value="__('Email')" class="text-gray-700" />
-                    <x-text-input
-                        id="email"
-                        class="block mt-2 w-full bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-sky-500 focus:ring-sky-500/30 rounded-xl shadow-sm transition-all"
-                        type="email"
-                        name="email"
-                        :value="old('email')"
-                        required
-                        autofocus
-                        autocomplete="username"
-                    />
-                    <x-input-error :messages="$errors->get('email')" class="mt-2 text-red-600 text-sm" />
+                        <!-- Email -->
+                        <div>
+                            <x-input-label for="email" :value="__('Email address')" class="text-slate-700 font-semibold text-base" />
+                            <x-text-input
+                                id="email"
+                                class="block mt-3 w-full bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-sky-500 focus:ring-sky-500 rounded-2xl py-4 px-5 text-base shadow-sm transition-all duration-200"
+                                type="email"
+                                name="email"
+                                :value="old('email')"
+                                required
+                                autofocus
+                                autocomplete="username"
+                            />
+                            <x-input-error :messages="$errors->get('email')" class="mt-2 text-red-600 text-sm" />
+                        </div>
+
+                        <!-- Password -->
+                        <div>
+                            <x-input-label for="password" :value="__('Password')" class="text-slate-700 font-semibold text-base" />
+                            <x-text-input
+                                id="password"
+                                class="block mt-3 w-full bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-sky-500 focus:ring-sky-500 rounded-2xl py-4 px-5 text-base shadow-sm transition-all duration-200"
+                                type="password"
+                                name="password"
+                                required
+                                autocomplete="current-password"
+                            />
+                            <x-input-error :messages="$errors->get('password')" class="mt-2 text-red-600 text-sm" />
+                        </div>
+
+                        <!-- Remember Me + Forgot Password -->
+                        <div class="flex items-center justify-between">
+                            <label for="remember_me" class="flex items-center cursor-pointer group">
+                                <input
+                                    id="remember_me"
+                                    type="checkbox"
+                                    class="w-5 h-5 rounded border-slate-300 text-sky-600 focus:ring-sky-500 transition-colors"
+                                    name="remember"
+                                >
+                                <span class="ml-3 text-base text-slate-600 group-hover:text-slate-700 transition-colors">
+                                    {{ __('Remember me') }}
+                                </span>
+                            </label>
+
+                            @if (Route::has('password.request'))
+                                <a href="{{ route('password.request') }}"
+                                   class="text-base font-medium text-sky-600 hover:text-sky-700 transition-colors">
+                                    {{ __('Forgot password?') }}
+                                </a>
+                            @endif
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div>
+                            <x-primary-button class="w-full py-4.5 text-lg font-bold rounded-2xl bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-400 shadow-lg shadow-sky-500/25 hover:shadow-xl hover:shadow-sky-500/30 active:scale-[0.985] transition-all duration-200">
+                                {{ __('Sign in') }}
+                            </x-primary-button>
+                        </div>
+                    </form>
                 </div>
 
-                <!-- Password -->
-                <div>
-                    <x-input-label for="password" :value="__('Password')" class="text-gray-700" />
-                    <x-text-input
-                        id="password"
-                        class="block mt-2 w-full bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-sky-500 focus:ring-sky-500/30 rounded-xl shadow-sm transition-all"
-                        type="password"
-                        name="password"
-                        required
-                        autocomplete="current-password"
-                    />
-                    <x-input-error :messages="$errors->get('password')" class="mt-2 text-red-600 text-sm" />
+                <!-- Footer hint -->
+                <div class="bg-slate-50 border-t border-slate-200 px-10 py-5 text-center">
+                    <p class="text-sm text-slate-600 font-medium">
+                        Secure access for EEC team members
+                    </p>
                 </div>
+            </div>
 
-                <!-- Remember Me + Forgot Password -->
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <label for="remember_me" class="inline-flex items-center">
-                        <input
-                            id="remember_me"
-                            type="checkbox"
-                            class="rounded border-gray-300 text-sky-600 focus:ring-sky-500/30"
-                            name="remember"
-                        >
-                        <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
-                    </label>
-
-                    @if (Route::has('password.request'))
-                        <a class="text-sm text-sky-600 hover:text-sky-800 font-medium transition-colors"
-                           href="{{ route('password.request') }}">
-                            {{ __('Forgot your password?') }}
-                        </a>
-                    @endif
-                </div>
-
-                <!-- Submit Button -->
-                <div>
-                    <x-primary-button class="w-full justify-center bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-400 text-white font-semibold py-3 rounded-xl shadow-lg shadow-sky-500/20 hover:shadow-sky-600/30 transition-all duration-200">
-                        {{ __('Log in') }}
-                    </x-primary-button>
-                </div>
-            </form>
-
-            <!-- Registration disabled for self-service -->
+            <!-- Optional subtle footer -->
+            <div class="mt-10 text-center text-sm text-slate-500">
+                © {{ date('Y') }} EEC Travel • All Rights Reserved
+            </div>
 
         </div>
     </div>
-
 </x-guest-layout>

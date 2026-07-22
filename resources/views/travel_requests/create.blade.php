@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="pageTitle">Raise Travel Request</x-slot>
 
-    <div class="max-w-2xl">
+    <div class="max-w-2xl mx-auto">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="px-6 py-5 border-b border-gray-100" style="background:linear-gradient(90deg,#eff6ff,#fff)">
                 <h2 class="text-lg font-bold text-gray-800">New Travel Request</h2>

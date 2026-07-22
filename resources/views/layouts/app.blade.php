@@ -42,7 +42,7 @@
         }
 
         .sidebar-link.active {
-            border-left: 3px solid #818cf8;
+            border-left: 3px solid #0ea5e9;
         }
 
         .top-bar-shadow {
@@ -111,11 +111,11 @@
         SIDEBAR
         =========================== --}}
         <aside class="sidebar flex-shrink-0 flex flex-col"
-            style="background: linear-gradient(180deg,#1e1b4b 0%,#312e81 100%); min-height:100vh;">
+            style="background: linear-gradient(180deg,#0c2d44 0%,#0d547a 100%); min-height:100vh;">
 
             {{-- Logo --}}
             <div class="flex items-center gap-3 px-6 py-5 border-b border-white/10 relative sidebar-logo">
-                <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#818cf8;">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#0ea5e9;">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -124,7 +124,7 @@
                 </div>
                 <span class="text-white font-bold text-lg tracking-tight sidebar-text">TravelPass</span>
                 <button id="sidebar-toggle" type="button"
-                    class="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg text-indigo-200 hover:text-white hover:bg-white/10 transition"
+                    class="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg text-blue-200 hover:text-white hover:bg-white/10 transition"
                     aria-label="Toggle sidebar">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -146,7 +146,7 @@
                 {{-- Reception navigation (Dashboard first) --}}
                 @hasrole('reception')
                 <a href="{{ route('reception.dashboard') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('reception.dashboard') ? 'active' : '' }}">
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-blue-200 text-sm font-medium {{ request()->routeIs('reception.dashboard') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -155,7 +155,7 @@
                     <span class="sidebar-text">Dashboard</span>
                 </a>
                 <a href="{{ route('reception.tickets.index') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('reception.tickets.index', 'reception.tickets.show') ? 'active' : '' }}">
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-blue-200 text-sm font-medium {{ request()->routeIs('reception.tickets.index', 'reception.tickets.show') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -164,7 +164,7 @@
                     <span class="sidebar-text">Approved Tickets</span>
                 </a>
                 <a href="{{ route('reception.tickets.archived') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('reception.tickets.archived') ? 'active' : '' }}">
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-blue-200 text-sm font-medium {{ request()->routeIs('reception.tickets.archived') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -177,7 +177,7 @@
                 {{-- Dashboard (all except reception) --}}
                 @unlessrole('reception')
                 <a href="{{ route('dashboard') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-blue-200 text-sm font-medium {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -522,11 +522,13 @@
                         </svg>
                     </button>
 
-                    <form method="POST" action="{{ route('logout') }}">
+                    <form method="POST" action="{{ route('logout') }}" id="logout-form">
                         @csrf
-                        <button type="submit"
+                        <button type="button"
                             class="p-2 rounded-full text-gray-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 focus:outline-none transition"
-                            aria-label="Sign out">
+                            aria-label="Sign out"
+                            title="Sign out"
+                            onclick="confirmationModal.show('Sign Out', 'Are you sure you want to sign out?', () => document.getElementById('logout-form').submit());">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -586,6 +588,9 @@
             });
         })();
     </script>
+
+    <!-- Confirmation Modal -->
+    @include('components.confirmation-modal')
 
 </body>
 

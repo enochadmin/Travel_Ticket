@@ -610,7 +610,220 @@
 
     {{-- ============= COMMERCIAL DIRECTOR DASHBOARD ============= --}}
     @hasrole('commercial-director')
-        @include('dashboard._summary')
+    <div class="space-y-8">
+        {{-- Header --}}
+        <div class="overflow-hidden rounded-2xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
+            <div class="px-6 py-6 sm:px-8" style="background:linear-gradient(135deg,#0284c7 0%,#0ea5e9 55%,#06b6d4 100%);">
+                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-blue-200">Dashboard</p>
+                <h2 class="mt-2 text-2xl font-bold text-white sm:text-3xl">{{ $dashboardTitle }}</h2>
+                <p class="mt-2 text-sm text-blue-100 max-w-2xl">{{ $dashboardSubtitle }}</p>
+            </div>
+        </div>
+
+        {{-- KPI Cards --}}
+        <div class="grid gap-4 sm:grid-cols-4">
+            <a href="{{ route('travel-requests.index', ['status' => 'approved']) }}" 
+               class="group rounded-2xl border border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-900 p-6 hover:shadow-lg hover:border-green-300 transition-all duration-200 cursor-pointer">
+                <p class="text-xs font-semibold uppercase tracking-wider text-green-700 dark:text-green-400 group-hover:text-green-800 dark:group-hover:text-green-300">Approved</p>
+                <p class="mt-3 text-4xl font-bold text-green-800 dark:text-green-300">{{ $approved }}</p>
+            </a>
+            <a href="{{ route('travel-requests.index') }}" 
+               class="group rounded-2xl border border-yellow-200 bg-yellow-50 dark:bg-yellow-950/30 dark:border-yellow-900 p-6 hover:shadow-lg hover:border-yellow-300 transition-all duration-200 cursor-pointer">
+                <p class="text-xs font-semibold uppercase tracking-wider text-yellow-700 dark:text-yellow-400 group-hover:text-yellow-800 dark:group-hover:text-yellow-300">Pending</p>
+                <p class="mt-3 text-4xl font-bold text-yellow-800 dark:text-yellow-300">{{ $pending }}</p>
+            </a>
+            <a href="{{ route('travel-requests.index', ['status' => 'rejected']) }}" 
+               class="group rounded-2xl border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-6 hover:shadow-lg hover:border-red-300 transition-all duration-200 cursor-pointer">
+                <p class="text-xs font-semibold uppercase tracking-wider text-red-700 dark:text-red-400 group-hover:text-red-800 dark:group-hover:text-red-300">Rejected</p>
+                <p class="mt-3 text-4xl font-bold text-red-800 dark:text-red-300">{{ $rejected }}</p>
+            </a>
+            <div class="rounded-2xl border border-indigo-200 bg-indigo-50 dark:bg-indigo-950/30 dark:border-indigo-900 p-6">
+                <p class="text-xs font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-400">Total</p>
+                <p class="mt-3 text-4xl font-bold text-indigo-800 dark:text-indigo-300">{{ $totalRequests }}</p>
+            </div>
+        </div>
+
+        {{-- Trend Cards --}}
+        <div class="grid gap-4 sm:grid-cols-2">
+            {{-- Month Trend --}}
+            <div class="rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-400">This Month vs Last Month</p>
+                        <p class="mt-2 text-3xl font-bold text-blue-800 dark:text-blue-300">{{ $currentMonthRequests }} requests</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        @if($monthTrendPercent > 0)
+                            <svg class="w-8 h-8 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M12 5a1 1 0 011 1v5.586l1.293-1.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L11 12.586V6a1 1 0 011-1z" clip-rule="evenodd" />
+                            </svg>
+                            <span class="text-lg font-bold text-green-700 dark:text-green-400">+{{ $monthTrendPercent }}%</span>
+                        @elseif($monthTrendPercent < 0)
+                            <svg class="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M12 15a1 1 0 01-1 1H9a1 1 0 01-1-1v-5.586l-1.293 1.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 9.414V15z" clip-rule="evenodd" />
+                            </svg>
+                            <span class="text-lg font-bold text-red-700 dark:text-red-400">{{ $monthTrendPercent }}%</span>
+                        @else
+                            <span class="text-lg font-bold text-gray-700 dark:text-gray-400">—</span>
+                        @endif
+                    </div>
+                </div>
+                <p class="text-sm text-blue-600 dark:text-blue-400">Last month: <span class="font-bold">{{ $lastMonthRequests }}</span> requests</p>
+            </div>
+
+            {{-- Request Status Chart --}}
+            <div class="rounded-2xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-900 p-6">
+                <h3 class="text-sm font-semibold text-gray-700 dark:text-slate-100 mb-4">Request Status Overview</h3>
+                <div class="mx-auto max-w-xs" style="height: 200px;">
+                    <canvas id="{{ $summaryChartId }}"></canvas>
+                </div>
+            </div>
+        </div>
+
+        {{-- Charts Grid --}}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {{-- Top Destinations Chart --}}
+            <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+                <h2 class="text-base font-bold text-gray-800 dark:text-slate-100 mb-4">Top Destinations</h2>
+                <div style="height: 280px;">
+                    <canvas id="topDestinationsChart"></canvas>
+                </div>
+                <div class="mt-4">
+                    <a href="{{ route('reports.frequent-travelers') }}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">View detailed report →</a>
+                </div>
+            </div>
+
+            {{-- Top Travelers --}}
+            <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+                <h2 class="text-base font-bold text-gray-800 dark:text-slate-100 mb-4">Top Travelers</h2>
+                <div class="space-y-3">
+                    @forelse($topTravelers as $index => $traveler)
+                        <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-800">
+                            <div class="flex items-center gap-3">
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-bold text-sm">
+                                    {{ $index + 1 }}
+                                </span>
+                                <span class="font-medium text-gray-800 dark:text-slate-100">{{ $traveler->user_name }}</span>
+                            </div>
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 text-sm font-bold">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5.951-1.429 5.951 1.429a1 1 0 001.169-1.409l-7-14z" />
+                                </svg>
+                                {{ $traveler->trip_count }}
+                            </span>
+                        </div>
+                    @empty
+                        <p class="text-sm text-gray-500 dark:text-slate-400 text-center py-4">No travelers yet</p>
+                    @endforelse
+                </div>
+                <div class="mt-4">
+                    <a href="{{ route('reports.frequent-travelers') }}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">View all travelers →</a>
+                </div>
+            </div>
+        </div>
+
+        {{-- Quick Links to Reports --}}
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <a href="{{ route('reports.travel-trend-analysis') }}" class="rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900 p-6 hover:shadow-lg transition-all">
+                <svg class="w-8 h-8 text-blue-600 dark:text-blue-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <h3 class="font-bold text-gray-800 dark:text-slate-100">Travel Trends</h3>
+                <p class="text-xs text-gray-600 dark:text-slate-400 mt-1">Compare periods & analyze growth</p>
+            </a>
+
+            <a href="{{ route('reports.frequent-travelers') }}" class="rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900 p-6 hover:shadow-lg transition-all">
+                <svg class="w-8 h-8 text-blue-600 dark:text-blue-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3a6 6 0 016-6h6a6 6 0 016 6h-12z" />
+                </svg>
+                <h3 class="font-bold text-gray-800 dark:text-slate-100">Frequent Travelers</h3>
+                <p class="text-xs text-gray-600 dark:text-slate-400 mt-1">Identify top travelers & routes</p>
+            </a>
+
+            <a href="{{ route('reports.index') }}" class="rounded-2xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-900 p-6 hover:shadow-lg transition-all">
+                <svg class="w-8 h-8 text-emerald-600 dark:text-emerald-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <h3 class="font-bold text-gray-800 dark:text-slate-100">All Reports</h3>
+                <p class="text-xs text-gray-600 dark:text-slate-400 mt-1">Access complete reports</p>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#e2e8f0' : '#475569';
+            const gridColor = isDark ? 'rgba(148, 163, 184, 0.2)' : 'rgba(148, 163, 184, 0.3)';
+            const borderColor = isDark ? '#0b1220' : '#ffffff';
+
+            // Summary Chart
+            const summaryCtx = document.getElementById(@json($summaryChartId));
+            if (summaryCtx) {
+                new Chart(summaryCtx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Approved', 'Pending', 'Rejected'],
+                        datasets: [{
+                            data: [{!! $approved !!}, {!! $pending !!}, {!! $rejected !!}],
+                            backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                            borderWidth: 2, borderColor: borderColor
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { font: { family: "'Inter', sans-serif" } } },
+                            tooltip: { backgroundColor: 'rgba(17, 24, 39, 0.9)', padding: 12, cornerRadius: 8 }
+                        }
+                    }
+                });
+            }
+
+            // Top Destinations Chart
+            const destCtx = document.getElementById('topDestinationsChart');
+            if (destCtx) {
+                new Chart(destCtx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: {!! json_encode($destinationChartLabels) !!},
+                        datasets: [{
+                            label: 'Number of Requests',
+                            data: {!! json_encode($destinationChartData) !!},
+                            backgroundColor: '#0ea5e9',
+                            borderRadius: 6,
+                            borderSkipped: false,
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                                padding: 12,
+                                cornerRadius: 8,
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1, color: textColor },
+                                grid: { color: gridColor }
+                            },
+                            y: {
+                                ticks: { color: textColor },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
     @endhasrole
 
     {{-- ============= HEAD-OFFICE-DIRECTOR (LEGACY) DASHBOARD ============= --}}
@@ -743,13 +956,13 @@
 
         {{-- Hero Banner --}}
         <div class="rounded-2xl p-8 flex items-center justify-between overflow-hidden relative"
-            style="background: linear-gradient(135deg,#1e1b4b,#4f46e5);">
+            style="background: linear-gradient(135deg,#0c4a6e,#0ea5e9);">
             <div class="relative z-10">
-                <p class="text-indigo-200 text-sm font-medium mb-1">Welcome back,</p>
+                <p class="text-sky-200 text-sm font-medium mb-1">Welcome back,</p>
                 <h2 class="text-2xl font-bold text-white mb-4">{{ Auth::user()->name }}</h2>
                 @if(Auth::user()->project_id)
                     <a href="{{ route('travel-requests.create') }}"
-                        class="inline-flex items-center gap-2 bg-white text-indigo-700 font-semibold text-sm px-5 py-2.5 rounded-xl shadow hover:shadow-md transition">
+                        class="inline-flex items-center gap-2 bg-white text-sky-700 font-semibold text-sm px-5 py-2.5 rounded-xl shadow hover:shadow-md transition">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -757,7 +970,7 @@
                         Raise Ticket Here
                     </a>
                 @else
-                    <p class="text-indigo-300 text-sm">You are not assigned to a project yet. Contact your admin.</p>
+                    <p class="text-sky-300 text-sm">You are not assigned to a project yet. Contact your admin.</p>
                 @endif
             </div>
             <div class="absolute right-0 top-0 h-full w-48 opacity-10">
@@ -774,7 +987,7 @@
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
             @php
                 $myCards = [
-                    ['label' => 'Total Tickets', 'value' => $myTotal, 'from' => '#6366f1', 'to' => '#818cf8'],
+                    ['label' => 'Total Tickets', 'value' => $myTotal, 'from' => '#0ea5e9', 'to' => '#38bdf8'],
                     ['label' => 'Pending', 'value' => $myPending, 'from' => '#f59e0b', 'to' => '#fbbf24'],
                     ['label' => 'Approved', 'value' => $myApproved, 'from' => '#10b981', 'to' => '#34d399'],
                     ['label' => 'Rejected', 'value' => $myRejected, 'from' => '#ef4444', 'to' => '#f87171'],
@@ -796,7 +1009,7 @@
             <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h2 class="text-base font-semibold text-gray-700">🧳 My Recent Tickets</h2>
                 <a href="{{ route('travel-requests.index') }}"
-                    class="text-xs text-indigo-600 hover:underline font-medium">View all →</a>
+                    class="text-xs text-sky-600 hover:underline font-medium">View all →</a>
             </div>
             @if($myRequests->isEmpty())
                 <div class="p-8 text-center">
@@ -828,8 +1041,8 @@
                                     class="px-2 py-0.5 rounded-full text-xs font-semibold {{ $statusColors[$req->status] ?? 'bg-gray-100 text-gray-600' }}">
                                     {{ ucfirst(str_replace('_', ' ', $req->status)) }}
                                 </span>
-                                <a href="{{ route('travel-requests.show', $req) }}"
-                                    class="text-xs text-indigo-600 hover:underline font-medium">View</a>
+                                    <a href="{{ route('travel-requests.show', $req) }}"
+                                    class="text-xs text-sky-600 hover:underline font-medium">View</a>
                             </div>
                         </div>
                     @endforeach
