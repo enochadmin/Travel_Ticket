@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\Reports\FrequentTravelersExport;
 use App\Exports\Reports\MostRequestedProjectsExport;
 use App\Exports\Reports\MostTraveledCitiesExport;
 use App\Exports\Reports\TravelRequestsReportExport;
+use App\Exports\Reports\TravelTrendAnalysisExport;
 use App\Models\City;
 use App\Models\Project;
 use App\Models\TravelRequest;
@@ -354,5 +356,227 @@ class ReportController extends Controller
         }
 
         return null;
+    }
+
+    public function travelTrendAnalysis(Request $request)
+    {
+        $query = $this->reportQuery($request);
+        $period = $request->get('period', 'month'); // month, quarter, year
+
+        // Get current period data
+        $currentData = $this->getTrendDataForPeriod(clone $query, $period, 'current');
+        $previousData = $this->getTrendDataForPeriod(clone $query, $period, 'previous');
+
+        $totalRequests = (clone $query)->count();
+        $projects = $this->projectsForFilters();
+        $filters = $this->reportFilters($request);
+        $scopeLabel = $this->scopeLabel();
+
+        // Prepare chart data
+        $chartLabels = ['Approved', 'Pending', 'Rejected'];
+        $chartData = [
+            'current' => [
+                $currentData['approved'] ?? 0,
+                $currentData['pending'] ?? 0,
+                $currentData['rejected'] ?? 0,
+            ],
+            'previous' => [
+                $previousData['approved'] ?? 0,
+                $previousData['pending'] ?? 0,
+                $previousData['rejected'] ?? 0,
+            ],
+        ];
+
+        // Calculate growth rates
+        $growthData = [
+            'total' => $this->calculateGrowth(
+                $previousData['total'] ?? 0,
+                $currentData['total'] ?? 0
+            ),
+            'approved' => $this->calculateGrowth(
+                $previousData['approved'] ?? 0,
+                $currentData['approved'] ?? 0
+            ),
+            'rejected' => $this->calculateGrowth(
+                $previousData['rejected'] ?? 0,
+                $currentData['rejected'] ?? 0
+            ),
+        ];
+
+        return view('reports.travel_trend_analysis', compact(
+            'currentData',
+            'previousData',
+            'chartLabels',
+            'chartData',
+            'growthData',
+            'period',
+            'projects',
+            'filters',
+            'totalRequests',
+            'scopeLabel'
+        ));
+    }
+
+    public function frequentTravelers(Request $request)
+    {
+        $query = $this->reportQuery($request);
+        $limit = $request->get('limit', 25);
+
+        // Get users sorted by request count
+        $travelers = $query
+            ->selectRaw('user_id, COUNT(*) as trip_count, GROUP_CONCAT(DISTINCT destination) as destinations, GROUP_CONCAT(DISTINCT project_id) as project_ids')
+            ->groupBy('user_id')
+            ->orderByRaw('COUNT(*) DESC')
+            ->get()
+            ->map(function ($item) {
+                $projectIds = array_filter(explode(',', $item->project_ids ?? ''));
+                $projects = Project::whereIn('id', $projectIds)->pluck('name')->implode(', ');
+                
+                // Get user details
+                $user = User::find($item->user_id);
+                
+                return (object) [
+                    'user_id' => $item->user_id,
+                    'user_name' => optional($user)->name ?? 'Unknown',
+                    'user_email' => optional($user)->email ?? '',
+                    'trip_count' => (int) $item->trip_count,
+                    'destinations' => $item->destinations ?? '',
+                    'projects' => $projects,
+                ];
+            })
+            ->take($limit);
+
+        // Get top destinations for chart
+        $topDestinations = (clone $query)
+            ->selectRaw('destination, COUNT(*) as count')
+            ->whereNotNull('destination')
+            ->where('destination', '!=', '')
+            ->groupBy('destination')
+            ->orderByRaw('COUNT(*) DESC')
+            ->limit(10)
+            ->get();
+
+        $chartData = [
+            'labels' => $topDestinations->pluck('destination')->toArray(),
+            'data' => $topDestinations->pluck('count')->toArray(),
+        ];
+
+        $totalRequests = (clone $query)->count();
+        $totalTravelers = (clone $query)->distinct('user_id')->count();
+        $projects = $this->projectsForFilters();
+        $filters = $this->reportFilters($request);
+        $scopeLabel = $this->scopeLabel();
+
+        return view('reports.frequent_travelers', compact(
+            'travelers',
+            'chartData',
+            'totalRequests',
+            'totalTravelers',
+            'projects',
+            'filters',
+            'scopeLabel'
+        ));
+    }
+
+    public function exportFrequentTravelers(Request $request): BinaryFileResponse
+    {
+        $query = $this->reportQuery($request);
+
+        // Get all travelers (no limit)
+        $travelers = $query
+            ->selectRaw('user_id, COUNT(*) as trip_count, GROUP_CONCAT(DISTINCT destination) as destinations, GROUP_CONCAT(DISTINCT project_id) as project_ids')
+            ->groupBy('user_id')
+            ->orderByRaw('COUNT(*) DESC')
+            ->get()
+            ->map(function ($item) {
+                $projectIds = array_filter(explode(',', $item->project_ids ?? ''));
+                $projects = Project::whereIn('id', $projectIds)->pluck('name')->implode(', ');
+                $user = User::find($item->user_id);
+                
+                return (object) [
+                    'user_name' => optional($user)->name ?? 'Unknown',
+                    'user_email' => optional($user)->email ?? '',
+                    'trip_count' => (int) $item->trip_count,
+                    'destinations' => $item->destinations ?? '',
+                    'projects' => $projects,
+                ];
+            });
+
+        return Excel::download(
+            new FrequentTravelersExport($travelers),
+            'frequent-travelers-' . now()->format('Y-m-d') . '.xlsx'
+        );
+    }
+
+    public function exportTravelTrendAnalysis(Request $request): BinaryFileResponse
+    {
+        $query = $this->reportQuery($request);
+        $period = $request->get('period', 'month');
+
+        $currentData = $this->getTrendDataForPeriod(clone $query, $period, 'current');
+        $previousData = $this->getTrendDataForPeriod(clone $query, $period, 'previous');
+
+        return Excel::download(
+            new TravelTrendAnalysisExport($currentData, $previousData, $period),
+            'travel-trend-analysis-' . now()->format('Y-m-d') . '.xlsx'
+        );
+    }
+
+    private function getTrendDataForPeriod(Builder $query, string $period, string $type): array
+    {
+        $now = now();
+
+        if ($type === 'current') {
+            if ($period === 'month') {
+                $query->whereBetween('travel_date', [$now->clone()->startOfMonth(), $now->clone()->endOfMonth()]);
+            } elseif ($period === 'quarter') {
+                $query->whereBetween('travel_date', [$now->clone()->startOfQuarter(), $now->clone()->endOfQuarter()]);
+            } elseif ($period === 'year') {
+                $query->whereBetween('travel_date', [$now->clone()->startOfYear(), $now->clone()->endOfYear()]);
+            }
+        } else {
+            // Previous period
+            if ($period === 'month') {
+                $prev = $now->clone()->subMonth();
+                $query->whereBetween('travel_date', [$prev->clone()->startOfMonth(), $prev->clone()->endOfMonth()]);
+            } elseif ($period === 'quarter') {
+                $prev = $now->clone()->subQuarter();
+                $query->whereBetween('travel_date', [$prev->clone()->startOfQuarter(), $prev->clone()->endOfQuarter()]);
+            } elseif ($period === 'year') {
+                $prev = $now->clone()->subYear();
+                $query->whereBetween('travel_date', [$prev->clone()->startOfYear(), $prev->clone()->endOfYear()]);
+            }
+        }
+
+        $base = clone $query;
+
+        return [
+            'total' => (clone $base)->count(),
+            'approved' => (clone $base)->where('status', 'approved')->count(),
+            'rejected' => (clone $base)->where('status', 'rejected')->count(),
+            'pending' => (clone $base)->whereIn('status', [
+                'pending_pm',
+                'pending_commercial',
+                'pending_hod',
+                'pending_ceo',
+            ])->count(),
+        ];
+    }
+
+    private function calculateGrowth(int $previous, int $current): array
+    {
+        if ($previous === 0) {
+            $percentChange = $current > 0 ? 100 : 0;
+        } else {
+            $percentChange = (($current - $previous) / $previous) * 100;
+        }
+
+        return [
+            'current' => $current,
+            'previous' => $previous,
+            'change' => $current - $previous,
+            'percent' => round($percentChange, 2),
+            'trend' => $current >= $previous ? 'up' : 'down',
+        ];
     }
 }

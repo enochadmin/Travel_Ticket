@@ -20,6 +20,16 @@
             Most Requested Projects
         </a>
         @endhasanyrole
+        @hasanyrole('admin|commercial-director')
+        <a href="{{ route('reports.travel-trend-analysis', $navQuery) }}"
+            class="px-4 py-2 rounded-xl text-sm font-semibold transition {{ request()->routeIs('reports.travel-trend-analysis') ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-700' }}">
+            Travel Trends
+        </a>
+        <a href="{{ route('reports.frequent-travelers', $navQuery) }}"
+            class="px-4 py-2 rounded-xl text-sm font-semibold transition {{ request()->routeIs('reports.frequent-travelers') ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-700' }}">
+            Frequent Travelers
+        </a>
+        @endhasanyrole
     </div>
 </div>
 
