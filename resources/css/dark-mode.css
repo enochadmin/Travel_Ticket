@@ -109,10 +109,14 @@ html.dark .top-bar-shadow {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35) !important;
 }
 
-/* Inline gradient headers used across cards */
-html.dark [style*="background:linear-gradient"],
-html.dark [style*="background: linear-gradient"] {
+/* Inline gradient headers used across cards — exclude the app sidebar */
+html.dark [style*="background:linear-gradient"]:not(.sidebar):not(.sidebar *),
+html.dark [style*="background: linear-gradient"]:not(.sidebar):not(.sidebar *) {
     background: linear-gradient(90deg, #1e293b, #0b1220) !important;
+}
+
+html.dark aside.sidebar {
+    background: linear-gradient(180deg, #0c2d44 0%, #0d547a 100%) !important;
 }
 
 /* Alert / status panels */

@@ -25,6 +25,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReceptionBookingController;
 
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserRegistrationController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SettingsSessionController;
@@ -34,6 +35,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('users/export', [UserController::class, 'export'])->name('users.export')->middleware('role:admin');
     Route::get('users/template', [UserController::class, 'downloadTemplate'])->name('users.template')->middleware('role:admin');
     Route::resource('users', UserController::class)->middleware('role:admin');
+
+    Route::get('user-registrations', [UserRegistrationController::class, 'index'])
+        ->name('user-registrations.index')
+        ->middleware('role:admin');
+    Route::post('user-registrations/{userRegistration}/approve', [UserRegistrationController::class, 'approve'])
+        ->name('user-registrations.approve')
+        ->middleware('role:admin');
+    Route::post('user-registrations/{userRegistration}/reject', [UserRegistrationController::class, 'reject'])
+        ->name('user-registrations.reject')
+        ->middleware('role:admin');
 
     // Project resource routes (except show)
     Route::post('projects/import', [ProjectController::class, 'import'])->name('projects.import')->middleware('role:admin|head-office-director|commercial-director|ceo');

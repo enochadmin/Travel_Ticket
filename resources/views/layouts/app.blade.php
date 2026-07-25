@@ -31,75 +31,147 @@
             font-family: 'Inter', sans-serif;
         }
 
-        .sidebar-link {
-            transition: background 0.2s, color 0.2s;
-        }
-
-        .sidebar-link:hover,
-        .sidebar-link.active {
-            background: rgba(255, 255, 255, 0.12);
-            color: #fff;
-        }
-
-        .sidebar-link.active {
-            border-left: 3px solid #0ea5e9;
+        [x-cloak] {
+            display: none !important;
         }
 
         .top-bar-shadow {
             box-shadow: 0 1px 3px rgba(0, 0, 0, .07);
         }
 
-        /* Animate sidebar icons */
-        .sidebar-link svg {
-            transition: transform 0.2s;
-        }
-
-        .sidebar-link:hover svg {
-            transform: scale(1.12);
-        }
-
-        [x-cloak] {
-            display: none !important;
-        }
-
+        /*
+         * Sticky sidebar: stays in view while main content scrolls.
+         * Without this, long pages (e.g. Travel History) scroll the sidebar away
+         * and top links like Dashboard appear to "disappear".
+         */
         .sidebar {
+            position: sticky;
+            top: 0;
+            align-self: flex-start;
             width: 16rem;
-            transition: width 0.2s ease;
+            height: 100vh;
+            max-height: 100vh;
+            overflow: hidden;
+            z-index: 40;
+            transition: width 0.2s ease, transform 0.2s ease;
+            background: linear-gradient(180deg, #0c2d44 0%, #0d547a 100%);
+        }
+
+        .sidebar nav {
+            min-height: 0;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .sidebar .sidebar-section-label {
+            color: #818cf8;
+        }
+
+        .sidebar .sidebar-link {
+            border-left: 3px solid transparent;
+            color: #bfdbfe;
+            transition: background 0.2s, color 0.2s, border-color 0.2s;
+        }
+
+        .sidebar .sidebar-link:hover,
+        .sidebar .sidebar-link.active {
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+        }
+
+        .sidebar .sidebar-link.active {
+            border-left-color: #0ea5e9;
+        }
+
+        .sidebar .sidebar-link svg {
+            flex-shrink: 0;
+            transition: transform 0.2s;
+            color: inherit;
+        }
+
+        .sidebar .sidebar-link:hover svg {
+            transform: scale(1.08);
+        }
+
+        .sidebar .sidebar-sublink {
+            color: #a5b4fc;
+        }
+
+        .sidebar .sidebar-sublink:hover,
+        .sidebar .sidebar-sublink.active {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.1);
         }
 
         #app-shell[data-sidebar-collapsed="true"] .sidebar {
             width: 5rem;
         }
 
-        @media (max-width: 767px) {
-            .sidebar {
-                width: 5rem;
-            }
-
-            #app-shell[data-sidebar-collapsed="false"] .sidebar {
-                width: 16rem;
-            }
-        }
-
         #app-shell[data-sidebar-collapsed="true"] .sidebar .sidebar-text,
-        #app-shell[data-sidebar-collapsed="true"] .sidebar .sidebar-user-text {
-            display: none;
+        #app-shell[data-sidebar-collapsed="true"] .sidebar .sidebar-user-text,
+        #app-shell[data-sidebar-collapsed="true"] .sidebar .sidebar-submenu {
+            display: none !important;
         }
 
         #app-shell[data-sidebar-collapsed="true"] .sidebar .sidebar-link {
             justify-content: center;
-            padding-left: 0;
-            padding-right: 0;
-        }
-
-        #app-shell[data-sidebar-collapsed="true"] .sidebar .sidebar-link svg {
-            margin-right: 0;
+            padding-left: 0.65rem;
+            padding-right: 0.65rem;
+            gap: 0;
         }
 
         #app-shell[data-sidebar-collapsed="true"] .sidebar .sidebar-logo {
             justify-content: center;
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
         }
 
+        #app-shell[data-sidebar-collapsed="true"] .sidebar .sidebar-logo-title {
+            display: none;
+        }
+
+        #app-shell[data-sidebar-collapsed="true"] .sidebar #sidebar-toggle {
+            right: 0.4rem;
+        }
+
+        .sidebar-backdrop {
+            display: none;
+        }
+
+        @media (max-width: 767px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                height: 100vh;
+                max-height: 100vh;
+                width: 16rem;
+                transform: translateX(-100%);
+                box-shadow: none;
+            }
+
+            #app-shell[data-sidebar-collapsed="false"] .sidebar {
+                transform: translateX(0);
+                width: 16rem;
+                box-shadow: 8px 0 24px rgba(0, 0, 0, 0.25);
+            }
+
+            #app-shell[data-sidebar-collapsed="true"] .sidebar {
+                width: 16rem;
+                transform: translateX(-100%);
+            }
+
+            #app-shell[data-sidebar-collapsed="false"] .sidebar-backdrop {
+                display: block;
+                position: fixed;
+                inset: 0;
+                background: rgba(15, 23, 42, 0.45);
+                z-index: 35;
+            }
+
+            .main-shell {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 
@@ -107,14 +179,15 @@
 
     <div id="app-shell" class="flex min-h-screen" data-sidebar-collapsed="false">
 
+        <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>
+
         {{-- ===========================
         SIDEBAR
         =========================== --}}
-        <aside class="sidebar flex-shrink-0 flex flex-col"
-            style="background: linear-gradient(180deg,#0c2d44 0%,#0d547a 100%); min-height:100vh;">
+        <aside class="sidebar flex-shrink-0 flex flex-col">
 
             {{-- Logo --}}
-            <div class="flex items-center gap-3 px-6 py-5 border-b border-white/10 relative sidebar-logo">
+            <div class="flex items-center gap-3 px-5 py-5 border-b border-white/10 relative sidebar-logo">
                 <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#0ea5e9;">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
@@ -122,13 +195,20 @@
                             d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 004 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
                     </svg>
                 </div>
-                <span class="text-white font-bold text-lg tracking-tight sidebar-text">TravelPass</span>
+                <span class="text-white font-bold text-lg tracking-tight sidebar-text sidebar-logo-title">TravelPass</span>
                 <button id="sidebar-toggle" type="button"
-                    class="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg text-blue-200 hover:text-white hover:bg-white/10 transition"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg text-blue-200 hover:text-white hover:bg-white/10 transition hidden md:inline-flex"
                     aria-label="Toggle sidebar">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M4 6h16M4 12h16M4 18h7" />
+                    </svg>
+                </button>
+                <button id="sidebar-close-mobile" type="button"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg text-blue-200 hover:text-white hover:bg-white/10 transition md:hidden"
+                    aria-label="Close menu">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
@@ -146,7 +226,7 @@
                 {{-- Reception navigation (Dashboard first) --}}
                 @hasrole('reception')
                 <a href="{{ route('reception.dashboard') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-blue-200 text-sm font-medium {{ request()->routeIs('reception.dashboard') ? 'active' : '' }}">
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('reception.dashboard') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -155,7 +235,7 @@
                     <span class="sidebar-text">Dashboard</span>
                 </a>
                 <a href="{{ route('reception.tickets.index') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-blue-200 text-sm font-medium {{ request()->routeIs('reception.tickets.index', 'reception.tickets.show') ? 'active' : '' }}">
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('reception.tickets.index', 'reception.tickets.show') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -164,7 +244,7 @@
                     <span class="sidebar-text">Approved Tickets</span>
                 </a>
                 <a href="{{ route('reception.tickets.archived') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-blue-200 text-sm font-medium {{ request()->routeIs('reception.tickets.archived') ? 'active' : '' }}">
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('reception.tickets.archived') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -177,7 +257,7 @@
                 {{-- Dashboard (all except reception) --}}
                 @unlessrole('reception')
                 <a href="{{ route('dashboard') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-blue-200 text-sm font-medium {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -190,7 +270,7 @@
                 {{-- Travel Requests (admin / director / ceo) --}}
                 @hasanyrole('admin|head-office-director|ceo')
                 <a href="{{ route('travel-requests.index') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('travel-requests.*') && !request()->query('view') ? 'active' : '' }}">
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('travel-requests.*') && !request()->query('view') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -203,7 +283,7 @@
                 {{-- Commercial Director: Travel + History --}}
                 @hasrole('commercial-director')
                 <a href="{{ route('travel-requests.index') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('travel-requests.*') && !request()->query('view') ? 'active' : '' }}">
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('travel-requests.*') && !request()->query('view') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -214,7 +294,7 @@
                 <div x-data="{ historyOpen: {{ request()->routeIs('travel-requests.*') && request()->query('view') ? 'true' : 'false' }} }"
                     class="space-y-1">
                     <button @click="historyOpen = !historyOpen"
-                        class="w-full sidebar-link flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium hover:bg-white/10 transition">
+                        class="w-full sidebar-link flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-white/10 transition">
                         <div class="flex items-center gap-3">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
@@ -228,13 +308,13 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
-                    <div x-show="historyOpen" x-collapse style="display: none;" class="pl-11 space-y-1 sidebar-text">
+                    <div x-show="historyOpen" x-collapse class="pl-11 space-y-1 sidebar-text sidebar-submenu">
                         <a href="{{ route('travel-requests.index', ['view' => 'personal']) }}"
-                            class="block px-3 py-2 rounded-lg text-indigo-300 hover:text-white hover:bg-white/10 text-sm transition {{ request()->query('view') === 'personal' ? 'text-white bg-white/10' : '' }}">
+                            class="sidebar-sublink block px-3 py-2 rounded-lg text-sm transition {{ request()->query('view') === 'personal' ? 'active' : '' }}">
                             My Travel History
                         </a>
                         <a href="{{ route('travel-requests.index', ['view' => 'approved']) }}"
-                            class="block px-3 py-2 rounded-lg text-indigo-300 hover:text-white hover:bg-white/10 text-sm transition {{ request()->query('view') === 'approved' ? 'text-white bg-white/10' : '' }}">
+                            class="sidebar-sublink block px-3 py-2 rounded-lg text-sm transition {{ request()->query('view') === 'approved' ? 'active' : '' }}">
                             Approved History
                         </a>
                     </div>
@@ -244,7 +324,7 @@
                 {{-- Travel History (regular users) --}}
                 @unlessrole('admin|head-office-director|commercial-director|ceo|project-manager')
                 <a href="{{ route('travel-requests.index', ['view' => 'personal']) }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('travel-requests.*') ? 'active' : '' }}">
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('travel-requests.*') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -259,7 +339,7 @@
                 <div x-data="{ historyOpen: {{ request()->routeIs('travel-requests.*') ? 'true' : 'false' }} }"
                     class="space-y-1">
                     <button @click="historyOpen = !historyOpen"
-                        class="w-full sidebar-link flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium hover:bg-white/10 transition">
+                        class="w-full sidebar-link flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-white/10 transition">
                         <div class="flex items-center gap-3">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
@@ -275,13 +355,13 @@
                         </svg>
                     </button>
 
-                    <div x-show="historyOpen" x-collapse style="display: none;" class="pl-11 space-y-1">
+                    <div x-show="historyOpen" x-collapse class="pl-11 space-y-1 sidebar-submenu">
                         <a href="{{ route('travel-requests.index', ['view' => 'personal']) }}"
-                            class="block px-3 py-2 rounded-lg text-indigo-300 hover:text-white hover:bg-white/10 text-sm transition {{ request()->query('view') === 'personal' ? 'text-white' : '' }}">
+                            class="sidebar-sublink block px-3 py-2 rounded-lg text-sm transition {{ request()->query('view') === 'personal' ? 'active' : '' }}">
                             My Travel History
                         </a>
                         <a href="{{ route('travel-requests.index', ['view' => 'project']) }}"
-                            class="block px-3 py-2 rounded-lg text-indigo-300 hover:text-white hover:bg-white/10 text-sm transition {{ request()->query('view') === 'project' ? 'text-white' : '' }}">
+                            class="sidebar-sublink block px-3 py-2 rounded-lg text-sm transition {{ request()->query('view') === 'project' ? 'active' : '' }}">
                             My Projects Travel History
                         </a>
                     </div>
@@ -291,7 +371,7 @@
                 {{-- Projects (admin / director / hod / ceo) --}}
                 @hasanyrole('admin|head-office-director|commercial-director|ceo')
                 <a href="{{ route('projects.index') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('projects.*') ? 'active' : '' }}">
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('projects.*') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -305,7 +385,7 @@
                 @hasrole('project-manager')
                 @if($myProjectId)
                     <a href="{{ route('projects.show', $myProjectId) }}"
-                        class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->is('projects/' . $myProjectId) ? 'active' : '' }}">
+                        class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->is('projects/' . $myProjectId) ? 'active' : '' }}">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -319,13 +399,22 @@
                 {{-- User Management (admin) --}}
                 @hasrole('admin')
                 <a href="{{ route('users.index') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('users.*') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
                     <span class="sidebar-text">User Management </span>
+                </a>
+                <a href="{{ route('user-registrations.index') }}"
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('user-registrations.*') ? 'active' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
+                    <span class="sidebar-text">Registrations</span>
                 </a>
                 @endhasrole
 
@@ -337,10 +426,10 @@
                 {{-- Settings (admin) --}}
                 @hasrole('admin')
                 <div class="pt-4 pb-1 px-3">
-                    <span class="text-indigo-400 text-xs font-semibold uppercase tracking-widest sidebar-text">Settings</span>
+                    <span class="sidebar-section-label text-xs font-semibold uppercase tracking-widest sidebar-text">Settings</span>
                 </div>
                 <a href="{{ route('settings.cities.index') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('settings.cities.*') ? 'active' : '' }}">
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('settings.cities.*') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -351,14 +440,14 @@
                     <span class="sidebar-text">Cities</span>
                 </a>
                 <a href="{{ route('settings.roles.index') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('settings.roles.*') ? 'active' : '' }}">
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('settings.roles.*') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
                     <span class="sidebar-text">Roles</span>
                 </a>
                 <a href="{{ route('settings.session.show') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('settings.session.*') ? 'active' : '' }}">
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('settings.session.*') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
@@ -368,12 +457,12 @@
 
                 {{-- Divider + label --}}
                 <div class="pt-4 pb-1 px-3">
-                    <span class="text-indigo-400 text-xs font-semibold uppercase tracking-widest sidebar-text">Account</span>
+                    <span class="sidebar-section-label text-xs font-semibold uppercase tracking-widest sidebar-text">Account</span>
                 </div>
 
                 {{-- Profile --}}
                 <a href="{{ route('profile.edit') }}"
-                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ request()->routeIs('profile.*') ? 'active' : '' }}">
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('profile.*') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -403,19 +492,29 @@
         {{-- ===========================
         MAIN CONTENT AREA
         =========================== --}}
-        <div class="flex-1 flex flex-col min-w-0">
+        <div class="main-shell flex-1 flex flex-col min-w-0">
 
             {{-- Top bar --}}
-            <header class="bg-white dark:bg-slate-950 top-bar-shadow px-4 py-4 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-10 border-b border-transparent dark:border-slate-800">
-                <div>
-                    @isset($pageTitle)
-                        <h1 class="text-xl font-bold text-gray-800 dark:text-slate-100">{{ $pageTitle }}</h1>
-                    @else
-                        <h1 class="text-xl font-bold text-gray-800 dark:text-slate-100">{{ config('app.name') }}</h1>
-                    @endisset
+            <header class="bg-white dark:bg-slate-950 top-bar-shadow px-4 py-4 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-20 border-b border-transparent dark:border-slate-800">
+                <div class="flex items-center gap-3 min-w-0">
+                    <button id="sidebar-open-mobile" type="button"
+                        class="md:hidden inline-flex items-center justify-center p-2 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition"
+                        aria-label="Open menu">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <div class="min-w-0">
+                        @isset($pageTitle)
+                            <h1 class="text-xl font-bold text-gray-800 dark:text-slate-100 truncate">{{ $pageTitle }}</h1>
+                        @else
+                            <h1 class="text-xl font-bold text-gray-800 dark:text-slate-100 truncate">{{ config('app.name') }}</h1>
+                        @endisset
+                    </div>
                 </div>
-                <div class="flex items-center gap-3">
-                    <span class="text-sm text-gray-500 dark:text-slate-400">{{ now()->format('l, M d Y') }}</span>
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <span class="hidden sm:inline text-sm text-gray-500 dark:text-slate-400">{{ now()->format('l, M d Y') }}</span>
 
                     {{-- Notification Bell --}}
                     @auth
@@ -552,40 +651,58 @@
         (function () {
             const shell = document.getElementById('app-shell');
             const sidebarToggle = document.getElementById('sidebar-toggle');
+            const sidebarOpenMobile = document.getElementById('sidebar-open-mobile');
+            const sidebarCloseMobile = document.getElementById('sidebar-close-mobile');
+            const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+
+            const isMobile = () => window.innerWidth < 768;
 
             const setSidebarState = (collapsed) => {
-                if (shell) {
-                    shell.dataset.sidebarCollapsed = collapsed ? 'true' : 'false';
-                }
-            };
-
-            const applyInitialState = () => {
                 if (!shell) {
                     return;
                 }
+                shell.dataset.sidebarCollapsed = collapsed ? 'true' : 'false';
+                document.body.classList.toggle('overflow-hidden', isMobile() && !collapsed);
+            };
 
-                if (window.innerWidth < 768) {
-                    setSidebarState(true);
-                } else {
-                    setSidebarState(false);
-                }
+            const applyInitialState = () => {
+                // Mobile: closed drawer. Desktop: expanded labels.
+                setSidebarState(isMobile());
             };
 
             if (sidebarToggle) {
                 sidebarToggle.addEventListener('click', () => {
-                    const next = shell && shell.dataset.sidebarCollapsed !== 'true';
-                    setSidebarState(next ? true : false);
+                    if (isMobile()) {
+                        return;
+                    }
+                    const nextCollapsed = shell && shell.dataset.sidebarCollapsed !== 'true';
+                    setSidebarState(!!nextCollapsed);
                 });
             }
 
-            applyInitialState();
-            window.addEventListener('resize', () => {
-                if (window.innerWidth < 768) {
-                    setSidebarState(true);
-                } else {
-                    setSidebarState(false);
-                }
+            if (sidebarOpenMobile) {
+                sidebarOpenMobile.addEventListener('click', () => setSidebarState(false));
+            }
+
+            if (sidebarCloseMobile) {
+                sidebarCloseMobile.addEventListener('click', () => setSidebarState(true));
+            }
+
+            if (sidebarBackdrop) {
+                sidebarBackdrop.addEventListener('click', () => setSidebarState(true));
+            }
+
+            // Close mobile drawer after navigating via a sidebar link
+            document.querySelectorAll('.sidebar a.sidebar-link, .sidebar a.sidebar-sublink').forEach((link) => {
+                link.addEventListener('click', () => {
+                    if (isMobile()) {
+                        setSidebarState(true);
+                    }
+                });
             });
+
+            applyInitialState();
+            window.addEventListener('resize', applyInitialState);
         })();
     </script>
 

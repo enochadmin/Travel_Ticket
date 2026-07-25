@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Project;
 use App\Models\User;
+use App\Models\UserRegistration;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
@@ -69,8 +70,10 @@ class UserController extends Controller
     {
         $roles = Role::all();
         $projects = Project::with('manager')->orderBy('name')->get();
+        $requestedProjectName = UserRegistration::where('user_id', $user->id)
+            ->value('project_name');
 
-        return view('users.edit', compact('user', 'roles', 'projects'));
+        return view('users.edit', compact('user', 'roles', 'projects', 'requestedProjectName'));
     }
 
     public function update(Request $request, User $user)
