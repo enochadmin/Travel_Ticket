@@ -69,6 +69,11 @@
                             This user approves tickets for <strong>{{ $user->managedProject->name }}</strong> (assigned on the project).
                         </p>
                     @endif
+                    @if(!empty($requestedProjectName))
+                        <p class="text-xs text-amber-800 mb-2 rounded-lg bg-amber-50 border border-amber-100 px-3 py-2">
+                            Requested project name at registration: <strong>{{ $requestedProjectName }}</strong> — confirm and select the matching system project below.
+                        </p>
+                    @endif
                     <select name="project_id"
                         class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition @error('project_id') border-red-400 @enderror">
                         <option value="">-- No project --</option>

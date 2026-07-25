@@ -5,7 +5,7 @@
 
 <div x-data="{ reportsOpen: {{ $reportsOpen ? 'true' : 'false' }} }" class="space-y-1">
     <button @click="reportsOpen = !reportsOpen"
-        class="w-full sidebar-link flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-indigo-200 text-sm font-medium {{ $reportsOpen ? 'active' : '' }}">
+        class="w-full sidebar-link flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ $reportsOpen ? 'active' : '' }}">
         <div class="flex items-center gap-3">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                 stroke="currentColor">
@@ -20,34 +20,34 @@
         </svg>
     </button>
 
-    <div x-show="reportsOpen" x-collapse style="display: none;" class="pl-11 space-y-1 sidebar-text">
+    <div x-show="reportsOpen" x-collapse class="pl-11 space-y-1 sidebar-text sidebar-submenu">
         <a href="{{ route('reports.index') }}"
-            class="block px-3 py-2 rounded-lg text-indigo-300 hover:text-white hover:bg-white/10 text-sm transition {{ request()->routeIs('reports.index') ? 'text-white bg-white/10' : '' }}">
+            class="sidebar-sublink block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('reports.index') ? 'active' : '' }}">
             Travel Requests
         </a>
 
         @hasanyrole('admin|commercial-director|project-manager')
         <a href="{{ route('reports.most-traveled-cities') }}"
-            class="block px-3 py-2 rounded-lg text-indigo-300 hover:text-white hover:bg-white/10 text-sm transition {{ request()->routeIs('reports.most-traveled-cities') ? 'text-white bg-white/10' : '' }}">
+            class="sidebar-sublink block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('reports.most-traveled-cities') ? 'active' : '' }}">
             Most Requested Cities
         </a>
         @endhasanyrole
 
         @hasanyrole('admin|commercial-director|head-office-director|ceo')
         <a href="{{ route('reports.most-requested-projects') }}"
-            class="block px-3 py-2 rounded-lg text-indigo-300 hover:text-white hover:bg-white/10 text-sm transition {{ request()->routeIs('reports.most-requested-projects') ? 'text-white bg-white/10' : '' }}">
+            class="sidebar-sublink block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('reports.most-requested-projects') ? 'active' : '' }}">
             Most Requested Projects
         </a>
         @endhasanyrole
 
         @hasanyrole('admin|commercial-director')
         <a href="{{ route('reports.travel-trend-analysis') }}"
-            class="block px-3 py-2 rounded-lg text-indigo-300 hover:text-white hover:bg-white/10 text-sm transition {{ request()->routeIs('reports.travel-trend-analysis') ? 'text-white bg-white/10' : '' }}">
+            class="sidebar-sublink block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('reports.travel-trend-analysis') ? 'active' : '' }}">
             Travel Trends
         </a>
 
         <a href="{{ route('reports.frequent-travelers') }}"
-            class="block px-3 py-2 rounded-lg text-indigo-300 hover:text-white hover:bg-white/10 text-sm transition {{ request()->routeIs('reports.frequent-travelers') ? 'text-white bg-white/10' : '' }}">
+            class="sidebar-sublink block px-3 py-2 rounded-lg text-sm transition {{ request()->routeIs('reports.frequent-travelers') ? 'active' : '' }}">
             Frequent Travelers
         </a>
         @endhasanyrole

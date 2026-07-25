@@ -15,7 +15,7 @@
                 <h1 class="text-4xl font-bold tracking-tight text-slate-900 mb-3">
                      Ethiopian Engineering Corporation 
                 </h1>
-                <p class="text-slate-1200 text-xl font-bold">
+                <p class="text-slate-1200 text-xl font-light">
                     Travel Requests & Approvals
                 </p>
             </div>
@@ -91,9 +91,15 @@
                 </div>
 
                 <!-- Footer hint -->
-                <div class="bg-slate-50 border-t border-slate-200 px-10 py-5 text-center">
+                <div class="bg-slate-50 border-t border-slate-200 px-10 py-5 text-center space-y-2">
                     <p class="text-sm text-slate-600 font-medium">
                         Secure access for EEC team members
+                    </p>
+                    <p class="text-sm text-slate-500">
+                        Need an account?
+                        <a href="{{ route('register') }}" class="font-semibold text-sky-600 hover:text-sky-700">
+                            Request access
+                        </a>
                     </p>
                 </div>
             </div>
