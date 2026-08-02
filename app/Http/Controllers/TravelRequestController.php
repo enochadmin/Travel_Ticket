@@ -223,17 +223,7 @@ class TravelRequestController extends Controller
         if (Auth::user()->hasRole('reception')) {
             abort(403);
         }
-        $validated = $request->validate([
-            'project_id' => 'required|exists:projects,id',
-            'destination' => ['required', 'string', 'max:255', Rule::exists('cities', 'name')->where('is_active', true)],
-            'origin' => ['required', 'string', 'max:255', Rule::exists('cities', 'name')->where('is_active', true)],
-            'passenger_count' => 'required|integer|min:1',
-            'flight_type' => 'required|in:national,international',
-            'travel_date' => 'required|date',
-            'return_date' => 'nullable|date|after_or_equal:travel_date',
-            'purpose' => 'required|string',
-            'remarks' => 'nullable|string',
-        ]);
+        $validated = $this->validateTravelRequest($request);
 
         $user = Auth::user();
         $isPrivileged = $user->hasAnyRole(['admin', 'head-office-director', 'commercial-director', 'ceo']);
@@ -380,16 +370,7 @@ class TravelRequestController extends Controller
             abort(403, 'Cannot edit this request after PM approval.');
         }
 
-        $validated = $request->validate([
-            'destination' => ['required', 'string', 'max:255', Rule::exists('cities', 'name')->where('is_active', true)],
-            'origin' => ['required', 'string', 'max:255', Rule::exists('cities', 'name')->where('is_active', true)],
-            'passenger_count' => 'required|integer|min:1',
-            'flight_type' => 'required|in:national,international',
-            'travel_date' => 'required|date',
-            'return_date' => 'nullable|date|after_or_equal:travel_date',
-            'purpose' => 'required|string',
-            'remarks' => 'nullable|string',
-        ]);
+        $validated = $this->validateTravelRequest($request, includeProject: false);
         $travelRequest->update($validated);
 
         return redirect()->route('travel-requests.index')->with('success', 'Travel request updated successfully.');
@@ -556,5 +537,50 @@ class TravelRequestController extends Controller
         }
 
         abort(403, 'Unauthorized action or invalid status.');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function validateTravelRequest(Request $request, bool $includeProject = true): array
+    {
+        $rules = [
+            'destination' => ['required', 'string', 'max:255', Rule::exists('cities', 'name')->where('is_active', true)],
+            'origin' => ['required', 'string', 'max:255', Rule::exists('cities', 'name')->where('is_active', true)],
+            'passenger_count' => 'required|integer|min:1|max:50',
+            'flight_type' => 'required|in:national,international',
+            'travel_date' => 'required|date',
+            'return_date' => 'nullable|date|after_or_equal:travel_date',
+            'purpose' => 'required|string',
+            'remarks' => 'nullable|string',
+        ];
+
+        if ($includeProject) {
+            $rules['project_id'] = 'required|exists:projects,id';
+        }
+
+        $validated = $request->validate($rules);
+
+        $passengerCount = (int) $validated['passenger_count'];
+        $additionalCount = max(0, $passengerCount - 1);
+
+        if ($additionalCount > 0) {
+            $request->validate([
+                'additional_passengers' => ['required', 'array', 'size:'.$additionalCount],
+                'additional_passengers.*' => ['required', 'string', 'max:255'],
+            ], [
+                'additional_passengers.required' => 'Please enter the full name for each additional passenger.',
+                'additional_passengers.size' => 'Please enter exactly '.$additionalCount.' additional passenger name(s).',
+                'additional_passengers.*.required' => 'Each additional passenger must have a full name (including grandfather).',
+            ]);
+
+            $validated['additional_passengers'] = array_values(
+                array_map('trim', $request->input('additional_passengers', []))
+            );
+        } else {
+            $validated['additional_passengers'] = null;
+        }
+
+        return $validated;
     }
 }

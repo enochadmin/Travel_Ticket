@@ -133,8 +133,49 @@
             right: 0.4rem;
         }
 
+        @media (max-width: 767px) {
+            .sidebar-desktop-toggle {
+                display: none !important;
+            }
+        }
+
+        @media (min-width: 768px) {
+            #sidebar-close-mobile {
+                display: none !important;
+            }
+        }
+
         .sidebar-backdrop {
             display: none;
+        }
+
+        .navbar-date {
+            display: inline-block;
+            flex-shrink: 0;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #64748b;
+            white-space: nowrap;
+        }
+
+        html.dark .navbar-date {
+            color: #cbd5e1;
+        }
+
+        @media (max-width: 639px) {
+            .navbar-date {
+                font-size: 0.75rem;
+            }
+        }
+
+        #sidebar-toggle-header {
+            display: none;
+        }
+
+        @media (min-width: 768px) {
+            #sidebar-toggle-header {
+                display: inline-flex;
+            }
         }
 
         @media (max-width: 767px) {
@@ -197,8 +238,9 @@
                 </div>
                 <span class="text-white font-bold text-lg tracking-tight sidebar-text sidebar-logo-title">TravelPass</span>
                 <button id="sidebar-toggle" type="button"
-                    class="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg text-blue-200 hover:text-white hover:bg-white/10 transition hidden md:inline-flex"
-                    aria-label="Toggle sidebar">
+                    class="sidebar-desktop-toggle absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg text-blue-200 hover:text-white hover:bg-white/10 transition"
+                    aria-label="Toggle sidebar"
+                    aria-expanded="true">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M4 6h16M4 12h16M4 18h7" />
@@ -513,8 +555,19 @@
                         @endisset
                     </div>
                 </div>
-                <div class="flex items-center gap-2 sm:gap-3">
-                    <span class="hidden sm:inline text-sm text-gray-500 dark:text-slate-400">{{ now()->format('l, M d Y') }}</span>
+                <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink-0">
+                    <button id="sidebar-toggle-header" type="button"
+                        class="inline-flex items-center justify-center p-2 rounded-lg text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition"
+                        aria-label="Toggle sidebar">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h7" />
+                        </svg>
+                    </button>
+
+                    <time datetime="{{ now()->toDateString() }}" class="navbar-date" id="navbar-date">
+                        {{ now()->format('l, M j, Y') }}
+                    </time>
 
                     {{-- Notification Bell --}}
                     @auth
@@ -648,62 +701,103 @@
     </div>
 
     <script>
-        (function () {
+        document.addEventListener('DOMContentLoaded', function () {
+            const STORAGE_KEY = 'travelpass.sidebar.collapsed';
             const shell = document.getElementById('app-shell');
             const sidebarToggle = document.getElementById('sidebar-toggle');
+            const sidebarToggleHeader = document.getElementById('sidebar-toggle-header');
             const sidebarOpenMobile = document.getElementById('sidebar-open-mobile');
             const sidebarCloseMobile = document.getElementById('sidebar-close-mobile');
             const sidebarBackdrop = document.getElementById('sidebar-backdrop');
 
-            const isMobile = () => window.innerWidth < 768;
+            if (!shell) {
+                return;
+            }
 
-            const setSidebarState = (collapsed) => {
-                if (!shell) {
-                    return;
-                }
+            const isMobile = () => window.matchMedia('(max-width: 767px)').matches;
+
+            const setSidebarState = (collapsed, persistDesktopPreference) => {
                 shell.dataset.sidebarCollapsed = collapsed ? 'true' : 'false';
                 document.body.classList.toggle('overflow-hidden', isMobile() && !collapsed);
+
+                [sidebarToggle, sidebarToggleHeader].forEach((button) => {
+                    if (button) {
+                        button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                    }
+                });
+
+                if (persistDesktopPreference && !isMobile()) {
+                    try {
+                        localStorage.setItem(STORAGE_KEY, collapsed ? '1' : '0');
+                    } catch (error) {
+                        // Ignore storage errors in restricted browsers.
+                    }
+                }
+            };
+
+            const readDesktopPreference = () => {
+                try {
+                    return localStorage.getItem(STORAGE_KEY) === '1';
+                } catch (error) {
+                    return false;
+                }
             };
 
             const applyInitialState = () => {
-                // Mobile: closed drawer. Desktop: expanded labels.
-                setSidebarState(isMobile());
+                if (isMobile()) {
+                    setSidebarState(true, false);
+                    return;
+                }
+
+                setSidebarState(readDesktopPreference(), false);
             };
 
-            if (sidebarToggle) {
-                sidebarToggle.addEventListener('click', () => {
-                    if (isMobile()) {
-                        return;
-                    }
-                    const nextCollapsed = shell && shell.dataset.sidebarCollapsed !== 'true';
-                    setSidebarState(!!nextCollapsed);
-                });
-            }
+            const toggleDesktopSidebar = () => {
+                if (isMobile()) {
+                    return;
+                }
+
+                const nextCollapsed = shell.dataset.sidebarCollapsed !== 'true';
+                setSidebarState(nextCollapsed, true);
+            };
+
+            [sidebarToggle, sidebarToggleHeader].forEach((button) => {
+                if (button) {
+                    button.addEventListener('click', toggleDesktopSidebar);
+                }
+            });
 
             if (sidebarOpenMobile) {
-                sidebarOpenMobile.addEventListener('click', () => setSidebarState(false));
+                sidebarOpenMobile.addEventListener('click', () => setSidebarState(false, false));
             }
 
             if (sidebarCloseMobile) {
-                sidebarCloseMobile.addEventListener('click', () => setSidebarState(true));
+                sidebarCloseMobile.addEventListener('click', () => setSidebarState(true, false));
             }
 
             if (sidebarBackdrop) {
-                sidebarBackdrop.addEventListener('click', () => setSidebarState(true));
+                sidebarBackdrop.addEventListener('click', () => setSidebarState(true, false));
             }
 
-            // Close mobile drawer after navigating via a sidebar link
             document.querySelectorAll('.sidebar a.sidebar-link, .sidebar a.sidebar-sublink').forEach((link) => {
                 link.addEventListener('click', () => {
                     if (isMobile()) {
-                        setSidebarState(true);
+                        setSidebarState(true, false);
                     }
                 });
             });
 
+            let wasMobile = isMobile();
+            window.addEventListener('resize', () => {
+                const nowMobile = isMobile();
+                if (nowMobile !== wasMobile) {
+                    wasMobile = nowMobile;
+                    applyInitialState();
+                }
+            });
+
             applyInitialState();
-            window.addEventListener('resize', applyInitialState);
-        })();
+        });
     </script>
 
     <!-- Confirmation Modal -->

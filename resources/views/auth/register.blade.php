@@ -1,16 +1,16 @@
-<x-guest-layout>
-    <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-sky-50 px-4 py-12">
-        <div class="w-full max-w-lg">
+<x-auth-layout>
+    <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-sky-50 px-4 py-8 sm:py-12">
+        <div class="w-full max-w-md sm:max-w-lg">
 
-            <div class="text-center mb-10">
-                <div class="flex justify-center items-center mb-6">
+            <div class="text-center mb-8 sm:mb-10">
+                <div class="flex justify-center items-center mb-5 sm:mb-6">
                     <img
                         src="{{ asset('images/eec-logo.png') }}"
                         alt="EEC Travel Logo"
-                        class="h-28 w-auto drop-shadow-md"
+                        class="h-16 sm:h-20 w-auto max-w-[180px] sm:max-w-[220px] object-contain drop-shadow-md"
                     >
                 </div>
-                <h1 class="text-3xl font-bold tracking-tight text-slate-900 mb-2">
+                <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 mb-2">
                     Request Access
                 </h1>
                 <p class="text-slate-600 text-base">
@@ -115,4 +115,4 @@
             </div>
         </div>
     </div>
-</x-guest-layout>
+</x-auth-layout>

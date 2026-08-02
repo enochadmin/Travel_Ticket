@@ -83,6 +83,8 @@
                 @endforeach
             </div>
 
+            @include('travel_requests._passengers_display', ['travelRequest' => $travelRequest])
+
             @if($travelRequest->remarks)
                 <div class="px-6 py-4 border-t border-gray-50">
                     <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">Remarks</p>
