@@ -14,6 +14,7 @@ class TravelRequest extends Model
         'destination',
         'origin',
         'passenger_count',
+        'additional_passengers',
         'flight_type',
         'travel_date',
         'return_date',
@@ -30,10 +31,35 @@ class TravelRequest extends Model
     ];
 
     protected $casts = [
+        'additional_passengers' => 'array',
         'pm_approved_at' => 'datetime',
         'hod_approved_at' => 'datetime',
         'archived_at' => 'datetime',
     ];
+
+    /**
+     * Full names of passengers other than the requester.
+     *
+     * @return array<int, string>
+     */
+    public function additionalPassengerNames(): array
+    {
+        return is_array($this->additional_passengers)
+            ? array_values(array_filter($this->additional_passengers))
+            : [];
+    }
+
+    /**
+     * Requester plus any additional passengers (for display).
+     *
+     * @return array<int, string>
+     */
+    public function allPassengerNames(): array
+    {
+        $names = array_filter([$this->user?->name]);
+
+        return array_merge($names, $this->additionalPassengerNames());
+    }
 
     public function user(): BelongsTo
     {

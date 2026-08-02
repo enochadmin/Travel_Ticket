@@ -158,6 +158,12 @@
                     </div>
                 </section>
 
+                @include('travel_requests._passengers_display', [
+                    'travelRequest' => $ticket,
+                    'wrapperClass' => 'bg-white rounded-3xl border border-slate-100 shadow-sm p-8',
+                    'sectionTitle' => 'All Travelers',
+                ])
+
                 <!-- Approval Trail -->
                 <section class="bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
                     <div class="flex items-center justify-between mb-6">
