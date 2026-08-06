@@ -42,6 +42,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('user-registrations/{userRegistration}/approve', [UserRegistrationController::class, 'approve'])
         ->name('user-registrations.approve')
         ->middleware('role:admin');
+    Route::post('user-registrations/{userRegistration}/approve-with-project', [UserRegistrationController::class, 'approveWithProject'])
+        ->name('user-registrations.approve-with-project')
+        ->middleware('role:admin');
     Route::post('user-registrations/{userRegistration}/reject', [UserRegistrationController::class, 'reject'])
         ->name('user-registrations.reject')
         ->middleware('role:admin');

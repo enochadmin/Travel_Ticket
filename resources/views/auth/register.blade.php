@@ -14,7 +14,7 @@
                     Request Access
                 </h1>
                 <p class="text-slate-600 text-base">
-                    Submit your details for IT Admin approval
+                    Submit your details for IT Admin approval — you'll sign in with the password you choose below
                 </p>
             </div>
 
@@ -65,6 +65,28 @@
                         </div>
 
                         <div>
+                            <x-input-label for="project_id" value="Project" class="text-slate-700 font-semibold text-base" />
+                            <select
+                                id="project_id"
+                                name="project_id"
+                                required
+                                class="block mt-2 w-full bg-white border-slate-300 text-slate-900 focus:border-sky-500 focus:ring-sky-500 rounded-2xl py-3.5 px-5 text-base shadow-sm"
+                            >
+                                <option value="" disabled {{ old('project_id') ? '' : 'selected' }}>Select a project</option>
+                                @foreach ($projects as $id => $name)
+                                    <option value="{{ $id }}" data-name="{{ $name }}" {{ (string) old('project_id') === (string) $id ? 'selected' : '' }}>
+                                        {{ $name }}
+                                    </option>
+                                @endforeach
+                                <option value="other" {{ old('project_id') === 'other' ? 'selected' : '' }}>
+                                    Other (my project isn't listed)
+                                </option>
+                            </select>
+                            <p class="mt-1.5 text-xs text-slate-500">Choose your project, or pick "Other" if it isn't listed.</p>
+                            <x-input-error :messages="$errors->get('project_id')" class="mt-2 text-red-600 text-sm" />
+                        </div>
+
+                        <div id="custom_project_field" class="hidden">
                             <x-input-label for="project_name" value="Project Name" class="text-slate-700 font-semibold text-base" />
                             <x-text-input
                                 id="project_name"
@@ -72,10 +94,9 @@
                                 type="text"
                                 name="project_name"
                                 :value="old('project_name')"
-                                required
                                 placeholder="Enter your project name"
                             />
-                            <p class="mt-1.5 text-xs text-slate-500">Your IT Admin will confirm and link this to the system project.</p>
+                            <p class="mt-1.5 text-xs text-slate-500">Your IT Admin will review this and add it to the system if approved.</p>
                             <x-input-error :messages="$errors->get('project_name')" class="mt-2 text-red-600 text-sm" />
                         </div>
 
@@ -95,11 +116,60 @@
                         </div>
 
                         <div>
+                            <x-input-label for="password" value="Password" class="text-slate-700 font-semibold text-base" />
+                            <x-text-input
+                                id="password"
+                                class="block mt-2 w-full bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-sky-500 focus:ring-sky-500 rounded-2xl py-3.5 px-5 text-base shadow-sm"
+                                type="password"
+                                name="password"
+                                required
+                                autocomplete="new-password"
+                                placeholder="At least 8 characters"
+                            />
+                            <p class="mt-1.5 text-xs text-slate-500">You'll use this password to sign in once your registration is approved.</p>
+                            <x-input-error :messages="$errors->get('password')" class="mt-2 text-red-600 text-sm" />
+                        </div>
+
+                        <div>
+                            <x-input-label for="password_confirmation" value="Confirm Password" class="text-slate-700 font-semibold text-base" />
+                            <x-text-input
+                                id="password_confirmation"
+                                class="block mt-2 w-full bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-sky-500 focus:ring-sky-500 rounded-2xl py-3.5 px-5 text-base shadow-sm"
+                                type="password"
+                                name="password_confirmation"
+                                required
+                                autocomplete="new-password"
+                                placeholder="Re-enter your password"
+                            />
+                            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2 text-red-600 text-sm" />
+                        </div>
+
+                        <div>
                             <x-primary-button class="w-full py-4 text-lg font-bold rounded-2xl bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-400 shadow-lg shadow-sky-500/25 hover:shadow-xl hover:shadow-sky-500/30 active:scale-[0.985] transition-all duration-200">
                                 Submit Registration
                             </x-primary-button>
                         </div>
                     </form>
+
+                    <script>
+                        (function () {
+                            const select = document.getElementById('project_id');
+                            const customField = document.getElementById('custom_project_field');
+                            const customInput = document.getElementById('project_name');
+
+                            function toggleCustomField() {
+                                const isCustom = select.value === 'other';
+                                customField.classList.toggle('hidden', !isCustom);
+                                customInput.required = isCustom;
+                                if (!isCustom) {
+                                    customInput.value = '';
+                                }
+                            }
+
+                            select.addEventListener('change', toggleCustomField);
+                            toggleCustomField();
+                        })();
+                    </script>
                 </div>
 
                 <div class="bg-slate-50 border-t border-slate-200 px-10 py-5 text-center">
