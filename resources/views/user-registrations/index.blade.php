@@ -29,7 +29,7 @@
                 <div>
                     <h2 class="text-lg font-bold text-gray-800">Registered Users</h2>
                     <p class="text-xs text-gray-400 mt-0.5">
-                        Review access requests and approve with the default password
+                        Review access requests — approved users sign in with the password they chose at registration
                         @if ($pendingCount > 0)
                             <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
                                 {{ $pendingCount }} pending
@@ -78,7 +78,17 @@
                             <tr class="hover:bg-indigo-50/30 transition">
                                 <td class="px-6 py-4 font-semibold text-gray-800">{{ $registration->name }}</td>
                                 <td class="px-6 py-4 text-gray-500">{{ $registration->email }}</td>
-                                <td class="px-6 py-4 text-gray-700">{{ $registration->project_name }}</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-gray-700">{{ $registration->project_name }}</span>
+                                        @if ($registration->usesCustomProject())
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-800"
+                                                title="Typed manually by the applicant — not yet in the projects list">
+                                                New project
+                                            </span>
+                                        @endif
+                                    </div>
+                                </td>
                                 <td class="px-6 py-4">
                                     <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">
                                         {{ $registration->roleLabel() }}
@@ -101,8 +111,18 @@
                                 </td>
                                 <td class="px-6 py-4 text-right space-x-2 whitespace-nowrap">
                                     @if ($registration->isPending())
+                                        @if ($registration->usesCustomProject())
+                                            <form action="{{ route('user-registrations.approve-with-project', $registration) }}" method="POST" class="inline"
+                                                onsubmit="return confirm('Approve this registration and add the project to the system? The user will be linked to the new project.');">
+                                                @csrf
+                                                <button type="submit"
+                                                    class="text-xs font-semibold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition">
+                                                    Approve & Add Project
+                                                </button>
+                                            </form>
+                                        @endif
                                         <form action="{{ route('user-registrations.approve', $registration) }}" method="POST" class="inline"
-                                            onsubmit="return confirm('Approve this registration? The user will receive the default password \"password\" and must change it on first login.');">
+                                            onsubmit="return confirm('Approve this registration?');">
                                             @csrf
                                             <button type="submit"
                                                 class="text-xs font-semibold text-green-700 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition">
@@ -146,9 +166,11 @@
         </div>
 
         <p class="text-xs text-gray-400 px-1">
-            After approval, assign the correct system project under
-            <a href="{{ route('users.index') }}" class="text-indigo-600 hover:underline">User Management → Edit</a>
-            using the requested project name as a guide.
+            Registrations that picked a project from the list are linked to it automatically on approval.
+            For <span class="font-semibold text-amber-700">New project</span> requests, use
+            <span class="font-semibold text-indigo-700">Approve & Add Project</span> to create the project and link the user;
+            or use <span class="font-semibold text-green-700">Approve</span> and assign a project later under
+            <a href="{{ route('users.index') }}" class="text-indigo-600 hover:underline">User Management → Edit</a>.
         </p>
     </div>
 </x-app-layout>
