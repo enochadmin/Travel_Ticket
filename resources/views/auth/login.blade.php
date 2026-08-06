@@ -43,17 +43,17 @@
 
                         <div>
                             <x-input-label for="password" :value="__('Password')" class="text-slate-700 font-semibold text-base" />
-                            <div class="relative mt-3">
+                            <div class="mt-3 flex items-stretch gap-2 sm:gap-3">
                                 <x-text-input
                                     id="password"
-                                    class="block w-full bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-sky-500 focus:ring-sky-500 rounded-2xl py-3.5 sm:py-4 px-5 pr-12 text-base shadow-sm transition-all duration-200"
+                                    class="block w-full min-w-0 bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-sky-500 focus:ring-sky-500 rounded-2xl py-3.5 sm:py-4 px-5 text-base shadow-sm transition-all duration-200"
                                     type="password"
                                     name="password"
                                     required
                                     autocomplete="current-password"
                                 />
                                 <button type="button" id="toggle-password"
-                                    class="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg text-slate-400 hover:text-sky-600 focus:outline-none transition"
+                                    class="flex-shrink-0 inline-flex items-center justify-center px-3.5 sm:px-4 rounded-2xl border border-slate-300 bg-white text-slate-400 hover:text-sky-600 hover:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/40 transition"
                                     aria-label="Show password"
                                     title="Show password">
                                     <svg id="eye-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
