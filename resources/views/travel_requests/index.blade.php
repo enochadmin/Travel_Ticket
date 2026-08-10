@@ -34,12 +34,16 @@
                     <h2 class="text-lg font-bold text-gray-800">Travel Requests</h2>
                     <p class="text-xs text-gray-400 mt-0.5">
                         @hasrole('commercial-director')
-                            @if(($filters['view'] ?? '') === 'approved')
-                                Tickets you approved as Commercial Director
-                            @elseif(($filters['view'] ?? '') === 'personal')
+                            @if(($filters['view'] ?? '') === 'personal')
                                 Your personal travel requests
-                            @else
+                            @elseif(($filters['view'] ?? '') === 'all')
                                 All travel requests across every project
+                            @elseif(($filters['status'] ?? '') === 'approved')
+                                Travel requests with approved status
+                            @elseif(($filters['status'] ?? '') === 'rejected')
+                                Travel requests with rejected status
+                            @else
+                                Travel requests approved by the Project Manager, awaiting your approval
                             @endif
                         @else
                             All requests visible to your role
