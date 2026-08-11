@@ -27,6 +27,8 @@ class User extends Authenticatable
         'password',
         'project_id',
         'must_change_password',
+        'job_title',
+        'status',
     ];
 
     /**
@@ -59,6 +61,11 @@ class User extends Authenticatable
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
     }
 
     public function projects(): BelongsToMany
