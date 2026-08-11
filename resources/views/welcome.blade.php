@@ -174,12 +174,12 @@
 <section class="py-16 bg-zinc-900 text-center">
     <div class="max-w-6xl mx-auto grid md:grid-cols-3 gap-8">
         <div>
-            <h2 class="text-4xl font-bold text-sky-400"> <span class="stat-count" data-target="1000" data-suffix="+">0</span> 
+            <h2 class="text-4xl font-bold text-sky-400"> <span class="stat-count" data-target="{{ $employeeCount }}" data-suffix="+">0</span> 
         </h2>
             <p class="text-gray-400">Employees</p>
         </div>
         <div>
-            <h2 class="text-4xl font-bold text-amber-400">  <span class="stat-count" data-target="1200" data-suffix="+">0</span>        
+            <h2 class="text-4xl font-bold text-amber-400">  <span class="stat-count" data-target="{{ $requestCount }}" data-suffix="+">0</span>        
         </h2>
             <p class="text-gray-400">Requests Processed</p>
         </div>

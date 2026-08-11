@@ -1,10 +1,15 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Models\TravelRequest;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('welcome', [
+        'employeeCount' => User::count(),
+        'requestCount' => TravelRequest::count(),
+    ]);
 });
 
 use App\Http\Controllers\DashboardController;
