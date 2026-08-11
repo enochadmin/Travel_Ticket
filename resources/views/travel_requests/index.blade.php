@@ -165,7 +165,7 @@
                                 ];
                             @endphp
                             <tr class="hover:bg-indigo-50/30 transition">
-                                <td class="px-6 py-4 text-gray-400">{{ $request->id }}</td>
+                                <td class="px-6 py-4 text-gray-400">{{ $travelRequests->firstItem() + $loop->index }}</td>
                                 <td class="px-6 py-4 font-semibold text-gray-800">{{ $request->user->name }}</td>
                                 <td class="px-6 py-4 text-gray-500">{{ optional($request->project)->name ?? 'N/A' }}</td>
                                 <td class="px-6 py-4 text-gray-700">{{ $request->destination }}</td>

@@ -490,8 +490,8 @@
             {{-- User card --}}
             <div class="px-4 py-4 border-t border-white/10">
                 <div class="flex items-center gap-3 mb-3">
-                    <div x-data="{ open: false }" class="relative flex-shrink-0">
-                        <button type="button" @click="open = !open" :aria-expanded="open ? 'true' : 'false'"
+                    <div x-data="{ open: false }" class="relative flex-shrink-0" @click.outside="open = false">
+                        <button type="button" @click.stop="open = !open" :aria-expanded="open ? 'true' : 'false'"
                             class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm cursor-pointer ring-2 ring-white/20 hover:ring-sky-400 focus:outline-none transition"
                             style="background:#6366f1;"
                             aria-label="View my profile details"
@@ -500,7 +500,7 @@
                         </button>
 
                         {{-- Profile popup --}}
-                        <div x-show="open" @click.outside="open = false"
+                        <div x-show="open"
                             x-transition:enter="transition ease-out duration-150"
                             x-transition:enter-start="opacity-0 -translate-y-1"
                             x-transition:enter-end="opacity-100 translate-y-0"
@@ -593,8 +593,8 @@
                     {{-- Notification Bell --}}
                     @auth
                         @php $unreadCount = Auth::user()->unreadNotifications->count(); @endphp
-                        <div x-data="{ bellOpen: false }" class="relative">
-                            <button @click="bellOpen = !bellOpen"
+                        <div x-data="{ bellOpen: false }" class="relative" @click.outside="bellOpen = false">
+                            <button @click.stop="bellOpen = !bellOpen"
                                 class="relative p-2 rounded-full text-gray-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950 focus:outline-none transition">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
@@ -608,7 +608,7 @@
                             </button>
 
                             {{-- Bell Dropdown --}}
-                            <div x-show="bellOpen" @click.outside="bellOpen = false" x-transition
+                            <div x-show="bellOpen" x-transition
                                 class="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-700 z-50 overflow-hidden"
                                 style="display: none;">
 

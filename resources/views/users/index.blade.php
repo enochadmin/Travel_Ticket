@@ -134,6 +134,7 @@
                 <table class="min-w-full text-sm">
                     <thead>
                         <tr class="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            <th class="px-6 py-3">#</th>
                             <th class="px-6 py-3">User</th>
                             <th class="px-6 py-3">Email</th>
                             <th class="px-6 py-3">Role</th>
@@ -144,6 +145,7 @@
                     <tbody class="divide-y divide-gray-50">
                         @foreach ($users as $user)
                             <tr class="hover:bg-indigo-50/30 transition">
+                                <td class="px-6 py-4 text-gray-400">{{ $users->firstItem() + $loop->index }}</td>
                                 <td class="px-6 py-4 font-semibold text-gray-800">{{ $user->name }}</td>
                                 <td class="px-6 py-4 text-gray-500">{{ $user->email }}</td>
                                 <td class="px-6 py-4">
