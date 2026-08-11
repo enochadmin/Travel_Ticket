@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'TravelPass') }}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/favicon.svg') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/eec-logo.png') }}">
 
     <script>
         (function () {
@@ -488,9 +490,66 @@
             {{-- User card --}}
             <div class="px-4 py-4 border-t border-white/10">
                 <div class="flex items-center gap-3 mb-3">
-                    <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm"
-                        style="background:#6366f1;">
-                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                    <div x-data="{ open: false }" class="relative flex-shrink-0" @click.outside="open = false">
+                        <button type="button" @click.stop="open = !open" :aria-expanded="open ? 'true' : 'false'"
+                            class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm cursor-pointer ring-2 ring-white/20 hover:ring-sky-400 focus:outline-none transition"
+                            style="background:#6366f1;"
+                            aria-label="View my profile details"
+                            title="View profile details">
+                            {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                        </button>
+
+                        {{-- Profile popup --}}
+                        <div x-show="open"
+                            x-transition:enter="transition ease-out duration-150"
+                            x-transition:enter-start="opacity-0 -translate-y-1"
+                            x-transition:enter-end="opacity-100 translate-y-0"
+                            x-transition:leave="transition ease-in duration-100"
+                            x-transition:leave-start="opacity-100"
+                            x-transition:leave-end="opacity-0"
+                            class="absolute bottom-full left-0 mb-3 w-64 rounded-2xl bg-white shadow-2xl border border-gray-100 z-50 overflow-hidden"
+                            style="display: none;">
+
+                            <div class="px-4 py-4" style="background: linear-gradient(135deg,#0c2d44,#0d547a);">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
+                                        style="background:#6366f1;">
+                                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="text-white text-sm font-bold truncate">{{ Auth::user()->name }}</p>
+                                        <p class="text-indigo-300 text-xs truncate">
+                                            {{ Auth::user()->getRoleNames()->first() ?? 'user' }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="px-4 py-3 space-y-3">
+                                <div>
+                                    <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Full Name</p>
+                                    <p class="text-sm font-semibold text-gray-800 mt-0.5">{{ Auth::user()->name }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Job Title</p>
+                                    <p class="text-sm font-semibold text-gray-800 mt-0.5">{{ Auth::user()->job_title ?: 'Not set' }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Status</p>
+                                    @if(Auth::user()->isActive())
+                                        <span class="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                            Active
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                            Inactive
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="min-w-0 sidebar-user-text">
                         <p class="text-white text-sm font-semibold truncate">{{ Auth::user()->name }}</p>
@@ -534,8 +593,8 @@
                     {{-- Notification Bell --}}
                     @auth
                         @php $unreadCount = Auth::user()->unreadNotifications->count(); @endphp
-                        <div x-data="{ bellOpen: false }" class="relative">
-                            <button @click="bellOpen = !bellOpen"
+                        <div x-data="{ bellOpen: false }" class="relative" @click.outside="bellOpen = false">
+                            <button @click.stop="bellOpen = !bellOpen"
                                 class="relative p-2 rounded-full text-gray-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950 focus:outline-none transition">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
@@ -549,7 +608,7 @@
                             </button>
 
                             {{-- Bell Dropdown --}}
-                            <div x-show="bellOpen" @click.outside="bellOpen = false" x-transition
+                            <div x-show="bellOpen" x-transition
                                 class="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-700 z-50 overflow-hidden"
                                 style="display: none;">
 

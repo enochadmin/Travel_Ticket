@@ -15,7 +15,7 @@
         @endif
 
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+            <div class="px-6 py-5 border-b border-gray-100 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                     <h2 class="text-lg font-bold text-gray-800">System Users</h2>
                     <p class="text-xs text-gray-400 mt-0.5">Manage users, roles and project assignments</p>
@@ -24,9 +24,9 @@
                 {{-- Search Form --}}
                 <form method="GET" action="{{ route('users.index') }}" class="flex items-center gap-2">
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="Search users..."
-                        class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        class="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                     <button type="submit"
-                        class="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition flex items-center gap-2">
+                        class="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition flex items-center gap-2 flex-shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -35,14 +35,14 @@
                     </button>
                     @if(request('search'))
                         <a href="{{ route('users.index') }}"
-                            class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">
+                            class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition flex-shrink-0">
                             Clear
                         </a>
                     @endif
                 </form>
 
                 {{-- Actions Container --}}
-                <div class="flex items-center gap-3" x-data="{ showImportModal: false }">
+                <div class="flex flex-wrap items-center gap-2" x-data="{ showImportModal: false }">
                     {{-- Export Button --}}
                     <a href="{{ route('users.export') }}"
                         class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
@@ -66,7 +66,7 @@
                     </button>
 
                     <a href="{{ route('users.create') }}"
-                        class="inline-flex items-center gap-2 text-sm font-semibold text-white px-4 py-2.5 rounded-xl transition"
+                        class="inline-flex items-center justify-center gap-2 text-sm font-semibold text-white px-4 py-2.5 rounded-xl transition flex-1 sm:flex-none"
                         style="background: linear-gradient(135deg,#10b981,#34d399);">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
@@ -134,6 +134,7 @@
                 <table class="min-w-full text-sm">
                     <thead>
                         <tr class="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            <th class="px-6 py-3">#</th>
                             <th class="px-6 py-3">User</th>
                             <th class="px-6 py-3">Email</th>
                             <th class="px-6 py-3">Role</th>
@@ -144,6 +145,7 @@
                     <tbody class="divide-y divide-gray-50">
                         @foreach ($users as $user)
                             <tr class="hover:bg-indigo-50/30 transition">
+                                <td class="px-6 py-4 text-gray-400">{{ $users->firstItem() + $loop->index }}</td>
                                 <td class="px-6 py-4 font-semibold text-gray-800">{{ $user->name }}</td>
                                 <td class="px-6 py-4 text-gray-500">{{ $user->email }}</td>
                                 <td class="px-6 py-4">
