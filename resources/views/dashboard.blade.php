@@ -637,10 +637,11 @@
                 <p class="text-xs font-semibold uppercase tracking-wider text-red-700 dark:text-red-400 group-hover:text-red-800 dark:group-hover:text-red-300">Rejected</p>
                 <p class="mt-3 text-4xl font-bold text-red-800 dark:text-red-300">{{ $rejected }}</p>
             </a>
-            <div class="rounded-2xl border border-indigo-200 bg-indigo-50 dark:bg-indigo-950/30 dark:border-indigo-900 p-6">
-                <p class="text-xs font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-400">Total</p>
+            <a href="{{ route('travel-requests.index', ['view' => 'all']) }}" 
+               class="group rounded-2xl border border-indigo-200 bg-indigo-50 dark:bg-indigo-950/30 dark:border-indigo-900 p-6 hover:shadow-lg hover:border-indigo-300 transition-all duration-200 cursor-pointer">
+                <p class="text-xs font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-400 group-hover:text-indigo-800 dark:group-hover:text-indigo-300">Total</p>
                 <p class="mt-3 text-4xl font-bold text-indigo-800 dark:text-indigo-300">{{ $totalRequests }}</p>
-            </div>
+            </a>
         </div>
 
         {{-- Trend Cards --}}

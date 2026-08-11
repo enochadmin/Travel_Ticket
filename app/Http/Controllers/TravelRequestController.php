@@ -75,13 +75,18 @@ class TravelRequestController extends Controller
         $query = TravelRequest::with(['user', 'project']);
         $viewType = $request->query('view');
 
-        if ($user->hasAnyRole(['admin', 'ceo', 'head-office-director', 'commercial-director'])) {
-            if ($user->hasRole('commercial-director') && $viewType === 'personal') {
+        if ($user->hasRole('commercial-director')) {
+            if ($viewType === 'personal') {
                 $query->where('user_id', $user->id);
-            } elseif ($user->hasRole('commercial-director') && $viewType === 'approved') {
-                // Show only tickets approved by PM (pending_commercial status)
+            } elseif ($viewType === 'all') {
+                // Total card: every request in the system (no default filter).
+            } elseif (($viewType === 'approved' || $viewType === null) && ! $request->filled('status')) {
+                // Default Travel Requests tab and "approved" history: only requests approved by the PM
+                // (i.e. awaiting the Commercial Director's decision). Explicit ?status= filters take precedence.
                 $query->where('status', 'pending_commercial');
             }
+        } elseif ($user->hasAnyRole(['admin', 'ceo', 'head-office-director'])) {
+            // Unrestricted roles see everything (filters below still apply).
         } elseif ($user->hasRole('project-manager')) {
             if ($viewType === 'personal') {
                 $query->where('user_id', $user->id);
