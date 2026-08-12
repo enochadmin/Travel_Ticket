@@ -41,6 +41,7 @@ class UserRegistrationController extends Controller
 
     public function approve(UserRegistration $userRegistration): RedirectResponse
     {
+        //User Registration to be approved
         if (! $userRegistration->isPending()) {
             return redirect()
                 ->route('user-registrations.index')

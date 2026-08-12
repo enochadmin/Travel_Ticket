@@ -78,15 +78,21 @@ class User extends Authenticatable
         return $this->hasOne(Project::class, 'manager_id');
     }
 
-    /** Project this user may approve tickets for (manager_id only). */
+    /** Project this user may approve tickets for (manager_id only) — legacy single-project helper. */
     public function approverProjectId(): ?int
     {
         return $this->managedProject?->id;
     }
 
+    /** All project ids this user may approve tickets for (every project where they are manager_id). */
+    public function approverProjectIds()
+    {
+        return Project::where('manager_id', $this->id)->pluck('id');
+    }
+
     public function isApproverForProject(int $projectId): bool
     {
-        return $this->approverProjectId() === $projectId;
+        return $this->approverProjectIds()->contains($projectId);
     }
 
     public function memberProjectIds()

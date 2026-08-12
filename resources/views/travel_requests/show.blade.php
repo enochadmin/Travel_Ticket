@@ -24,9 +24,9 @@
             'rejected' => ['label' => 'Rejected', 'color' => 'bg-red-100 text-red-800'],
         ];
         $s = $statusMap[$travelRequest->status] ?? ['label' => $travelRequest->status, 'color' => 'bg-gray-100 text-gray-700'];
-        $pmProjectId = Auth::user()->hasRole('project-manager')
-            ? Auth::user()->approverProjectId()
-            : null;
+        $pmProjectIds = Auth::user()->hasRole('project-manager')
+            ? Auth::user()->approverProjectIds()
+            : collect();
     @endphp
 
     <div class="max-w-3xl space-y-5">
@@ -115,7 +115,7 @@
         {{-- Approval Actions --}}
         <div x-data="{ rejectModal: false, rejectAction: '' }" class="flex flex-wrap gap-3 items-center">
 
-            @if(Auth::user()->hasRole('project-manager') && $travelRequest->status === 'pending_pm' && $pmProjectId && (int) $pmProjectId === (int) $travelRequest->project_id)
+            @if(Auth::user()->hasRole('project-manager') && $travelRequest->status === 'pending_pm' && $pmProjectIds->contains((int) $travelRequest->project_id))
                 <form action="{{ route('travel-requests.approve', $travelRequest) }}" method="POST">
                     @csrf @method('PATCH')
                     <button
