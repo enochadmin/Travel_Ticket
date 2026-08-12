@@ -68,7 +68,8 @@ class MobileTravelRequestController extends MobileApiController
             if ($viewType === 'personal') {
                 $query->where('user_id', $user->id);
             } else {
-                $query->where('project_id', $user->approverProjectId() ?? -1);
+                $pmProjectIds = $user->approverProjectIds();
+                $query->whereIn('project_id', $pmProjectIds->isEmpty() ? [-1] : $pmProjectIds);
             }
         } else {
             $query->where('user_id', $user->id);
@@ -188,9 +189,9 @@ class MobileTravelRequestController extends MobileApiController
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
-        $pmProjectId = $user->hasRole('project-manager') ? $user->approverProjectId() : null;
+        $pmProjectIds = $user->hasRole('project-manager') ? $user->approverProjectIds() : collect();
 
-        if ($user->hasRole('project-manager') && $travelRequest->status === 'pending_pm' && $pmProjectId && (int) $travelRequest->project_id === (int) $pmProjectId) {
+        if ($user->hasRole('project-manager') && $travelRequest->status === 'pending_pm' && $pmProjectIds->contains((int) $travelRequest->project_id)) {
             $travelRequest->update([
                 'status' => 'pending_commercial',
                 'pm_id' => $user->id,
@@ -284,9 +285,9 @@ class MobileTravelRequestController extends MobileApiController
             'rejection_reason' => ['required', 'string', 'max:1000'],
         ])['rejection_reason'];
 
-        $pmProjectId = $user->hasRole('project-manager') ? $user->approverProjectId() : null;
+        $pmProjectIds = $user->hasRole('project-manager') ? $user->approverProjectIds() : collect();
 
-        if ($user->hasRole('project-manager') && $travelRequest->status === 'pending_pm' && $pmProjectId && (int) $travelRequest->project_id === (int) $pmProjectId) {
+        if ($user->hasRole('project-manager') && $travelRequest->status === 'pending_pm' && $pmProjectIds->contains((int) $travelRequest->project_id)) {
             $travelRequest->update([
                 'status' => 'rejected',
                 'pm_id' => $user->id,
@@ -346,10 +347,10 @@ class MobileTravelRequestController extends MobileApiController
         }
 
         if ($user->hasRole('project-manager')) {
-            $pmProjectId = $user->approverProjectId();
+            $pmProjectIds = $user->approverProjectIds();
 
             return (int) $travelRequest->user_id === (int) $user->id
-                || ($pmProjectId && (int) $travelRequest->project_id === (int) $pmProjectId);
+                || $pmProjectIds->contains((int) $travelRequest->project_id);
         }
 
         return (int) $travelRequest->user_id === (int) $user->id;
