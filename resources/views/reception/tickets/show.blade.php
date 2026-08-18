@@ -42,7 +42,7 @@
             : route('reception.tickets.index', $routeParams);
     @endphp
 
-    <div x-data="{ processModal: false, bookModal: false }">
+    <div x-data="{ processModal: false, bookModal: false, rejectModal: false }">
     <div class="mx-auto max-w-7xl space-y-8">
         <!-- Hero Header -->
         <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
@@ -284,6 +284,11 @@
                             <span>Process &amp; Create Booking</span>
                         </button>
 
+                        <button type="button" @click="rejectModal = true"
+                                class="w-full py-4 bg-red-600 hover:bg-red-700 transition-colors text-white font-semibold rounded-2xl flex items-center justify-center gap-2 text-base">
+                            <span>Reject Ticket</span>
+                        </button>
+
                         <div class="flex gap-3 pt-2">
                             <a href="{{ $backRoute }}" 
                                class="flex-1 py-4 border border-slate-300 hover:bg-slate-50 transition-colors text-slate-700 font-semibold rounded-2xl text-center">
@@ -306,7 +311,7 @@
             <h3 class="text-xl font-semibold">Confirm Processing</h3>
             <p class="mt-3 text-slate-600">Mark ticket #{{ $ticket->id }} as processed and archive it?</p>
             <div class="flex gap-3 mt-8">
-                <form method="POST" action="{{ route('reception.tickets.process') }}" class="flex-1">
+                <form method="POST" action="{{ route('reception.tickets.process') }}" class="flex-1" data-prevent-double-submit data-submitting-text="Processing...">
                     @csrf
                     <input type="hidden" name="ticket_ids[]" value="{{ $ticket->id }}">
                     <button type="submit" class="w-full py-3.5 bg-emerald-600 text-white font-semibold rounded-2xl">Yes, Process</button>
@@ -322,7 +327,7 @@
             <h3 class="text-xl font-semibold">Create Booking?</h3>
             <p class="mt-3 text-slate-600">Process ticket #{{ $ticket->id }} and proceed to booking creation.</p>
             <div class="flex gap-3 mt-8">
-                <form method="POST" action="{{ route('reception.tickets.process_and_book') }}" class="flex-1">
+                <form method="POST" action="{{ route('reception.tickets.process_and_book') }}" class="flex-1" data-prevent-double-submit data-submitting-text="Processing...">
                     @csrf
                     <input type="hidden" name="ticket_ids[]" value="{{ $ticket->id }}">
                     <button type="submit" class="w-full py-3.5 bg-indigo-600 text-white font-semibold rounded-2xl">Continue</button>
@@ -332,5 +337,49 @@
             </div>
         </div>
     </div>
+
+    <div x-show="rejectModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8" @click.outside="rejectModal = false">
+            <h3 class="text-xl font-semibold text-red-600">Reject Ticket #{{ $ticket->id }}</h3>
+            <p class="mt-3 text-slate-600">This ticket is fully approved. Rejecting it (e.g. duplicate/repeated request) will notify the requester, admins and commercial directors with the reason below.</p>
+            <form method="POST" action="{{ route('reception.tickets.reject', $ticket) }}" class="mt-6" data-prevent-double-submit data-submitting-text="Rejecting...">
+                @csrf
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Rejection Reason <span class="text-red-500">*</span></label>
+                <textarea name="rejection_reason" rows="4" required
+                    placeholder="e.g. Duplicate request — an identical ticket already exists."
+                    class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-transparent resize-none"></textarea>
+                <div class="flex gap-3 mt-6">
+                    <button type="submit"
+                        class="flex-1 py-3.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-2xl transition">
+                        Confirm Rejection
+                    </button>
+                    <button type="button" @click="rejectModal = false"
+                        class="flex-1 py-3.5 border border-slate-300 text-slate-700 font-semibold rounded-2xl hover:bg-slate-50 transition">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
+    </div>
+
+    <script>
+        (function () {
+            document.querySelectorAll('form[data-prevent-double-submit]').forEach(function (form) {
+                form.addEventListener('submit', function (e) {
+                    if (form.dataset.submitting === 'true') {
+                        e.preventDefault();
+                        return;
+                    }
+                    form.dataset.submitting = 'true';
+                    var btn = form.querySelector('button[type="submit"]');
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.dataset.originalHtml = btn.innerHTML;
+                        btn.innerHTML = form.getAttribute('data-submitting-text') || 'Saving...';
+                    }
+                });
+            });
+        })();
+    </script>
 </x-app-layout>

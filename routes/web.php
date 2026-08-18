@@ -84,6 +84,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('reception/tickets/process-and-book', [ReceptionTicketController::class, 'processAndBook'])
         ->name('reception.tickets.process_and_book')
         ->middleware('role:reception');
+    Route::post('reception/tickets/{ticket}/reject', [ReceptionTicketController::class, 'reject'])
+        ->name('reception.tickets.reject')
+        ->middleware('role:reception');
     Route::get('reception/bookings/create', [ReceptionBookingController::class, 'create'])
         ->name('reception.bookings.create')
         ->middleware('role:reception');

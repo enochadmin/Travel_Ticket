@@ -31,7 +31,7 @@
 
             <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
                 <div class="px-8 pt-8 pb-10 sm:px-10">
-                    <form method="POST" action="{{ route('register') }}" class="space-y-5">
+                    <form method="POST" action="{{ route('register') }}" class="space-y-5" data-prevent-double-submit data-submitting-text="Submitting...">
                         @csrf
 
                         <div>
@@ -168,6 +168,26 @@
 
                             select.addEventListener('change', toggleCustomField);
                             toggleCustomField();
+                        })();
+                    </script>
+
+                    <script>
+                        (function () {
+                            document.querySelectorAll('form[data-prevent-double-submit]').forEach(function (form) {
+                                form.addEventListener('submit', function (e) {
+                                    if (form.dataset.submitting === 'true') {
+                                        e.preventDefault();
+                                        return;
+                                    }
+                                    form.dataset.submitting = 'true';
+                                    var btn = form.querySelector('button[type="submit"]');
+                                    if (btn) {
+                                        btn.disabled = true;
+                                        btn.dataset.originalHtml = btn.innerHTML;
+                                        btn.innerHTML = form.getAttribute('data-submitting-text') || 'Saving...';
+                                    }
+                                });
+                            });
                         })();
                     </script>
                 </div>

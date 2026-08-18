@@ -8,7 +8,8 @@
                 <p class="text-xs text-gray-400 mt-0.5">You can only edit requests still awaiting PM review</p>
             </div>
 
-            <form action="{{ route('travel-requests.update', $travelRequest) }}" method="POST" class="p-6 space-y-5">
+            <form action="{{ route('travel-requests.update', $travelRequest) }}" method="POST" class="p-6 space-y-5"
+                data-prevent-double-submit data-submitting-text="Updating...">
                 @csrf
                 @method('PUT')
 
@@ -91,4 +92,24 @@
             </form>
         </div>
     </div>
+
+    <script>
+        (function () {
+            document.querySelectorAll('form[data-prevent-double-submit]').forEach(function (form) {
+                form.addEventListener('submit', function (e) {
+                    if (form.dataset.submitting === 'true') {
+                        e.preventDefault();
+                        return;
+                    }
+                    form.dataset.submitting = 'true';
+                    var btn = form.querySelector('button[type="submit"]');
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.dataset.originalHtml = btn.innerHTML;
+                        btn.innerHTML = form.getAttribute('data-submitting-text') || 'Saving...';
+                    }
+                });
+            });
+        })();
+    </script>
 </x-app-layout>

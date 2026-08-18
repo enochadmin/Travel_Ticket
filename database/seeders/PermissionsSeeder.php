@@ -14,6 +14,7 @@ class PermissionsSeeder extends Seeder
     {
         $permissions = [
             'edit own ticket',
+            'delete own ticket',
         ];
 
         foreach ($permissions as $permission) {

@@ -18,15 +18,21 @@ class RolesAndPermissionsSeeder extends Seeder
         }
 
         // Create permissions
-        $permissions = ['edit own ticket'];
+        $permissions = ['edit own ticket', 'delete own ticket'];
         foreach ($permissions as $permission) {
             \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $permission]);
         }
 
-        // Assign 'edit own ticket' permission to user role
+        // Assign 'edit own ticket' and 'delete own ticket' permissions to user role
         $userRole = \Spatie\Permission\Models\Role::where('name', 'user')->first();
         if ($userRole) {
-            $userRole->givePermissionTo('edit own ticket');
+            $userRole->givePermissionTo(['edit own ticket', 'delete own ticket']);
+        }
+
+        // Project managers also raise their own tickets, so they get the same self-service permissions.
+        $pmRole = \Spatie\Permission\Models\Role::where('name', 'project-manager')->first();
+        if ($pmRole) {
+            $pmRole->givePermissionTo(['edit own ticket', 'delete own ticket']);
         }
 
         $admin = \App\Models\User::firstOrCreate([

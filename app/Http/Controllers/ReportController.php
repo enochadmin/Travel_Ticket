@@ -422,7 +422,10 @@ class ReportController extends Controller
         $query = $this->reportQuery($request);
         $limit = $request->get('limit', 25);
 
-        // Get users sorted by request count
+        // Only fully processed trips count: approved tickets archived by Reception.
+        $query->where('status', 'approved')->whereNotNull('archived_at');
+
+        // Get users sorted by trip count
         $travelers = $query
             ->selectRaw('user_id, COUNT(*) as trip_count, GROUP_CONCAT(DISTINCT destination) as destinations, GROUP_CONCAT(DISTINCT project_id) as project_ids')
             ->groupBy('user_id')
@@ -481,6 +484,9 @@ class ReportController extends Controller
     public function exportFrequentTravelers(Request $request): BinaryFileResponse
     {
         $query = $this->reportQuery($request);
+
+        // Only fully processed trips count: approved tickets archived by Reception.
+        $query->where('status', 'approved')->whereNotNull('archived_at');
 
         // Get all travelers (no limit)
         $travelers = $query

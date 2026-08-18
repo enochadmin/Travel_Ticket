@@ -20,6 +20,10 @@ class NotificationController extends Controller
             if ($ticketId) {
                 return redirect()->route('travel-requests.show', $ticketId);
             }
+            $registrationId = $notification->data['registration_id'] ?? null;
+            if ($registrationId) {
+                return redirect()->route('user-registrations.index');
+            }
         }
 
         return redirect()->route('dashboard');
