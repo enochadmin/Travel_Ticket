@@ -135,9 +135,17 @@ class DashboardController extends Controller
             $data['monthTrendPercent'] = $lastMonth > 0 
                 ? round((($currentMonth - $lastMonth) / $lastMonth) * 100, 2)
                 : ($currentMonth > 0 ? 100 : 0);
+            $data['trendChartLabels'] = [
+                $now->clone()->subMonth()->format('M Y'),
+                $now->format('M Y'),
+            ];
+            $data['trendChartData'] = [$lastMonth, $currentMonth];
 
-            // Top travelers
+            // Top travelers — count only fully processed trips: approved tickets
+            // that were processed/archived by Reception.
             $data['topTravelers'] = TravelRequest::selectRaw('user_id, COUNT(*) as trip_count')
+                ->where('status', 'approved')
+                ->whereNotNull('archived_at')
                 ->groupBy('user_id')
                 ->orderByRaw('COUNT(*) DESC')
                 ->limit(5)

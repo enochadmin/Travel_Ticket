@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\ReceptionTicket;
 use App\Models\Project;
+use App\Models\User;
+use App\Notifications\TicketStatusUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -98,6 +100,52 @@ class ReceptionTicketController extends Controller
 
         $ticket->load(['user', 'project', 'pm', 'hod']);
         return view('reception.tickets.show', compact('ticket'));
+    }
+
+    /**
+     * Reject an already-approved ticket (e.g. duplicate/repeated request).
+     * The rejection reason stays on the ticket and admins + commercial
+     * directors are notified.
+     */
+    public function reject(Request $request, ReceptionTicket $ticket)
+    {
+        if ($ticket->status !== 'approved') {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'rejection_reason' => 'required|string|max:1000',
+        ]);
+
+        $ticket->update([
+            'status' => 'rejected',
+            'rejection_reason' => $validated['rejection_reason'],
+        ]);
+
+        $receptionUser = Auth::user();
+        $message = 'Ticket ' . $ticket->origin . ' → ' . $ticket->destination
+            . ' (#' . $ticket->id . ') was rejected by Reception (' . $receptionUser->name . '). Reason: '
+            . $validated['rejection_reason'];
+
+        // Notify the requester
+        if ($ticket->user) {
+            $ticket->user->notify(new TicketStatusUpdated($ticket, 'Your ticket for ' . $ticket->destination . ' was rejected by Reception. Reason: ' . $validated['rejection_reason'], 'error'));
+        }
+
+        // Notify all admins
+        $admins = User::role('admin')->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new TicketStatusUpdated($ticket, $message, 'error'));
+        }
+
+        // Notify all commercial directors
+        $directors = User::role('commercial-director')->get();
+        foreach ($directors as $director) {
+            $director->notify(new TicketStatusUpdated($ticket, $message, 'error'));
+        }
+
+        return redirect()->route('reception.tickets.index')
+            ->with('success', 'Ticket rejected. The requester, admins and commercial directors have been notified.');
     }
 
     public function export(Request $request)

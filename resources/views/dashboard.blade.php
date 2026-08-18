@@ -670,6 +670,10 @@
                     </div>
                 </div>
                 <p class="text-sm text-blue-600 dark:text-blue-400">Last month: <span class="font-bold">{{ $lastMonthRequests }}</span> requests</p>
+
+                <div class="mt-5" style="height: 130px;">
+                    <canvas id="monthTrendChart"></canvas>
+                </div>
             </div>
 
             {{-- Request Status Chart --}}
@@ -777,6 +781,52 @@
                         plugins: {
                             legend: { position: 'bottom', labels: { font: { family: "'Inter', sans-serif" } } },
                             tooltip: { backgroundColor: 'rgba(17, 24, 39, 0.9)', padding: 12, cornerRadius: 8 }
+                        }
+                    }
+                });
+            }
+
+            // Month Trend Chart (This Month vs Last Month)
+            const trendCtx = document.getElementById('monthTrendChart');
+            if (trendCtx) {
+                new Chart(trendCtx.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: {!! json_encode($trendChartLabels) !!},
+                        datasets: [{
+                            label: 'Requests',
+                            data: {!! json_encode($trendChartData) !!},
+                            borderColor: '#0284c7',
+                            backgroundColor: 'rgba(2, 132, 199, 0.12)',
+                            fill: true,
+                            tension: 0.3,
+                            pointBackgroundColor: '#0284c7',
+                            pointBorderColor: '#ffffff',
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                                padding: 10,
+                                cornerRadius: 8,
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1, color: textColor },
+                                grid: { color: gridColor }
+                            },
+                            x: {
+                                ticks: { color: textColor },
+                                grid: { display: false }
+                            }
                         }
                     }
                 });

@@ -116,7 +116,7 @@
         <div x-data="{ rejectModal: false, rejectAction: '' }" class="flex flex-wrap gap-3 items-center">
 
             @if(Auth::user()->hasRole('project-manager') && $travelRequest->status === 'pending_pm' && $pmProjectIds->contains((int) $travelRequest->project_id))
-                <form action="{{ route('travel-requests.approve', $travelRequest) }}" method="POST">
+                <form action="{{ route('travel-requests.approve', $travelRequest) }}" method="POST" data-prevent-double-submit data-submitting-text="Approving...">
                     @csrf @method('PATCH')
                     <button
                         class="px-5 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm font-semibold transition">✓
@@ -129,7 +129,7 @@
             @endif
 
             @if(Auth::user()->hasRole('commercial-director') && in_array($travelRequest->status, ['pending_commercial', 'pending_hod'], true))
-                <form action="{{ route('travel-requests.approve', $travelRequest) }}" method="POST">
+                <form action="{{ route('travel-requests.approve', $travelRequest) }}" method="POST" data-prevent-double-submit data-submitting-text="Approving...">
                     @csrf @method('PATCH')
                     <button
                         class="px-5 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm font-semibold transition">✓
@@ -142,7 +142,7 @@
             @endif
 
             @if(Auth::user()->hasRole('ceo') && $travelRequest->status === 'pending_ceo')
-                <form action="{{ route('travel-requests.approve', $travelRequest) }}" method="POST">
+                <form action="{{ route('travel-requests.approve', $travelRequest) }}" method="POST" data-prevent-double-submit data-submitting-text="Approving...">
                     @csrf @method('PATCH')
                     <button
                         class="px-5 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm font-semibold transition">âœ“
@@ -152,6 +152,17 @@
                     @click="rejectAction='{{ route('travel-requests.reject', $travelRequest) }}'; rejectModal=true"
                     class="px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition">âœ—
                     Reject as CEO</button>
+            @endif
+
+            @if($travelRequest->user_id === Auth::id() && Auth::user()->can('delete own ticket') && ($travelRequest->status === 'pending_pm' || ($travelRequest->status === 'pending_commercial' && Auth::user()->hasRole('project-manager'))))
+                <form action="{{ route('travel-requests.destroy', $travelRequest) }}" method="POST"
+                    data-prevent-double-submit data-submitting-text="Deleting..."
+                    onsubmit="return confirm('Delete this request?');">
+                    @csrf @method('DELETE')
+                    <button type="submit"
+                        class="px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition">🗑
+                        Delete Request</button>
+                </form>
             @endif
 
             <a href="{{ route('travel-requests.index') }}"
@@ -178,7 +189,7 @@
                     <p class="text-sm text-gray-500 text-center mb-6">Please provide a reason for rejection. This will
                         be visible to the requester.</p>
 
-                    <form :action="rejectAction" method="POST">
+                    <form :action="rejectAction" method="POST" data-prevent-double-submit data-submitting-text="Rejecting...">
                         @csrf
                         @method('PATCH')
                         <div class="mb-5">
@@ -203,4 +214,24 @@
             </div>
         </div>
     </div>
+
+    <script>
+        (function () {
+            document.querySelectorAll('form[data-prevent-double-submit]').forEach(function (form) {
+                form.addEventListener('submit', function (e) {
+                    if (form.dataset.submitting === 'true') {
+                        e.preventDefault();
+                        return;
+                    }
+                    form.dataset.submitting = 'true';
+                    var btn = form.querySelector('button[type="submit"]');
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.dataset.originalHtml = btn.innerHTML;
+                        btn.innerHTML = form.getAttribute('data-submitting-text') || 'Saving...';
+                    }
+                });
+            });
+        })();
+    </script>
 </x-app-layout>

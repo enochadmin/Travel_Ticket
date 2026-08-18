@@ -386,12 +386,22 @@ class TravelRequestController extends Controller
         if (Auth::user()->hasRole('reception')) {
             abort(403);
         }
-        if ($travelRequest->user_id != Auth::id() || ($travelRequest->status !== 'pending_pm' && $travelRequest->status !== 'pending_commercial')) {
-            abort(403, 'Cannot delete this request at this stage.');
+        // Only the user who created the request may delete it.
+        if ($travelRequest->user_id != Auth::id()) {
+            abort(403, 'You can only delete your own requests.');
+        }
+        if (! Auth::user()->can('delete own ticket')) {
+            abort(403, 'You do not have permission to delete requests.');
         }
 
-        if ($travelRequest->status === 'pending_commercial' && !Auth::user()->hasRole('project-manager')) {
-            abort(403, 'Cannot delete this request after PM approval.');
+        // A ticket may only be deleted while it is still in its first approval stage:
+        // - regular users: pending_pm (before the PM approves)
+        // - PM requesters (who skip the PM stage): pending_commercial
+        $isFirstStage = $travelRequest->status === 'pending_pm'
+            || ($travelRequest->status === 'pending_commercial' && Auth::user()->hasRole('project-manager'));
+
+        if (! $isFirstStage) {
+            abort(403, 'You can only delete a ticket that is still pending review (before approval).');
         }
 
         $travelRequest->delete();

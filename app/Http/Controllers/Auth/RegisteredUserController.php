@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\User;
 use App\Models\UserRegistration;
+use App\Notifications\NewUserRegistration;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -75,7 +76,7 @@ class RegisteredUserController extends Controller
             $projectId = $project->id;
         }
 
-        UserRegistration::create([
+        $registration = UserRegistration::create([
             'name' => $request->name,
             'email' => $request->email,
             'project_name' => $projectName,
@@ -84,6 +85,12 @@ class RegisteredUserController extends Controller
             'password' => $request->password, // hashed automatically via model cast
             'status' => 'pending',
         ]);
+
+        // Notify every admin user about the new registration so they can approve it.
+        $admins = User::role('admin')->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new NewUserRegistration($registration));
+        }
 
         return redirect()
             ->route('register')
