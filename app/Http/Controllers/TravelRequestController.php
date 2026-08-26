@@ -364,7 +364,21 @@ class TravelRequestController extends Controller
             old('destination', $travelRequest->destination)
         );
 
-        return view('travel_requests.edit', compact('travelRequest', 'cities'));
+        // The project can be changed while editing — limited to the projects the
+        // user is assigned to (privileged roles may pick any project, like on create).
+        $user = Auth::user();
+        $isPrivileged = $user->hasAnyRole(['admin', 'head-office-director', 'commercial-director', 'ceo']);
+
+        $projects = $isPrivileged
+            ? Project::orderBy('name')->get()
+            : $this->requestableProjectsFor($user)
+                ->push($travelRequest->project)
+                ->filter()
+                ->unique('id')
+                ->sortBy('name')
+                ->values();
+
+        return view('travel_requests.edit', compact('travelRequest', 'cities', 'projects'));
     }
 
     public function update(Request $request, TravelRequest $travelRequest)
@@ -382,8 +396,48 @@ class TravelRequestController extends Controller
             abort(403, 'Cannot edit this request after PM approval.');
         }
 
+        $user = Auth::user();
+        $isPrivileged = $user->hasAnyRole(['admin', 'head-office-director', 'commercial-director', 'ceo']);
+
+        // The project may only be changed to one the user is assigned to
+        // (privileged roles may pick any project, like on create).
+        $allowedProjectIds = $isPrivileged
+            ? Project::pluck('id')
+            : $user->memberProjectIds();
+
         $validated = $this->validateTravelRequest($request, includeProject: false);
+        $validated['project_id'] = $request->validate([
+            'project_id' => ['required', 'exists:projects,id', Rule::in($allowedProjectIds->all())],
+        ])['project_id'];
+
+        $oldStatus = $travelRequest->status;
         $travelRequest->update($validated);
+        $travelRequest->load('project'); // refresh relation in case the project changed
+
+        // Recompute the approval stage for the (possibly) new project, so the request
+        // always lands with the right approver: the PM stage is skipped when the
+        // requester is a PM or the project is managed by a Commercial Director.
+        $newStatus = ($user->hasRole('project-manager') || $travelRequest->project->managerIsCommercialDirector())
+            ? 'pending_commercial'
+            : 'pending_pm';
+
+        if ($newStatus !== $oldStatus) {
+            $travelRequest->update(['status' => $newStatus]);
+
+            if ($newStatus === 'pending_commercial') {
+                $this->notifyCommercialDirectors(
+                    $travelRequest,
+                    $user->name . ' updated ticket for ' . $travelRequest->destination . ' — it now awaits your approval.',
+                    'warning'
+                );
+            } else {
+                $this->notifyProjectManager(
+                    $travelRequest,
+                    $user->name . ' updated ticket for ' . $travelRequest->destination . ' awaiting your approval.',
+                    'warning'
+                );
+            }
+        }
 
         return redirect()->route('travel-requests.index')->with('success', 'Travel request updated successfully.');
     }

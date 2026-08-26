@@ -5,13 +5,27 @@
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="px-6 py-5 border-b border-gray-100" style="background:linear-gradient(90deg,#fef3c7,#fff)">
                 <h2 class="text-lg font-bold text-gray-800">Edit Travel Request</h2>
-                <p class="text-xs text-gray-400 mt-0.5">You can only edit requests still awaiting PM review</p>
+                <p class="text-xs text-gray-400 mt-0.5">You can only edit requests that are still awaiting review</p>
             </div>
 
             <form action="{{ route('travel-requests.update', $travelRequest) }}" method="POST" class="p-6 space-y-5"
                 data-prevent-double-submit data-submitting-text="Updating...">
                 @csrf
                 @method('PUT')
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Select Project <span
+                            class="text-red-500">*</span></label>
+                    <select name="project_id" required
+                        class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition @error('project_id') border-red-400 @enderror">
+                        @foreach($projects as $project)
+                            <option value="{{ $project->id }}" {{ old('project_id', $travelRequest->project_id) == $project->id ? 'selected' : '' }}>
+                                {{ $project->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('project_id')<p class="text-red-500 text-xs mt-1.5">{{ $message }}</p>@enderror
+                </div>
 
                 <x-city-search-select
                     name="origin"
