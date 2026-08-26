@@ -91,7 +91,7 @@
                                 class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition">
                                 <option value="">— Assign Manager —</option>
                                 @foreach($managers as $mgr)
-                                    <option value="{{ $mgr->id }}" {{ old('manager_id', $project->manager_id) == $mgr->id ? 'selected' : '' }}>{{ $mgr->name }}</option>
+                                    <option value="{{ $mgr->id }}" {{ old('manager_id', $project->manager_id) == $mgr->id ? 'selected' : '' }}>{{ $mgr->name }}@if($mgr->hasRole('commercial-director')) (Commercial Director)@endif</option>
                                 @endforeach
                             </select>
                         </div>

@@ -154,7 +154,7 @@
                     Reject as CEO</button>
             @endif
 
-            @if($travelRequest->user_id === Auth::id() && Auth::user()->can('delete own ticket') && ($travelRequest->status === 'pending_pm' || ($travelRequest->status === 'pending_commercial' && Auth::user()->hasRole('project-manager'))))
+            @if($travelRequest->user_id === Auth::id() && Auth::user()->can('delete own ticket') && ($travelRequest->status === 'pending_pm' || ($travelRequest->status === 'pending_commercial' && (Auth::user()->hasRole('project-manager') || $travelRequest->project?->managerIsCommercialDirector()))))
                 <form action="{{ route('travel-requests.destroy', $travelRequest) }}" method="POST"
                     data-prevent-double-submit data-submitting-text="Deleting..."
                     onsubmit="return confirm('Delete this request?');">

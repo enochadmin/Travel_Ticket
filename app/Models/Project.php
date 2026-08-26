@@ -48,6 +48,18 @@ class Project extends Model
         return (bool) $this->manager_id;
     }
 
+    /**
+     * Whether the assigned manager is a Commercial Director — i.e. the project
+     * has no Project Manager, so requests skip the PM stage and go straight
+     * to the Commercial Director for approval.
+     */
+    public function managerIsCommercialDirector(): bool
+    {
+        $manager = $this->resolveManager();
+
+        return $manager !== null && $manager->hasRole('commercial-director');
+    }
+
     /** Staff assigned to this project */
     public function users(): HasMany
     {

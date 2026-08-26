@@ -97,7 +97,7 @@
                                 <option value="">— Assign Manager —</option>
                                 @foreach($managers as $mgr)
                                     <option value="{{ $mgr->id }}" {{ old('manager_id') == $mgr->id ? 'selected' : '' }}>
-                                        {{ $mgr->name }}</option>
+                                        {{ $mgr->name }}@if($mgr->hasRole('commercial-director')) (Commercial Director)@endif</option>
                                 @endforeach
                             </select>
                             @error('manager_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
