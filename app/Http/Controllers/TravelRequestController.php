@@ -291,8 +291,10 @@ class TravelRequestController extends Controller
             return redirect()->route('travel-requests.index')->with('success', 'CEO request auto-approved and sent to Reception.');
         }
 
-        // If the requester is a project manager, we skip the PM approval stage.
-        if ($user->hasRole('project-manager')) {
+        // Skip the PM approval stage when the requester is a project manager, or when the
+        // project's assigned manager is a Commercial Director (no PM assigned to the project —
+        // the request goes straight to the Commercial Director).
+        if ($user->hasRole('project-manager') || $travelRequest->project->managerIsCommercialDirector()) {
             $travelRequest->status = 'pending_commercial';
         } else {
             $travelRequest->status = 'pending_pm';
@@ -350,7 +352,10 @@ class TravelRequestController extends Controller
         // Only allow edit before the first approval stage:
         // - Regular users: only while pending_pm
         // - PM requester (skips PM stage): allow while pending_commercial
-        if ($travelRequest->status === 'pending_commercial' && !Auth::user()->hasRole('project-manager')) {
+        // - CD-managed project (no PM): pending_commercial IS the first stage
+        if ($travelRequest->status === 'pending_commercial'
+            && !Auth::user()->hasRole('project-manager')
+            && ! $travelRequest->project?->managerIsCommercialDirector()) {
             abort(403, 'Cannot edit this request after PM approval.');
         }
 
@@ -371,7 +376,9 @@ class TravelRequestController extends Controller
             abort(403, 'Cannot edit this request at this stage.');
         }
 
-        if ($travelRequest->status === 'pending_commercial' && !Auth::user()->hasRole('project-manager')) {
+        if ($travelRequest->status === 'pending_commercial'
+            && !Auth::user()->hasRole('project-manager')
+            && ! $travelRequest->project?->managerIsCommercialDirector()) {
             abort(403, 'Cannot edit this request after PM approval.');
         }
 
@@ -397,8 +404,10 @@ class TravelRequestController extends Controller
         // A ticket may only be deleted while it is still in its first approval stage:
         // - regular users: pending_pm (before the PM approves)
         // - PM requesters (who skip the PM stage): pending_commercial
+        // - CD-managed project (no PM): pending_commercial IS the first stage
         $isFirstStage = $travelRequest->status === 'pending_pm'
-            || ($travelRequest->status === 'pending_commercial' && Auth::user()->hasRole('project-manager'));
+            || ($travelRequest->status === 'pending_commercial'
+                && (Auth::user()->hasRole('project-manager') || $travelRequest->project?->managerIsCommercialDirector()));
 
         if (! $isFirstStage) {
             abort(403, 'You can only delete a ticket that is still pending review (before approval).');

@@ -144,9 +144,11 @@ class MobileTravelRequestController extends MobileApiController
 
         $travelRequest = new TravelRequest($validated);
         $travelRequest->user_id = $user->id;
+        // Skip the PM stage when the requester is a PM, or when the project's assigned
+        // manager is a Commercial Director (no PM assigned — goes straight to the director).
         $travelRequest->status = $user->hasRole('ceo')
             ? 'approved'
-            : ($user->hasRole('project-manager') ? 'pending_commercial' : 'pending_pm');
+            : (($user->hasRole('project-manager') || $travelRequest->project->managerIsCommercialDirector()) ? 'pending_commercial' : 'pending_pm');
         $travelRequest->save();
         $travelRequest->load(['user.roles', 'project']);
 

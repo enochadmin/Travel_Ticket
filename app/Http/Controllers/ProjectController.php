@@ -52,7 +52,9 @@ class ProjectController extends Controller
 
     public function create()
     {
-        $managers = User::role('project-manager')->orderBy('name')->get();
+        // Commercial Directors are included: projects without a Project Manager
+        // route their requests straight to the Commercial Director.
+        $managers = User::role(['project-manager', 'commercial-director'])->orderBy('name')->get();
         $availableUsers = User::with(['roles', 'project'])
             ->whereDoesntHave('roles', fn($q) => $q->where('name', 'admin'))
             ->orderBy('name')
@@ -142,7 +144,9 @@ class ProjectController extends Controller
 
     public function edit(Project $project)
     {
-        $managers = User::role('project-manager')->orderBy('name')->get();
+        // Commercial Directors are included: projects without a Project Manager
+        // route their requests straight to the Commercial Director.
+        $managers = User::role(['project-manager', 'commercial-director'])->orderBy('name')->get();
         return view('projects.edit', compact('project', 'managers'));
     }
 

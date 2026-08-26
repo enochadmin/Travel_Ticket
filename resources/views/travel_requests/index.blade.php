@@ -184,7 +184,7 @@
                                         <a href="{{ route('travel-requests.edit', $request) }}"
                                             class="text-xs font-semibold text-gray-500 hover:text-gray-700">Edit</a>
                                     @endif
-                                    @if($request->user_id === Auth::id() && Auth::user()->can('delete own ticket') && ($request->status === 'pending_pm' || ($request->status === 'pending_commercial' && Auth::user()->hasRole('project-manager'))))
+                                    @if($request->user_id === Auth::id() && Auth::user()->can('delete own ticket') && ($request->status === 'pending_pm' || ($request->status === 'pending_commercial' && (Auth::user()->hasRole('project-manager') || $request->project?->managerIsCommercialDirector()))))
                                         <form action="{{ route('travel-requests.destroy', $request) }}" method="POST"
                                             class="inline" onsubmit="return confirm('Delete this request?');">
                                             @csrf @method('DELETE')
