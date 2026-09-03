@@ -7,8 +7,10 @@ use App\Models\Project;
 use App\Models\User;
 use App\Models\UserRegistration;
 use App\Notifications\NewUserRegistration;
+use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
@@ -32,6 +34,13 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        // Normalize the email: trim whitespace and convert to lowercase so the
+        // address is accepted regardless of how it is typed, and duplicate
+        // detection is case-insensitive.
+        $request->merge([
+            'email' => mb_strtolower(trim((string) $request->input('email'))),
+        ]);
+
         // 'other' (or an empty value) means the applicant typed a custom project name.
         $isCustomProject = $request->input('project_id') === 'other' || ! $request->filled('project_id');
 
@@ -40,11 +49,27 @@ class RegisteredUserController extends Controller
             'email' => [
                 'required',
                 'string',
-                'lowercase',
                 'email',
                 'max:255',
-                'unique:'.User::class,
-                Rule::unique('user_registrations', 'email')->where(fn ($query) => $query->where('status', 'pending')),
+                // Mandatory format: the address must contain "@" and end with ".com".
+                function (string $attribute, mixed $value, Closure $fail) {
+                    $value = mb_strtolower(trim((string) $value));
+                    if (! str_contains($value, '@') || ! str_ends_with($value, '.com')) {
+                        $fail('The email address must contain "@" and end with ".com".');
+                    }
+                },
+                // An approved account with this email already exists.
+                function (string $attribute, mixed $value, Closure $fail) {
+                    if (User::where('email', $value)->exists()) {
+                        $fail('This email address is already registered and cannot be duplicated. Please try signing in instead.');
+                    }
+                },
+                // Another access request with this email is already waiting for approval.
+                function (string $attribute, mixed $value, Closure $fail) {
+                    if (UserRegistration::where('email', $value)->where('status', 'pending')->exists()) {
+                        $fail('This email address has already been used to request access and cannot be duplicated. Please wait for your IT Admin to approve it.');
+                    }
+                },
             ],
             'role' => ['required', Rule::in(['user', 'project-manager'])],
             'password' => ['required', 'confirmed', Password::defaults()],
