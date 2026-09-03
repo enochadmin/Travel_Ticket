@@ -71,7 +71,7 @@ class RegisteredUserController extends Controller
                     }
                 },
             ],
-            'role' => ['required', Rule::in(['user', 'project-manager'])],
+            'role' => ['required', Rule::in(['user', 'project-manager', 'head-office-manager'])],
             'password' => ['required', 'confirmed', Password::defaults()],
         ];
 

@@ -180,6 +180,7 @@
                                 <option value="" disabled {{ old('role') ? '' : 'selected' }}>Select a role</option>
                                 <option value="user" {{ old('role') === 'user' ? 'selected' : '' }}>User</option>
                                 <option value="project-manager" {{ old('role') === 'project-manager' ? 'selected' : '' }}>Project Manager</option>
+                                <option value="head-office-manager" {{ old('role') === 'head-office-manager' ? 'selected' : '' }}>Head Office Manager</option>
                             </select>
                             <x-input-error :messages="$errors->get('role')" class="mt-2 text-red-600 text-sm" />
                         </div>

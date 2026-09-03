@@ -24,9 +24,10 @@
             'rejected' => ['label' => 'Rejected', 'color' => 'bg-red-100 text-red-800'],
         ];
         $s = $statusMap[$travelRequest->status] ?? ['label' => $travelRequest->status, 'color' => 'bg-gray-100 text-gray-700'];
-        $pmProjectIds = Auth::user()->hasRole('project-manager')
+        $pmProjectIds = Auth::user()->hasAnyRole(['project-manager', 'head-office-manager'])
             ? Auth::user()->approverProjectIds()
             : collect();
+        $isHeadOfficeManager = Auth::user()->hasRole('head-office-manager');
     @endphp
 
     <div class="max-w-3xl space-y-5">
@@ -115,17 +116,17 @@
         {{-- Approval Actions --}}
         <div x-data="{ rejectModal: false, rejectAction: '' }" class="flex flex-wrap gap-3 items-center">
 
-            @if(Auth::user()->hasRole('project-manager') && $travelRequest->status === 'pending_pm' && $pmProjectIds->contains((int) $travelRequest->project_id))
+            @if(Auth::user()->hasAnyRole(['project-manager', 'head-office-manager']) && $travelRequest->status === 'pending_pm' && $pmProjectIds->contains((int) $travelRequest->project_id))
                 <form action="{{ route('travel-requests.approve', $travelRequest) }}" method="POST" data-prevent-double-submit data-submitting-text="Approving...">
                     @csrf @method('PATCH')
                     <button
                         class="px-5 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm font-semibold transition">✓
-                        Approve as PM</button>
+                        {{ $isHeadOfficeManager ? 'Approve as Head Office Manager' : 'Approve as PM' }}</button>
                 </form>
                 <button type="button"
                     @click="rejectAction='{{ route('travel-requests.reject', $travelRequest) }}'; rejectModal=true"
                     class="px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition">✗
-                    Reject as PM</button>
+                    {{ $isHeadOfficeManager ? 'Reject as Head Office Manager' : 'Reject as PM' }}</button>
             @endif
 
             @if(Auth::user()->hasRole('commercial-director') && in_array($travelRequest->status, ['pending_commercial', 'pending_hod'], true))
@@ -154,7 +155,7 @@
                     Reject as CEO</button>
             @endif
 
-            @if($travelRequest->user_id === Auth::id() && Auth::user()->can('delete own ticket') && ($travelRequest->status === 'pending_pm' || ($travelRequest->status === 'pending_commercial' && (Auth::user()->hasRole('project-manager') || $travelRequest->project?->managerIsCommercialDirector()))))
+            @if($travelRequest->user_id === Auth::id() && Auth::user()->can('delete own ticket') && ($travelRequest->status === 'pending_pm' || ($travelRequest->status === 'pending_commercial' && (Auth::user()->hasAnyRole(['project-manager', 'head-office-manager']) || $travelRequest->project?->managerIsCommercialDirector()))))
                 <form action="{{ route('travel-requests.destroy', $travelRequest) }}" method="POST"
                     data-prevent-double-submit data-submitting-text="Deleting..."
                     onsubmit="return confirm('Delete this request?');">

@@ -79,6 +79,16 @@ class Project extends Model
     public function scopeHeadOffice(Builder $query): Builder
     {
         return $query->where(function ($q) {
+            // Source of truth: the discipline field set to "Head-Office" / "Head Office"
+            // (case and separator insensitive), e.g. for head-office departments.
+            $q->where(function ($discipline) {
+                foreach (['%head-office%', '%head office%', '%headoffice%'] as $pattern) {
+                    $discipline->orWhereRaw('LOWER(discipline) LIKE ?', [$pattern]);
+                }
+            });
+
+            // Legacy: projects created before the discipline flag existed were
+            // categorised by matching "head office" in their name/location columns.
             foreach (['name', 'region', 'location', 'project_code'] as $column) {
                 $q->orWhereRaw("LOWER({$column}) LIKE ?", ['%head office%']);
             }
@@ -87,6 +97,12 @@ class Project extends Model
 
     public function isHeadOffice(): bool
     {
+        $discipline = $this->discipline;
+        if ($discipline && preg_match('/head[\s-]?office/i', (string) $discipline)) {
+            return true;
+        }
+
+        // Legacy fallback for projects created before the discipline flag existed.
         foreach (['name', 'region', 'location', 'project_code'] as $field) {
             $value = $this->{$field};
             if ($value && str_contains(strtolower((string) $value), 'head office')) {

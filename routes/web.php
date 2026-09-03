@@ -130,6 +130,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Notification routes
     Route::get('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'read'])->name('notifications.read');
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.markAllRead');
+    Route::post('/notifications/clear-read', [\App\Http\Controllers\NotificationController::class, 'clearRead'])->name('notifications.clearRead');
 });
 
 require __DIR__ . '/auth.php';

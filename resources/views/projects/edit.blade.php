@@ -47,7 +47,7 @@
                             <select name="discipline"
                                 class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition">
                                 <option value="">— Select Discipline —</option>
-                                @foreach(['Infrastructure', 'Water', 'Building'] as $d)
+                                @foreach(['Infrastructure', 'Water', 'Building', 'Head-Office'] as $d)
                                     <option value="{{ $d }}" {{ old('discipline', $project->discipline) === $d ? 'selected' : '' }}>{{ $d }}</option>
                                 @endforeach
                             </select>
@@ -91,7 +91,7 @@
                                 class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition">
                                 <option value="">— Assign Manager —</option>
                                 @foreach($managers as $mgr)
-                                    <option value="{{ $mgr->id }}" {{ old('manager_id', $project->manager_id) == $mgr->id ? 'selected' : '' }}>{{ $mgr->name }}@if($mgr->hasRole('commercial-director')) (Commercial Director)@endif</option>
+                                    <option value="{{ $mgr->id }}" {{ old('manager_id', $project->manager_id) == $mgr->id ? 'selected' : '' }}>{{ $mgr->name }}@if($mgr->hasRole('commercial-director')) (Commercial Director)@elseif($mgr->hasRole('head-office-manager')) (Head Office Manager)@endif</option>
                                 @endforeach
                             </select>
                         </div>

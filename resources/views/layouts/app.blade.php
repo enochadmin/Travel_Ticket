@@ -233,7 +233,7 @@
 
                 @php
                     $myProjectId = null;
-                    if (auth()->check() && auth()->user()->hasRole('project-manager')) {
+                    if (auth()->check() && auth()->user()->hasAnyRole(['project-manager', 'head-office-manager'])) {
                         $myProjectId = auth()->user()->approverProjectId();
                     }
                 @endphp
@@ -337,7 +337,7 @@
                 @endhasrole
 
                 {{-- Travel History (regular users) --}}
-                @unlessrole('admin|head-office-director|commercial-director|ceo|project-manager')
+                @unlessrole('admin|head-office-director|commercial-director|ceo|project-manager|head-office-manager')
                 <a href="{{ route('travel-requests.index', ['view' => 'personal']) }}"
                     class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('travel-requests.*') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
@@ -349,8 +349,8 @@
                 </a>
                 @endunlessrole
 
-                {{-- History Dropdown (Project Manager) --}}
-                @hasrole('project-manager')
+                {{-- History Dropdown (Project Manager / Head Office Manager) --}}
+                @hasanyrole('project-manager|head-office-manager')
                 <div x-data="{ historyOpen: {{ request()->routeIs('travel-requests.*') ? 'true' : 'false' }} }"
                     class="space-y-1">
                     <button @click="historyOpen = !historyOpen"
@@ -396,8 +396,8 @@
                 </a>
                 @endhasanyrole
 
-                {{-- My Project (Project Manager only) --}}
-                @hasrole('project-manager')
+                {{-- My Project (Project Manager / Head Office Manager only) --}}
+                @hasanyrole('project-manager|head-office-manager')
                 @if($myProjectId)
                     <a href="{{ route('projects.show', $myProjectId) }}"
                         class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->is('projects/' . $myProjectId) ? 'active' : '' }}">
@@ -592,7 +592,10 @@
 
                     {{-- Notification Bell --}}
                     @auth
-                        @php $unreadCount = Auth::user()->unreadNotifications->count(); @endphp
+                        @php
+                            $unreadCount = Auth::user()->unreadNotifications->count();
+                            $readCount = Auth::user()->notifications()->whereNotNull('read_at')->count();
+                        @endphp
                         <div x-data="{ bellOpen: false }" class="relative" @click.outside="bellOpen = false">
                             <button @click.stop="bellOpen = !bellOpen"
                                 class="relative p-2 rounded-full text-gray-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950 focus:outline-none transition">
@@ -613,17 +616,28 @@
                                 style="display: none;">
 
                                 <div
-                                    class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
+                                    class="flex items-center justify-between gap-2 px-4 py-3 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
                                     <p class="text-sm font-bold text-gray-800 dark:text-slate-100">Notifications <span
                                             class="text-indigo-600">({{ $unreadCount }} new)</span></p>
-                                    @if($unreadCount > 0)
-                                        <form method="POST" action="{{ route('notifications.markAllRead') }}">
-                                            @csrf
-                                            <button type="submit"
-                                                class="text-xs text-indigo-600 hover:underline font-medium">Mark all
-                                                read</button>
-                                        </form>
-                                    @endif
+                                    <div class="flex items-center gap-3 flex-shrink-0">
+                                        @if($readCount > 0)
+                                            <form method="POST" action="{{ route('notifications.clearRead') }}"
+                                                onsubmit="return confirm('Clear all read notifications from this list? Unread ones will stay.');">
+                                                @csrf
+                                                <button type="submit"
+                                                    class="text-xs text-gray-400 hover:text-red-500 hover:underline font-medium">Clear
+                                                    read</button>
+                                            </form>
+                                        @endif
+                                        @if($unreadCount > 0)
+                                            <form method="POST" action="{{ route('notifications.markAllRead') }}">
+                                                @csrf
+                                                <button type="submit"
+                                                    class="text-xs text-indigo-600 hover:underline font-medium">Mark all
+                                                    read</button>
+                                            </form>
+                                        @endif
+                                    </div>
                                 </div>
 
                                 <div class="max-h-72 overflow-y-auto divide-y divide-gray-50">

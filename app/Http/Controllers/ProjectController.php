@@ -19,7 +19,7 @@ class ProjectController extends Controller
             return true;
         }
 
-        if ($user->hasRole('project-manager')) {
+        if ($user->hasAnyRole(['project-manager', 'head-office-manager'])) {
             return ($project->manager_id === $user->id)
                 || $user->projects()->whereKey($project->id)->exists();
         }
@@ -33,7 +33,7 @@ class ProjectController extends Controller
             return true;
         }
 
-        return $user->hasRole('project-manager') && $project->manager_id === $user->id;
+        return $user->hasAnyRole(['project-manager', 'head-office-manager']) && $project->manager_id === $user->id;
     }
 
     public function index()
@@ -54,7 +54,8 @@ class ProjectController extends Controller
     {
         // Commercial Directors are included: projects without a Project Manager
         // route their requests straight to the Commercial Director.
-        $managers = User::role(['project-manager', 'commercial-director'])->orderBy('name')->get();
+        // Head Office Managers are included: they manage head-office department projects.
+        $managers = User::role(['project-manager', 'commercial-director', 'head-office-manager'])->orderBy('name')->get();
         $availableUsers = User::with(['roles', 'project'])
             ->whereDoesntHave('roles', fn($q) => $q->where('name', 'admin'))
             ->orderBy('name')
@@ -146,7 +147,8 @@ class ProjectController extends Controller
     {
         // Commercial Directors are included: projects without a Project Manager
         // route their requests straight to the Commercial Director.
-        $managers = User::role(['project-manager', 'commercial-director'])->orderBy('name')->get();
+        // Head Office Managers are included: they manage head-office department projects.
+        $managers = User::role(['project-manager', 'commercial-director', 'head-office-manager'])->orderBy('name')->get();
         return view('projects.edit', compact('project', 'managers'));
     }
 
@@ -158,7 +160,7 @@ class ProjectController extends Controller
             'description' => 'nullable|string',
             'location' => 'nullable|string|max:255',
             'region' => 'nullable|string|max:255',
-            'discipline' => 'nullable|string|in:Infrastructure,Water,Building',
+            'discipline' => 'nullable|string|in:Infrastructure,Water,Building,Head-Office',
             'manager_id' => 'nullable|exists:users,id',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',

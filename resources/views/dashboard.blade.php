@@ -940,10 +940,10 @@
     </div>
     @endhasrole
 
-    {{-- ============= PROJECT MANAGER DASHBOARD ============= --}}
-    @hasrole('project-manager')
+    {{-- ============= PROJECT MANAGER / HEAD OFFICE MANAGER DASHBOARD ============= --}}
+    @hasanyrole('project-manager|head-office-manager')
         @include('dashboard._summary')
-    @endhasrole
+    @endhasanyrole
 
     {{-- ============= REQUESTER (regular user) DASHBOARD ============= --}}
     @hasrole('user')
