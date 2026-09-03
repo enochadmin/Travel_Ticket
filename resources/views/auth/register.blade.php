@@ -19,13 +19,80 @@
             </div>
 
             @if (session('status'))
-                <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-center">
-                    <p class="text-sm font-semibold text-amber-900 leading-relaxed">
-                        {{ session('status') }}
-                    </p>
-                    <a href="{{ route('login') }}" class="inline-block mt-3 text-sm font-medium text-sky-600 hover:text-sky-700">
-                        Back to sign in
-                    </a>
+                {{-- Success confirmation popup shown after the registration is submitted --}}
+                <div
+                    x-data="{ show: true }"
+                    class="fixed inset-0 z-50 overflow-y-auto"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="registration-success-title"
+                >
+                    <div
+                        x-show="show"
+                        x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0"
+                        x-transition:enter-end="opacity-100"
+                        x-transition:leave="transition ease-in duration-150"
+                        x-transition:leave-start="opacity-100"
+                        x-transition:leave-end="opacity-0"
+                        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
+                        @click="show = false"
+                    ></div>
+
+                    <div class="min-h-full flex items-center justify-center p-4">
+                        <div
+                            x-show="show"
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+                            x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                            x-transition:leave="transition ease-in duration-150"
+                            x-transition:leave-start="opacity-100 scale-100"
+                            x-transition:leave-end="opacity-0 scale-95"
+                            class="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden"
+                            @keydown.escape.window="show = false"
+                        >
+                            <button
+                                type="button"
+                                @click="show = false"
+                                aria-label="Close confirmation"
+                                class="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+
+                            <div class="px-6 sm:px-8 pt-10 sm:pt-12 pb-8 sm:pb-10 text-center">
+                                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+                                    <svg class="h-9 w-9 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                    </svg>
+                                </div>
+                                <h2 id="registration-success-title" class="mt-5 text-xl sm:text-2xl font-bold text-slate-900">
+                                    Registration Submitted Successfully
+                                </h2>
+                                <p class="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed">
+                                    {{ session('status') }}
+                                </p>
+                            </div>
+
+                            <div class="bg-slate-50 border-t border-slate-200 px-6 sm:px-8 py-4 sm:py-5 flex flex-col-reverse sm:flex-row gap-3 sm:justify-center">
+                                <button
+                                    type="button"
+                                    @click="show = false"
+                                    class="inline-flex items-center justify-center px-5 py-3 rounded-2xl border border-slate-300 bg-white text-slate-600 text-sm font-semibold hover:bg-slate-100 transition"
+                                >
+                                    Close
+                                </button>
+                                <a
+                                    href="{{ route('login') }}"
+                                    class="inline-flex items-center justify-center px-5 py-3 rounded-2xl bg-gradient-to-r from-sky-600 to-sky-500 text-white text-sm font-semibold shadow-lg shadow-sky-500/25 hover:from-sky-500 hover:to-sky-400 transition"
+                                >
+                                    Back to Sign In
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             @endif
 
@@ -60,7 +127,9 @@
                                 :value="old('email')"
                                 required
                                 autocomplete="username"
+                                placeholder="e.g. yourname@company.com"
                             />
+                            <p class="mt-1.5 text-xs text-slate-500">Must contain "@" and end with ".com" — addresses are accepted in lowercase.</p>
                             <x-input-error :messages="$errors->get('email')" class="mt-2 text-red-600 text-sm" />
                         </div>
 
@@ -187,6 +256,65 @@
                                         btn.innerHTML = form.getAttribute('data-submitting-text') || 'Saving...';
                                     }
                                 });
+                            });
+                        })();
+                    </script>
+
+                    <script>
+                        (function () {
+                            const form = document.querySelector('form[data-prevent-double-submit]');
+                            const emailInput = document.getElementById('email');
+                            if (!form || !emailInput) {
+                                return;
+                            }
+
+                            const emailPattern = /^[^\s@]+@[^\s@]+\.com$/;
+
+                            function restoreSubmitButton() {
+                                form.dataset.submitting = 'false';
+                                const btn = form.querySelector('button[type="submit"]');
+                                if (btn) {
+                                    btn.disabled = false;
+                                    if (btn.dataset.originalHtml) {
+                                        btn.innerHTML = btn.dataset.originalHtml;
+                                    }
+                                }
+                            }
+
+                            // Show a clear message when the email field fails any check.
+                            emailInput.addEventListener('invalid', function () {
+                                if (emailInput.validity.valueMissing) {
+                                    emailInput.setCustomValidity('Email address is required.');
+                                } else if (!emailPattern.test(emailInput.value.trim().toLowerCase())) {
+                                    emailInput.setCustomValidity('Email address must contain "@" and end with ".com".');
+                                } else {
+                                    emailInput.setCustomValidity('');
+                                }
+                            });
+
+                            // Accept lowercase email addresses: convert as the user types
+                            // so any casing is accepted and stored consistently.
+                            emailInput.addEventListener('input', function () {
+                                const start = emailInput.selectionStart;
+                                const end = emailInput.selectionEnd;
+                                emailInput.value = emailInput.value.toLowerCase().trim();
+                                if (emailInput.setSelectionRange) {
+                                    emailInput.setSelectionRange(start, end);
+                                }
+                                emailInput.setCustomValidity('');
+                            });
+
+                            // Guard for values like "a@b" that pass the browser's native
+                            // email check but are missing ".com".
+                            form.addEventListener('submit', function (e) {
+                                const value = emailInput.value.trim().toLowerCase();
+                                emailInput.value = value;
+                                if (!emailPattern.test(value)) {
+                                    e.preventDefault();
+                                    emailInput.setCustomValidity('Email address must contain "@" and end with ".com".');
+                                    emailInput.reportValidity();
+                                    restoreSubmitButton();
+                                }
                             });
                         })();
                     </script>

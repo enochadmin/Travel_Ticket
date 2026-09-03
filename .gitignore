@@ -23,5 +23,6 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 
-sf_proc_00.*
+sf_proc_*
+_tmp_*.php
 artisan_serve*.log
