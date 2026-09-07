@@ -18,11 +18,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'password.changed' => \App\Http\Middleware\EnsurePasswordIsChanged::class,
             'impersonation.guard' => \App\Http\Middleware\ImpersonationGuard::class,
+            'last.activity' => \App\Http\Middleware\UpdateLastActivity::class,
         ]);
 
         $middleware->appendToGroup('web', [
             \App\Http\Middleware\EnsurePasswordIsChanged::class,
             \App\Http\Middleware\ImpersonationGuard::class,
+            \App\Http\Middleware\UpdateLastActivity::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

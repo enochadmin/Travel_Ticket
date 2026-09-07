@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ config('app.name', 'TravelPass') }}</title>
+    <title>{{ config('app.name', 'EEC Travel') }}</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/favicon.svg') }}">
     <link rel="icon" type="image/png" href="{{ asset('images/eec-logo.png') }}">
 
@@ -57,6 +57,42 @@
             z-index: 40;
             transition: width 0.2s ease, transform 0.2s ease;
             background: linear-gradient(180deg, #0c2d44 0%, #0d547a 100%);
+        }
+
+        /* Dark mode: the sidebar adapts with a deeper, slate-tinted gradient so it
+           blends with the dark surfaces instead of staying in the light theme colors. */
+        html.dark .sidebar {
+            background: linear-gradient(180deg, #030712 0%, #0b1a2e 100%);
+            border-right: 1px solid rgba(148, 163, 184, 0.08);
+            box-shadow: none;
+        }
+
+        html.dark .sidebar .sidebar-section-label {
+            color: #7f93b5;
+        }
+
+        html.dark .sidebar .sidebar-link {
+            color: #a9bcd4;
+        }
+
+        html.dark .sidebar .sidebar-link:hover,
+        html.dark .sidebar .sidebar-link.active {
+            background: rgba(148, 163, 184, 0.14);
+            color: #ffffff;
+        }
+
+        html.dark .sidebar .sidebar-link.active {
+            border-left-color: #38bdf8;
+        }
+
+        html.dark .sidebar .sidebar-sublink {
+            color: #93a6c8;
+        }
+
+        html.dark .sidebar .sidebar-sublink:hover,
+        html.dark .sidebar .sidebar-sublink.active {
+            color: #ffffff;
+            background: rgba(148, 163, 184, 0.12);
         }
 
         .sidebar nav {
@@ -244,7 +280,7 @@
                             d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 004 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
                     </svg>
                 </div>
-                <span class="text-white font-bold text-lg tracking-tight sidebar-text sidebar-logo-title">TravelPass</span>
+                <span class="text-white font-bold text-lg tracking-tight sidebar-text sidebar-logo-title">EEC Travel</span>
                 <button id="sidebar-close-mobile" type="button"
                     class="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg text-blue-200 hover:text-white hover:bg-white/10 transition md:hidden"
                     aria-label="Close menu">
@@ -464,11 +500,22 @@
                 @include('layouts.partials.reports-sidebar')
                 @endhasanyrole
 
-                {{-- Settings (admin) --}}
+                {{-- Settings (admin) — collapsible group --}}
                 @hasrole('admin')
-                <div class="pt-4 pb-1 px-3">
-                    <span class="sidebar-section-label text-xs font-semibold uppercase tracking-widest sidebar-text">Settings</span>
-                </div>
+                <div class="space-y-1" x-data="{ settingsOpen: {{ request()->routeIs('settings.*') ? 'true' : 'false' }} }">
+                    <button type="button" @click="settingsOpen = !settingsOpen"
+                        class="w-full flex items-center justify-between gap-2 px-3 pt-4 pb-1 cursor-pointer group text-left">
+                        <span
+                            class="sidebar-section-label text-xs font-semibold uppercase tracking-widest sidebar-text transition group-hover:text-sky-300">Settings</span>
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                            class="w-3.5 h-3.5 shrink-0 sidebar-text transition-transform duration-200"
+                            :class="settingsOpen ? 'rotate-0' : '-rotate-90'"
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div x-show="settingsOpen" x-collapse>
                 <a href="{{ route('settings.cities.index') }}"
                     class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('settings.cities.*') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
@@ -501,6 +548,8 @@
                     </svg>
                     <span class="sidebar-text">Sessions</span>
                 </a>
+                    </div>
+                </div>
                 @endhasrole
 
                 {{-- Divider + label --}}
@@ -525,11 +574,18 @@
                 <div class="flex items-center gap-3 mb-3">
                     <div x-data="{ open: false }" class="relative flex-shrink-0" @click.outside="open = false">
                         <button type="button" @click.stop="open = !open" :aria-expanded="open ? 'true' : 'false'"
-                            class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm cursor-pointer ring-2 ring-white/20 hover:ring-sky-400 focus:outline-none transition"
-                            style="background:#6366f1;"
+                            class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-xs cursor-pointer ring-2 ring-white/20 hover:ring-sky-400 focus:outline-none transition overflow-hidden"
                             aria-label="View my profile details"
                             title="View profile details">
-                            {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                            @if(Auth::user()->avatarUrl())
+                                <img src="{{ Auth::user()->avatarUrl() }}" alt="{{ Auth::user()->name }}"
+                                    class="w-full h-full object-cover">
+                            @else
+                                <span class="w-full h-full flex items-center justify-center"
+                                    style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">
+                                    {{ Auth::user()->initials() }}
+                                </span>
+                            @endif
                         </button>
 
                         {{-- Profile popup --}}
@@ -540,47 +596,60 @@
                             x-transition:leave="transition ease-in duration-100"
                             x-transition:leave-start="opacity-100"
                             x-transition:leave-end="opacity-0"
-                            class="absolute bottom-full left-0 mb-3 w-64 rounded-2xl bg-white shadow-2xl border border-gray-100 z-50 overflow-hidden"
+                            class="absolute bottom-full left-0 mb-3 w-80 rounded-2xl bg-white shadow-2xl border border-gray-100 z-50 overflow-hidden"
                             style="display: none;">
 
-                            <div class="px-4 py-4" style="background: linear-gradient(135deg,#0c2d44,#0d547a);">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
-                                        style="background:#6366f1;">
-                                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                            {{-- Profile picture on top --}}
+                            <div class="px-6 py-6 text-center"
+                                style="background: linear-gradient(135deg,#0c2d44,#0d547a);">
+                                @if(Auth::user()->avatarUrl())
+                                    <img src="{{ Auth::user()->avatarUrl() }}" alt="{{ Auth::user()->name }}"
+                                        class="w-20 h-20 rounded-full object-cover mx-auto ring-4 ring-white/20">
+                                @else
+                                    <div class="w-20 h-20 rounded-full flex items-center justify-center text-white text-xl font-bold mx-auto ring-4 ring-white/20"
+                                        style="background: linear-gradient(135deg,#6366f1,#8b5cf6);">
+                                        {{ Auth::user()->initials() }}
                                     </div>
-                                    <div class="min-w-0">
-                                        <p class="text-white text-sm font-bold truncate">{{ Auth::user()->name }}</p>
-                                        <p class="text-indigo-300 text-xs truncate">
-                                            {{ Auth::user()->getRoleNames()->first() ?? 'user' }}
-                                        </p>
-                                    </div>
-                                </div>
+                                @endif
+                                <p class="text-white text-base font-bold mt-3 truncate">{{ Auth::user()->name }}</p>
+                                <p class="text-indigo-300 text-xs truncate">
+                                    {{ Auth::user()->getRoleNames()->first() ?? 'user' }}
+                                </p>
                             </div>
 
-                            <div class="px-4 py-3 space-y-3">
+                            <div class="px-5 py-4 space-y-3">
                                 <div>
                                     <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Full Name</p>
                                     <p class="text-sm font-semibold text-gray-800 mt-0.5">{{ Auth::user()->name }}</p>
                                 </div>
                                 <div>
-                                    <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Job Title</p>
-                                    <p class="text-sm font-semibold text-gray-800 mt-0.5">{{ Auth::user()->job_title ?: 'Not set' }}</p>
+                                    <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Phone Number</p>
+                                    <p class="text-sm font-semibold text-gray-800 mt-0.5">{{ Auth::user()->phone ?: 'Not set' }}</p>
                                 </div>
                                 <div>
                                     <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Status</p>
-                                    @if(Auth::user()->isActive())
+                                    @if(Auth::user()->isOnline())
                                         <span class="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                                            Active
+                                            <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                            Online
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                                            Inactive
+                                        <span class="inline-flex items-center gap-1.5 mt-1 text-sm text-gray-500">
+                                            <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                                            {{ Auth::user()->presenceLabel() }}
                                         </span>
                                     @endif
                                 </div>
+                            </div>
+
+                            <div class="px-5 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-3">
+                                <a href="{{ route('profile.edit') }}"
+                                    class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition">
+                                    Edit my profile →
+                                </a>
+                                @if(Auth::user()->job_title)
+                                    <span class="text-[11px] text-gray-400 truncate">{{ Auth::user()->job_title }}</span>
+                                @endif
                             </div>
                         </div>
                     </div>
