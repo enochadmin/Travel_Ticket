@@ -29,6 +29,9 @@ class User extends Authenticatable
         'must_change_password',
         'job_title',
         'status',
+        'phone',
+        'avatar_path',
+        'last_activity_at',
     ];
 
     /**
@@ -52,6 +55,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'must_change_password' => 'boolean',
+            'last_activity_at' => 'datetime',
         ];
     }
 
@@ -66,6 +70,42 @@ class User extends Authenticatable
     public function isActive(): bool
     {
         return $this->status === 'active';
+    }
+
+    /** Two-letter avatar initials: first letter of the first and last name. */
+    public function initials(): string
+    {
+        $words = preg_split('/\s+/', trim((string) $this->name)) ?: [];
+        $first = (string) ($words[0] ?? '');
+        $last = count($words) > 1 ? (string) $words[count($words) - 1] : '';
+
+        return strtoupper(mb_substr($first, 0, 1) . ($last !== '' ? mb_substr($last, 0, 1) : ''));
+    }
+
+    /** Absolute URL of the uploaded profile picture, if any. */
+    public function avatarUrl(): ?string
+    {
+        return $this->avatar_path ? asset('storage/' . $this->avatar_path) : null;
+    }
+
+    /** Online when the account is active and active within the last N minutes. */
+    public function isOnline(int $withinMinutes = 5): bool
+    {
+        return $this->isActive()
+            && $this->last_activity_at !== null
+            && $this->last_activity_at->gte(now()->subMinutes($withinMinutes));
+    }
+
+    /** Human presence label: "Online" or "Inactive · active X ago". */
+    public function presenceLabel(): string
+    {
+        if ($this->isOnline()) {
+            return 'Online';
+        }
+
+        return $this->last_activity_at
+            ? 'Inactive · active ' . $this->last_activity_at->diffForHumans()
+            : 'Inactive';
     }
 
     public function projects(): BelongsToMany

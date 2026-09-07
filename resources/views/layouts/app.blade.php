@@ -561,11 +561,18 @@
                 <div class="flex items-center gap-3 mb-3">
                     <div x-data="{ open: false }" class="relative flex-shrink-0" @click.outside="open = false">
                         <button type="button" @click.stop="open = !open" :aria-expanded="open ? 'true' : 'false'"
-                            class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm cursor-pointer ring-2 ring-white/20 hover:ring-sky-400 focus:outline-none transition"
-                            style="background:#6366f1;"
+                            class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-xs cursor-pointer ring-2 ring-white/20 hover:ring-sky-400 focus:outline-none transition overflow-hidden"
                             aria-label="View my profile details"
                             title="View profile details">
-                            {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                            @if(Auth::user()->avatarUrl())
+                                <img src="{{ Auth::user()->avatarUrl() }}" alt="{{ Auth::user()->name }}"
+                                    class="w-full h-full object-cover">
+                            @else
+                                <span class="w-full h-full flex items-center justify-center"
+                                    style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">
+                                    {{ Auth::user()->initials() }}
+                                </span>
+                            @endif
                         </button>
 
                         {{-- Profile popup --}}
@@ -576,47 +583,60 @@
                             x-transition:leave="transition ease-in duration-100"
                             x-transition:leave-start="opacity-100"
                             x-transition:leave-end="opacity-0"
-                            class="absolute bottom-full left-0 mb-3 w-64 rounded-2xl bg-white shadow-2xl border border-gray-100 z-50 overflow-hidden"
+                            class="absolute bottom-full left-0 mb-3 w-80 rounded-2xl bg-white shadow-2xl border border-gray-100 z-50 overflow-hidden"
                             style="display: none;">
 
-                            <div class="px-4 py-4" style="background: linear-gradient(135deg,#0c2d44,#0d547a);">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
-                                        style="background:#6366f1;">
-                                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                            {{-- Profile picture on top --}}
+                            <div class="px-6 py-6 text-center"
+                                style="background: linear-gradient(135deg,#0c2d44,#0d547a);">
+                                @if(Auth::user()->avatarUrl())
+                                    <img src="{{ Auth::user()->avatarUrl() }}" alt="{{ Auth::user()->name }}"
+                                        class="w-20 h-20 rounded-full object-cover mx-auto ring-4 ring-white/20">
+                                @else
+                                    <div class="w-20 h-20 rounded-full flex items-center justify-center text-white text-xl font-bold mx-auto ring-4 ring-white/20"
+                                        style="background: linear-gradient(135deg,#6366f1,#8b5cf6);">
+                                        {{ Auth::user()->initials() }}
                                     </div>
-                                    <div class="min-w-0">
-                                        <p class="text-white text-sm font-bold truncate">{{ Auth::user()->name }}</p>
-                                        <p class="text-indigo-300 text-xs truncate">
-                                            {{ Auth::user()->getRoleNames()->first() ?? 'user' }}
-                                        </p>
-                                    </div>
-                                </div>
+                                @endif
+                                <p class="text-white text-base font-bold mt-3 truncate">{{ Auth::user()->name }}</p>
+                                <p class="text-indigo-300 text-xs truncate">
+                                    {{ Auth::user()->getRoleNames()->first() ?? 'user' }}
+                                </p>
                             </div>
 
-                            <div class="px-4 py-3 space-y-3">
+                            <div class="px-5 py-4 space-y-3">
                                 <div>
                                     <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Full Name</p>
                                     <p class="text-sm font-semibold text-gray-800 mt-0.5">{{ Auth::user()->name }}</p>
                                 </div>
                                 <div>
-                                    <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Job Title</p>
-                                    <p class="text-sm font-semibold text-gray-800 mt-0.5">{{ Auth::user()->job_title ?: 'Not set' }}</p>
+                                    <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Phone Number</p>
+                                    <p class="text-sm font-semibold text-gray-800 mt-0.5">{{ Auth::user()->phone ?: 'Not set' }}</p>
                                 </div>
                                 <div>
                                     <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Status</p>
-                                    @if(Auth::user()->isActive())
+                                    @if(Auth::user()->isOnline())
                                         <span class="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                                            Active
+                                            <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                            Online
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                                            Inactive
+                                        <span class="inline-flex items-center gap-1.5 mt-1 text-sm text-gray-500">
+                                            <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                                            {{ Auth::user()->presenceLabel() }}
                                         </span>
                                     @endif
                                 </div>
+                            </div>
+
+                            <div class="px-5 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-3">
+                                <a href="{{ route('profile.edit') }}"
+                                    class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition">
+                                    Edit my profile →
+                                </a>
+                                @if(Auth::user()->job_title)
+                                    <span class="text-[11px] text-gray-400 truncate">{{ Auth::user()->job_title }}</span>
+                                @endif
                             </div>
                         </div>
                     </div>
