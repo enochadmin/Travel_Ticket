@@ -59,6 +59,42 @@
             background: linear-gradient(180deg, #0c2d44 0%, #0d547a 100%);
         }
 
+        /* Dark mode: the sidebar adapts with a deeper, slate-tinted gradient so it
+           blends with the dark surfaces instead of staying in the light theme colors. */
+        html.dark .sidebar {
+            background: linear-gradient(180deg, #030712 0%, #0b1a2e 100%);
+            border-right: 1px solid rgba(148, 163, 184, 0.08);
+            box-shadow: none;
+        }
+
+        html.dark .sidebar .sidebar-section-label {
+            color: #7f93b5;
+        }
+
+        html.dark .sidebar .sidebar-link {
+            color: #a9bcd4;
+        }
+
+        html.dark .sidebar .sidebar-link:hover,
+        html.dark .sidebar .sidebar-link.active {
+            background: rgba(148, 163, 184, 0.14);
+            color: #ffffff;
+        }
+
+        html.dark .sidebar .sidebar-link.active {
+            border-left-color: #38bdf8;
+        }
+
+        html.dark .sidebar .sidebar-sublink {
+            color: #93a6c8;
+        }
+
+        html.dark .sidebar .sidebar-sublink:hover,
+        html.dark .sidebar .sidebar-sublink.active {
+            color: #ffffff;
+            background: rgba(148, 163, 184, 0.12);
+        }
+
         .sidebar nav {
             min-height: 0;
             -webkit-overflow-scrolling: touch;
