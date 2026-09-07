@@ -38,8 +38,12 @@
                 style="background:linear-gradient(90deg,#eff6ff,#fff)">
                 <div>
                     <h2 class="text-lg font-bold text-gray-800">Request #{{ $travelRequest->id }}</h2>
-                    <p class="text-xs text-gray-400 mt-0.5">Submitted by <span
-                            class="font-semibold text-gray-600">{{ $travelRequest->user->name }}</span></p>
+                    <p class="text-xs text-gray-400 mt-0.5 flex items-center gap-2 flex-wrap">Submitted by
+                        <span class="inline-flex items-center gap-2">
+                            <x-user-badge :user="$travelRequest->user" size="sm" />
+                            <span class="font-semibold text-gray-600">{{ $travelRequest->user->name }}</span>
+                        </span>
+                    </p>
                     @if($travelRequest->status === 'pending_pm')
                         @php
                             $pm = $travelRequest->project?->manager;

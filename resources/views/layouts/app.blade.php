@@ -500,11 +500,22 @@
                 @include('layouts.partials.reports-sidebar')
                 @endhasanyrole
 
-                {{-- Settings (admin) --}}
+                {{-- Settings (admin) — collapsible group --}}
                 @hasrole('admin')
-                <div class="pt-4 pb-1 px-3">
-                    <span class="sidebar-section-label text-xs font-semibold uppercase tracking-widest sidebar-text">Settings</span>
-                </div>
+                <div class="space-y-1" x-data="{ settingsOpen: true }">
+                    <button type="button" @click="settingsOpen = !settingsOpen"
+                        class="w-full flex items-center justify-between gap-2 px-3 pt-4 pb-1 cursor-pointer group text-left">
+                        <span
+                            class="sidebar-section-label text-xs font-semibold uppercase tracking-widest sidebar-text transition group-hover:text-sky-300">Settings</span>
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                            class="w-3.5 h-3.5 shrink-0 sidebar-text transition-transform duration-200"
+                            :class="settingsOpen ? 'rotate-0' : '-rotate-90'"
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div x-show="settingsOpen" x-collapse>
                 <a href="{{ route('settings.cities.index') }}"
                     class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('settings.cities.*') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
@@ -537,6 +548,8 @@
                     </svg>
                     <span class="sidebar-text">Sessions</span>
                 </a>
+                    </div>
+                </div>
                 @endhasrole
 
                 {{-- Divider + label --}}

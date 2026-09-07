@@ -146,7 +146,12 @@
                         @foreach ($users as $user)
                             <tr class="hover:bg-indigo-50/30 transition">
                                 <td class="px-6 py-4 text-gray-400">{{ $users->firstItem() + $loop->index }}</td>
-                                <td class="px-6 py-4 font-semibold text-gray-800">{{ $user->name }}</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <x-user-badge :user="$user" size="md" />
+                                        <span class="font-semibold text-gray-800">{{ $user->name }}</span>
+                                    </div>
+                                </td>
                                 <td class="px-6 py-4 text-gray-500">{{ $user->email }}</td>
                                 <td class="px-6 py-4">
                                     <span
