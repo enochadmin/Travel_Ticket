@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ config('app.name', 'TravelPass') }}</title>
+    <title>{{ config('app.name', 'EEC Travel') }}</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/favicon.svg') }}">
     <link rel="icon" type="image/png" href="{{ asset('images/eec-logo.png') }}">
 
@@ -280,7 +280,7 @@
                             d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 004 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
                     </svg>
                 </div>
-                <span class="text-white font-bold text-lg tracking-tight sidebar-text sidebar-logo-title">TravelPass</span>
+                <span class="text-white font-bold text-lg tracking-tight sidebar-text sidebar-logo-title">EEC Travel</span>
                 <button id="sidebar-close-mobile" type="button"
                     class="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg text-blue-200 hover:text-white hover:bg-white/10 transition md:hidden"
                     aria-label="Close menu">
@@ -502,7 +502,7 @@
 
                 {{-- Settings (admin) — collapsible group --}}
                 @hasrole('admin')
-                <div class="space-y-1" x-data="{ settingsOpen: true }">
+                <div class="space-y-1" x-data="{ settingsOpen: {{ request()->routeIs('settings.*') ? 'true' : 'false' }} }">
                     <button type="button" @click="settingsOpen = !settingsOpen"
                         class="w-full flex items-center justify-between gap-2 px-3 pt-4 pb-1 cursor-pointer group text-left">
                         <span

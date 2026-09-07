@@ -113,7 +113,8 @@
                     class="relative mx-auto rounded-2xl overflow-hidden bg-slate-200 select-none touch-none cursor-move"
                     style="width:min(100%, 340px); aspect-ratio:1/1;">
                     <img id="crop-image" alt="Crop preview" draggable="false"
-                        class="absolute top-0 left-0 max-w-none will-change-transform">
+                        class="absolute top-0 left-0 max-w-none will-change-transform"
+                        style="transform-origin: 0 0;">
                 </div>
 
                 <div class="mt-4 flex items-center gap-3">
@@ -183,6 +184,7 @@
 
             function applyTransform() {
                 const s = baseScale * zoom;
+                image.style.transformOrigin = '0 0';
                 image.style.transform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + s + ')';
             }
 
@@ -271,7 +273,11 @@
             });
 
             resetBtn.addEventListener('click', initView);
-            cancelBtn.addEventListener('click', hideModal);
+
+            cancelBtn.addEventListener('click', function () {
+                input.value = ''; // never upload a file the user cancelled
+                hideModal();
+            });
 
             applyBtn.addEventListener('click', function () {
                 if (naturalW > 0) { cropAndApply(); }
