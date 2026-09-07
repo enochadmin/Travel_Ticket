@@ -200,6 +200,32 @@
 
 <body class="bg-gray-50 dark:bg-slate-900 text-gray-800 dark:text-slate-200 antialiased">
 
+    {{-- Admin "Open as" read-only banner --}}
+    @if(session('impersonator_id') && Auth::check())
+        @php $impersonatedUser = \App\Models\User::find(session('impersonated_id')); @endphp
+        @if($impersonatedUser)
+            <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm"
+                style="background:#fef3c7;border-bottom:1px solid #f59e0b;color:#78350f;">
+                <span class="flex items-center gap-2 font-medium min-w-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <span class="truncate">Viewing as {{ $impersonatedUser->name }}
+                        ({{ ucfirst(str_replace('-', ' ', $impersonatedUser->getRoleNames()->first() ?? 'user')) }}) — read-only preview</span>
+                </span>
+                <form method="POST" action="{{ route('impersonation.exit') }}" class="flex-shrink-0">
+                    @csrf
+                    <button type="submit"
+                        class="px-3 py-1.5 rounded-lg font-semibold text-white text-xs transition hover:opacity-90"
+                        style="background:#d97706;">
+                        Exit
+                    </button>
+                </form>
+            </div>
+        @endif
+    @endif
+
     <div id="app-shell" class="flex min-h-screen" data-sidebar-collapsed="false">
 
         <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>
@@ -233,7 +259,7 @@
 
                 @php
                     $myProjectId = null;
-                    if (auth()->check() && auth()->user()->hasRole('project-manager')) {
+                    if (auth()->check() && auth()->user()->hasAnyRole(['project-manager', 'head-office-manager'])) {
                         $myProjectId = auth()->user()->approverProjectId();
                     }
                 @endphp
@@ -337,7 +363,7 @@
                 @endhasrole
 
                 {{-- Travel History (regular users) --}}
-                @unlessrole('admin|head-office-director|commercial-director|ceo|project-manager')
+                @unlessrole('admin|head-office-director|commercial-director|ceo|project-manager|head-office-manager')
                 <a href="{{ route('travel-requests.index', ['view' => 'personal']) }}"
                     class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('travel-requests.*') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
@@ -349,8 +375,8 @@
                 </a>
                 @endunlessrole
 
-                {{-- History Dropdown (Project Manager) --}}
-                @hasrole('project-manager')
+                {{-- History Dropdown (Project Manager / Head Office Manager) --}}
+                @hasanyrole('project-manager|head-office-manager')
                 <div x-data="{ historyOpen: {{ request()->routeIs('travel-requests.*') ? 'true' : 'false' }} }"
                     class="space-y-1">
                     <button @click="historyOpen = !historyOpen"
@@ -396,8 +422,8 @@
                 </a>
                 @endhasanyrole
 
-                {{-- My Project (Project Manager only) --}}
-                @hasrole('project-manager')
+                {{-- My Project (Project Manager / Head Office Manager only) --}}
+                @hasanyrole('project-manager|head-office-manager')
                 @if($myProjectId)
                     <a href="{{ route('projects.show', $myProjectId) }}"
                         class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->is('projects/' . $myProjectId) ? 'active' : '' }}">
@@ -460,6 +486,13 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
                     <span class="sidebar-text">Roles</span>
+                </a>
+                <a href="{{ route('settings.impersonation-logs') }}"
+                    class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('settings.impersonation-logs') ? 'active' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                    <span class="sidebar-text">Open-as Log</span>
                 </a>
                 <a href="{{ route('settings.session.show') }}"
                     class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('settings.session.*') ? 'active' : '' }}">
@@ -585,15 +618,32 @@
                         @endisset
                     </div>
                 </div>
-                <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink-0">
+                <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink-0 relative"
+                    x-data="{ bellOpen: false }" @click.outside="bellOpen = false" @scroll.window="bellOpen = false">
                     <time datetime="{{ now()->toDateString() }}" class="navbar-date" id="navbar-date">
                         {{ now()->format('l, M j, Y') }}
                     </time>
 
+                    {{-- Exit impersonation chip --}}
+                    @if(session('impersonator_id'))
+                        <form method="POST" action="{{ route('impersonation.exit') }}" class="flex-shrink-0">
+                            @csrf
+                            <button type="submit"
+                                class="px-3 py-1.5 rounded-lg font-semibold text-white text-xs transition hover:opacity-90"
+                                style="background:#d97706;"
+                                title="Exit read-only preview and return to your administrator view">
+                                Exit
+                            </button>
+                        </form>
+                    @endif
+
                     {{-- Notification Bell --}}
                     @auth
-                        @php $unreadCount = Auth::user()->unreadNotifications->count(); @endphp
-                        <div x-data="{ bellOpen: false }" class="relative" @click.outside="bellOpen = false">
+                        @php
+                            $unreadCount = Auth::user()->unreadNotifications->count();
+                            $readCount = Auth::user()->notifications()->whereNotNull('read_at')->count();
+                        @endphp
+                        <div>
                             <button @click.stop="bellOpen = !bellOpen"
                                 class="relative p-2 rounded-full text-gray-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950 focus:outline-none transition">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
@@ -609,21 +659,35 @@
 
                             {{-- Bell Dropdown --}}
                             <div x-show="bellOpen" x-transition
-                                class="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-700 z-50 overflow-hidden"
+                                class="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-700 z-50 overflow-hidden"
                                 style="display: none;">
 
                                 <div
-                                    class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
+                                    class="flex items-center justify-between gap-2 px-4 py-3 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
                                     <p class="text-sm font-bold text-gray-800 dark:text-slate-100">Notifications <span
                                             class="text-indigo-600">({{ $unreadCount }} new)</span></p>
-                                    @if($unreadCount > 0)
-                                        <form method="POST" action="{{ route('notifications.markAllRead') }}">
-                                            @csrf
-                                            <button type="submit"
-                                                class="text-xs text-indigo-600 hover:underline font-medium">Mark all
-                                                read</button>
-                                        </form>
-                                    @endif
+                                    <div class="flex items-center gap-3 flex-shrink-0">
+                                        @if($readCount > 0)
+                                            <form method="POST" action="{{ route('notifications.clearRead') }}"
+                                                data-confirm-form
+                                                data-confirm-title="Clear read notifications"
+                                                data-confirm-message="Remove all read notifications from this list? Unread notifications will stay."
+                                                data-confirm-label="Clear read">
+                                                @csrf
+                                                <button type="submit"
+                                                    class="text-xs text-gray-400 hover:text-red-500 hover:underline font-medium">Clear
+                                                    read</button>
+                                            </form>
+                                        @endif
+                                        @if($unreadCount > 0)
+                                            <form method="POST" action="{{ route('notifications.markAllRead') }}">
+                                                @csrf
+                                                <button type="submit"
+                                                    class="text-xs text-indigo-600 hover:underline font-medium">Mark all
+                                                    read</button>
+                                            </form>
+                                        @endif
+                                    </div>
                                 </div>
 
                                 <div class="max-h-72 overflow-y-auto divide-y divide-gray-50">
@@ -780,6 +844,35 @@
 
     <!-- Confirmation Modal -->
     @include('components.confirmation-modal')
+
+    <script>
+        // Route every form marked data-confirm-form through the styled confirmation
+        // modal instead of the native browser confirm().
+        (function () {
+            document.addEventListener('submit', function (e) {
+                const target = e.target && e.target.closest
+                    ? e.target.closest('form[data-confirm-form]')
+                    : null;
+                if (!target) return;
+
+                e.preventDefault();
+
+                const message = target.dataset.confirmMessage || 'Are you sure you want to proceed?';
+                const title = target.dataset.confirmTitle || 'Confirm action';
+                const label = target.dataset.confirmLabel || 'Yes';
+
+                if (window.confirmationModal) {
+                    window.confirmationModal.show(title, message, function () {
+                        target.submit();
+                    }, label);
+                } else if (window.confirm) {
+                    if (window.confirm(message)) {
+                        target.submit();
+                    }
+                }
+            }, true);
+        })();
+    </script>
 
 </body>
 

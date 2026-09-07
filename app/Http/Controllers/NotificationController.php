@@ -37,4 +37,14 @@ class NotificationController extends Controller
         Auth::user()->unreadNotifications->markAsRead();
         return back();
     }
+
+    /**
+     * Remove already-read notifications from the dropdown.
+     * Unread notifications are kept so nothing pending is lost.
+     */
+    public function clearRead()
+    {
+        Auth::user()->notifications()->whereNotNull('read_at')->delete();
+        return back();
+    }
 }

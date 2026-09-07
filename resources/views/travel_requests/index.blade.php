@@ -104,7 +104,7 @@
                             <option value="">All</option>
                             @foreach($projects ?? [] as $project)
                                 <option value="{{ $project->id }}" {{ (string) ($filters['project_id'] ?? '') === (string) $project->id ? 'selected' : '' }}>
-                                    {{ $project->name }}
+                                    {{ $project->name }}{{ $project->isHeadOffice() ? ' (Head Office)' : '' }}
                                 </option>
                             @endforeach
                         </select>
@@ -136,6 +136,21 @@
                     </div>
                 </div>
             </form>
+
+            {{-- Head Office quick filter (privileged roles) --}}
+            @hasanyrole('admin|head-office-director|commercial-director|ceo')
+            <div class="flex flex-wrap items-center gap-2 px-6 py-3 border-b border-gray-100 bg-white">
+                <span class="text-xs font-semibold text-gray-500 mr-1">Records:</span>
+                <a href="{{ route('travel-requests.index', array_filter(request()->except(['head_office_only', 'page']))) }}"
+                    class="px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ empty($filters['head_office_only']) ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
+                    All projects
+                </a>
+                <a href="{{ route('travel-requests.index', array_merge(request()->except(['head_office_only', 'page']), ['head_office_only' => 1])) }}"
+                    class="px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ !empty($filters['head_office_only']) ? 'bg-purple-600 text-white' : 'bg-purple-100 text-purple-700 hover:bg-purple-200' }}">
+                    Head Office only
+                </a>
+            </div>
+            @endhasanyrole
 
             {{-- Table --}}
             <div class="overflow-x-auto">
@@ -184,9 +199,12 @@
                                         <a href="{{ route('travel-requests.edit', $request) }}"
                                             class="text-xs font-semibold text-gray-500 hover:text-gray-700">Edit</a>
                                     @endif
-                                    @if($request->user_id === Auth::id() && Auth::user()->can('delete own ticket') && ($request->status === 'pending_pm' || ($request->status === 'pending_commercial' && (Auth::user()->hasRole('project-manager') || $request->project?->managerIsCommercialDirector()))))
+                                    @if($request->user_id === Auth::id() && Auth::user()->can('delete own ticket') && ($request->status === 'pending_pm' || ($request->status === 'pending_commercial' && (Auth::user()->hasAnyRole(['project-manager', 'head-office-manager']) || $request->project?->managerIsCommercialDirector()))))
                                         <form action="{{ route('travel-requests.destroy', $request) }}" method="POST"
-                                            class="inline" onsubmit="return confirm('Delete this request?');">
+                                            class="inline" data-confirm-form
+                                            data-confirm-title="Delete travel request"
+                                            data-confirm-message="Are you sure you want to delete this travel request? This cannot be undone."
+                                            data-confirm-label="Delete">
                                             @csrf @method('DELETE')
                                             <button
                                                 class="text-xs font-semibold text-red-500 hover:text-red-700">Delete</button>

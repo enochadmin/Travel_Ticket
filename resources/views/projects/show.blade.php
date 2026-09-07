@@ -193,7 +193,17 @@
                             @error('user_ids')<p class="text-red-500 text-xs mb-2">{{ $message }}</p>@enderror
                             @error('user_ids.*')<p class="text-red-500 text-xs mb-2">{{ $message }}</p>@enderror
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
+                            {{-- Employee search: filters the assignable list while typing --}}
+                            <div class="relative mb-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+                                </svg>
+                                <input type="text" id="member-search-input" autocomplete="off"
+                                    placeholder="Search employee by name or email…"
+                                    class="w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition">
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-80 overflow-y-auto overscroll-contain pr-1">
                                 @forelse(($availableUsers ?? collect()) as $u)
                                     @php
                                         $parts = collect(explode(' ', trim($u->name)))->filter();
@@ -201,7 +211,8 @@
                                         $role = ucfirst(str_replace('-', ' ', $u->roles->first()?->name ?? 'user'));
                                         $color = $avatarColors[$loop->index % count($avatarColors)];
                                     @endphp
-                                    <label class="relative flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 cursor-pointer transition hover:border-indigo-200 hover:bg-white shadow-sm">
+                                    <label data-member-search-row data-name="{{ $u->name }}" data-email="{{ $u->email }}"
+                                        class="relative flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 cursor-pointer transition hover:border-indigo-200 hover:bg-white shadow-sm">
                                         <input type="checkbox" name="user_ids[]" value="{{ $u->id }}"
                                             class="peer sr-only" {{ in_array((int) $u->id, $selectedUserIds, true) ? 'checked' : '' }}>
                                         <span class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-sm ring-2 ring-white"
@@ -231,6 +242,11 @@
                                         <p class="text-xs text-gray-400 mt-1">Everyone eligible is already assigned to this project.</p>
                                     </div>
                                 @endforelse
+                                <div id="member-search-empty"
+                                    class="hidden sm:col-span-2 rounded-xl border border-dashed border-gray-200 bg-white px-4 py-5 text-center">
+                                    <p class="text-sm font-semibold text-gray-600">No employees match your search.</p>
+                                    <p class="text-xs text-gray-400 mt-1">Try a different name or email.</p>
+                                </div>
                             </div>
 
                             <div class="hidden">
@@ -584,7 +600,10 @@
 
         @hasanyrole('admin|head-office-director|commercial-director|ceo')
         <form action="{{ route('projects.destroy', $project) }}" method="POST" class="ml-auto"
-            onsubmit="return confirm('Delete this project permanently?');">
+            data-confirm-form
+            data-confirm-title="Delete project"
+            data-confirm-message="Are you sure you want to permanently delete {{ $project->name }}? All linked records and memberships will be removed."
+            data-confirm-label="Delete">
             @csrf @method('DELETE')
             <button
                 class="px-5 py-2.5 rounded-xl text-red-600 border border-red-200 text-sm font-medium hover:bg-red-50 transition shadow-sm">
@@ -594,4 +613,29 @@
         @endhasanyrole
     </div>
     </div>
+
+    <script>
+        (function () {
+            const input = document.getElementById('member-search-input');
+            if (!input) return;
+
+            const rows = document.querySelectorAll('[data-member-search-row]');
+            const emptyMsg = document.getElementById('member-search-empty');
+
+            function applyFilter() {
+                const q = input.value.trim().toLowerCase();
+                let visible = 0;
+                rows.forEach(function (row) {
+                    const haystack = ((row.dataset.name || '') + ' ' + (row.dataset.email || '')).toLowerCase();
+                    const show = q === '' || haystack.includes(q);
+                    row.classList.toggle('hidden', !show);
+                    if (show) visible++;
+                });
+                if (emptyMsg) emptyMsg.classList.toggle('hidden', visible !== 0);
+            }
+
+            input.addEventListener('input', applyFilter);
+            applyFilter();
+        })();
+    </script>
 </x-app-layout>

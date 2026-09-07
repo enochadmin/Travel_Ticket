@@ -72,9 +72,12 @@
         });
 
         window.confirmationModal = {
-            show: (title, message, cb) => {
+            show: (title, message, cb, confirmText) => {
                 titleEl.textContent = title;
                 messageEl.textContent = message;
+                if (confirmText) {
+                    confirmBtn.textContent = confirmText;
+                }
                 callback = cb;
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');

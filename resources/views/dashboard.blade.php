@@ -173,47 +173,110 @@
                 window.__charts.push(roleChart);
             }
 
-            // 2. Discipline Bar
+            // Center-text plugin for the status doughnut (shows the total count)
+            const projectCenterPlugin = {
+                id: 'projectCenter',
+                afterDraw(chart) {
+                    const { ctx } = chart;
+                    const meta = chart.getDatasetMeta(0);
+                    if (!meta.data.length) return;
+                    const total = chart.data.datasets[0].data.reduce((a, b) => a + (Number(b) || 0), 0);
+                    const center = meta.data[0];
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.font = "800 24px 'Inter', sans-serif";
+                    ctx.fillStyle = t.text;
+                    ctx.fillText(String(total), center.x, center.y - 8);
+                    ctx.font = "500 11px 'Inter', sans-serif";
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.fillText('Projects', center.x, center.y + 13);
+                    ctx.restore();
+                }
+            };
+
+            const disciplineColors = {
+                'Infrastructure': '#6366f1',
+                'Water': '#0891b2',
+                'Building': '#d97706',
+                'Head-Office': '#7c3aed'
+            };
+
+            // 2. Projects by Discipline — horizontal bars, one color per discipline
             const discCtx = document.getElementById('disciplineChart');
             if(discCtx) {
+                const discLabels = {!! json_encode($disciplineChartLabels) !!};
                 const disciplineChart = new Chart(discCtx.getContext('2d'), {
                     type: 'bar',
                     data: {
-                        labels: {!! json_encode($disciplineChartLabels) !!},
+                        labels: discLabels,
                         datasets: [{
                             label: 'Total Projects',
                             data: {!! json_encode($disciplineChartData) !!},
-                            backgroundColor: '#3b82f6',
-                            borderRadius: 6
+                            backgroundColor: discLabels.map(l => disciplineColors[l] || '#94a3b8'),
+                            borderRadius: 6,
+                            borderSkipped: false,
+                            barPercentage: 0.6
                         }]
                     },
                     options: {
                         ...commonOptions,
+                        indexAxis: 'y',
                         plugins: { legend: { display: false }, tooltip: commonOptions.plugins.tooltip },
                         scales: {
-                            y: { beginAtZero: true, ticks: { stepSize: 1, color: t.text }, grid: { color: t.grid } },
-                            x: { grid: { display: false }, ticks: { color: t.text } }
+                            x: { beginAtZero: true, ticks: { stepSize: 1, color: t.text }, grid: { color: t.grid } },
+                            y: { grid: { display: false }, ticks: { color: t.text, font: { family: "'Inter', sans-serif", weight: '600' } } }
                         }
                     }
                 });
                 window.__charts.push(disciplineChart);
             }
 
-            // 3. Status Pie
+            // 3. Projects by Status — doughnut with center total and status-colored slices
             const statusCtx = document.getElementById('statusChart');
             if(statusCtx) {
+                const statusLabels = {!! json_encode($statusChartLabels) !!};
+                const statusColorMap = {
+                    'Active': '#10b981',
+                    'On-Hold': '#f59e0b',
+                    'Completed': '#3b82f6',
+                    'Cancelled': '#ef4444'
+                };
                 const statusChart = new Chart(statusCtx.getContext('2d'), {
-                    type: 'pie',
+                    type: 'doughnut',
                     data: {
-                        labels: {!! json_encode($statusChartLabels) !!},
+                        labels: statusLabels,
                         datasets: [{
                             data: {!! json_encode($statusChartData) !!},
-                            backgroundColor: ['#10b981', '#f59e0b', '#3b82f6', '#ef4444'],
-                            borderWidth: 2, borderColor: t.border
+                            backgroundColor: statusLabels.map(l => statusColorMap[l] || '#94a3b8'),
+                            borderWidth: 2, borderColor: t.border,
+                            hoverOffset: 6
                         }]
                     },
-                    options: commonOptions
-                });
+                    options: {
+                        ...commonOptions,
+                        cutout: '64%',
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: { family: "'Inter', sans-serif" },
+                                    generateLabels: (chart) => {
+                                        const data = chart.data;
+                                        return data.labels.map((label, i) => ({
+                                            text: `${label}  (${data.datasets[0].data[i]})`,
+                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                            strokeStyle: data.datasets[0].backgroundColor[i],
+                                            hidden: false,
+                                            index: i
+                                        }));
+                                    }
+                                }
+                            },
+                            tooltip: commonOptions.plugins.tooltip
+                        }
+                    }
+                }, [projectCenterPlugin]);
                 window.__charts.push(statusChart);
             }
 
@@ -940,10 +1003,10 @@
     </div>
     @endhasrole
 
-    {{-- ============= PROJECT MANAGER DASHBOARD ============= --}}
-    @hasrole('project-manager')
+    {{-- ============= PROJECT MANAGER / HEAD OFFICE MANAGER DASHBOARD ============= --}}
+    @hasanyrole('project-manager|head-office-manager')
         @include('dashboard._summary')
-    @endhasrole
+    @endhasanyrole
 
     {{-- ============= REQUESTER (regular user) DASHBOARD ============= --}}
     @hasrole('user')

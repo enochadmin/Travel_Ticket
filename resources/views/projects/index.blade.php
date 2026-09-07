@@ -112,7 +112,51 @@
                 </div>
             </div>
 
-            {{-- Cards or Table View --}}
+            {{-- Search & Filter Tabs --}}
+        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/40 space-y-3">
+            <form method="GET" action="{{ route('projects.index') }}"
+                class="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div class="relative flex-1 max-w-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2"
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input type="search" name="search" value="{{ $search ?? '' }}"
+                        placeholder="Search projects by name, code or location…"
+                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition">
+                </div>
+                @if($status)
+                    <input type="hidden" name="status" value="{{ $status }}">
+                @endif
+                <button type="submit"
+                    class="px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition">
+                    Search
+                </button>
+                @if($search !== '')
+                    <a href="{{ route('projects.index', $status ? ['status' => $status] : []) }}"
+                        class="text-xs font-medium text-gray-500 hover:text-gray-700 transition">Clear search</a>
+                @endif
+            </form>
+
+            <div class="flex flex-wrap items-center gap-2">
+                @php
+                    $tabs = ['active' => 'Active', 'on-hold' => 'On Hold', 'completed' => 'Completed', 'cancelled' => 'Cancelled', 'head-office' => 'Head Office'];
+                @endphp
+                <a href="{{ route('projects.index', array_filter(['search' => $search ?: null])) }}"
+                    class="px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ ! $status ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100' }}">
+                    All Projects
+                </a>
+                @foreach($tabs as $val => $label)
+                    <a href="{{ route('projects.index', array_filter(['status' => $val, 'search' => $search ?: null])) }}"
+                        class="px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ $status === $val ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100' }}">
+                        {{ $label }}
+                    </a>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- Cards or Table View --}}
             @hasanyrole('commercial-director|ceo')
                 <div class="p-6 bg-gray-50/50">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -128,6 +172,7 @@
                                     'Infrastructure' => 'bg-indigo-100 text-indigo-700',
                                     'Water' => 'bg-cyan-100 text-cyan-700',
                                     'Building' => 'bg-orange-100 text-orange-700',
+                                    'Head-Office' => 'bg-purple-100 text-purple-700',
                                 ];
                             @endphp
                             <a href="{{ route('projects.show', $project) }}" class="block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition group flex flex-col h-full">
@@ -206,6 +251,7 @@
                                     'Infrastructure' => 'bg-indigo-100 text-indigo-700',
                                     'Water' => 'bg-cyan-100 text-cyan-700',
                                     'Building' => 'bg-orange-100 text-orange-700',
+                                    'Head-Office' => 'bg-purple-100 text-purple-700',
                                 ];
                             @endphp
                             <tr class="hover:bg-indigo-50/30 transition">
@@ -255,7 +301,10 @@
                                     <a href="{{ route('projects.edit', $project) }}"
                                         class="text-xs font-semibold text-gray-500 hover:text-gray-700">Edit</a>
                                     <form action="{{ route('projects.destroy', $project) }}" method="POST" class="inline"
-                                        onsubmit="return confirm('Delete this project?');">
+                                        data-confirm-form
+                                        data-confirm-title="Delete project"
+                                        data-confirm-message="Are you sure you want to delete {{ $project->name }}? All linked records and memberships will be removed."
+                                        data-confirm-label="Delete">
                                         @csrf @method('DELETE')
                                         <button
                                             class="text-xs font-semibold text-red-500 hover:text-red-700">Delete</button>

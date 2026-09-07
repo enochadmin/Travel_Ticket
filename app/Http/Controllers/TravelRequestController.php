@@ -87,11 +87,11 @@ class TravelRequestController extends Controller
             }
         } elseif ($user->hasAnyRole(['admin', 'ceo', 'head-office-director'])) {
             // Unrestricted roles see everything (filters below still apply).
-        } elseif ($user->hasRole('project-manager')) {
+        } elseif ($user->hasAnyRole(['project-manager', 'head-office-manager'])) {
             if ($viewType === 'personal') {
                 $query->where('user_id', $user->id);
             } else {
-                // PMs see requests from every project they manage
+                // PMs / Head Office Managers see requests from every project they manage
                 $pmProjectIds = $user->approverProjectIds();
                 $query->whereIn('project_id', $pmProjectIds->isEmpty() ? [-1] : $pmProjectIds);
             }
@@ -104,6 +104,7 @@ class TravelRequestController extends Controller
         $status = $request->query('status');
         $flightType = $request->query('flight_type');
         $projectId = $request->query('project_id');
+        $headOfficeOnly = $request->boolean('head_office_only');
         $dateFrom = $request->query('date_from');
         $dateTo = $request->query('date_to');
         $keyword = trim((string) $request->query('keyword', ''));
@@ -124,6 +125,12 @@ class TravelRequestController extends Controller
 
         if ($projectId) {
             $query->where('project_id', $projectId);
+        }
+
+        // Head-office-only view: restrict to records whose project is a head-office
+        // department (discipline = Head-Office, or legacy head-office naming).
+        if ($headOfficeOnly) {
+            $query->forHeadOffice();
         }
 
         if ($flightType) {
@@ -164,6 +171,7 @@ class TravelRequestController extends Controller
         $filters = [
             'status' => $status,
             'project_id' => $projectId,
+            'head_office_only' => $headOfficeOnly,
             'flight_type' => $flightType,
             'date_from' => $dateFrom,
             'date_to' => $dateTo,
@@ -291,10 +299,10 @@ class TravelRequestController extends Controller
             return redirect()->route('travel-requests.index')->with('success', 'CEO request auto-approved and sent to Reception.');
         }
 
-        // Skip the PM approval stage when the requester is a project manager, or when the
-        // project's assigned manager is a Commercial Director (no PM assigned to the project —
-        // the request goes straight to the Commercial Director).
-        if ($user->hasRole('project-manager') || $travelRequest->project->managerIsCommercialDirector()) {
+        // Skip the PM approval stage when the requester is a Project Manager or Head Office
+        // Manager, or when the project's assigned manager is a Commercial Director (no PM
+        // assigned to the project — the request goes straight to the Commercial Director).
+        if ($user->hasAnyRole(['project-manager', 'head-office-manager']) || $travelRequest->project->managerIsCommercialDirector()) {
             $travelRequest->status = 'pending_commercial';
         } else {
             $travelRequest->status = 'pending_pm';
@@ -325,11 +333,11 @@ class TravelRequestController extends Controller
             abort(403);
         }
         $user = Auth::user();
-        $pmProjectIds = $user->hasRole('project-manager') ? $user->approverProjectIds() : collect();
+        $pmProjectIds = $user->hasAnyRole(['project-manager', 'head-office-manager']) ? $user->approverProjectIds() : collect();
 
         if (
             ! $user->hasRole('admin') && ! $user->hasRole('ceo') && ! $user->hasRole('commercial-director') && ! $user->hasRole('head-office-director') &&
-            ! ($user->hasRole('project-manager') && $pmProjectIds->contains((int) $travelRequest->project_id)) &&
+            ! ($user->hasAnyRole(['project-manager', 'head-office-manager']) && $pmProjectIds->contains((int) $travelRequest->project_id)) &&
             $travelRequest->user_id != $user->id
         ) {
             abort(403);
@@ -354,7 +362,7 @@ class TravelRequestController extends Controller
         // - PM requester (skips PM stage): allow while pending_commercial
         // - CD-managed project (no PM): pending_commercial IS the first stage
         if ($travelRequest->status === 'pending_commercial'
-            && !Auth::user()->hasRole('project-manager')
+            && !Auth::user()->hasAnyRole(['project-manager', 'head-office-manager'])
             && ! $travelRequest->project?->managerIsCommercialDirector()) {
             abort(403, 'Cannot edit this request after PM approval.');
         }
@@ -391,7 +399,7 @@ class TravelRequestController extends Controller
         }
 
         if ($travelRequest->status === 'pending_commercial'
-            && !Auth::user()->hasRole('project-manager')
+            && !Auth::user()->hasAnyRole(['project-manager', 'head-office-manager'])
             && ! $travelRequest->project?->managerIsCommercialDirector()) {
             abort(403, 'Cannot edit this request after PM approval.');
         }
@@ -417,7 +425,7 @@ class TravelRequestController extends Controller
         // Recompute the approval stage for the (possibly) new project, so the request
         // always lands with the right approver: the PM stage is skipped when the
         // requester is a PM or the project is managed by a Commercial Director.
-        $newStatus = ($user->hasRole('project-manager') || $travelRequest->project->managerIsCommercialDirector())
+        $newStatus = ($user->hasAnyRole(['project-manager', 'head-office-manager']) || $travelRequest->project->managerIsCommercialDirector())
             ? 'pending_commercial'
             : 'pending_pm';
 
@@ -461,7 +469,7 @@ class TravelRequestController extends Controller
         // - CD-managed project (no PM): pending_commercial IS the first stage
         $isFirstStage = $travelRequest->status === 'pending_pm'
             || ($travelRequest->status === 'pending_commercial'
-                && (Auth::user()->hasRole('project-manager') || $travelRequest->project?->managerIsCommercialDirector()));
+                && (Auth::user()->hasAnyRole(['project-manager', 'head-office-manager']) || $travelRequest->project?->managerIsCommercialDirector()));
 
         if (! $isFirstStage) {
             abort(403, 'You can only delete a ticket that is still pending review (before approval).');
@@ -478,10 +486,10 @@ class TravelRequestController extends Controller
             abort(403);
         }
         $user = Auth::user();
-        $pmProjectIds = $user->hasRole('project-manager') ? $user->approverProjectIds() : collect();
+        $pmProjectIds = $user->hasAnyRole(['project-manager', 'head-office-manager']) ? $user->approverProjectIds() : collect();
 
-        // PM approval — the PM may approve requests of any project they manage (projects.manager_id)
-        if ($user->hasRole('project-manager') && $travelRequest->status === 'pending_pm' && $pmProjectIds->contains((int) $travelRequest->project_id)) {
+        // PM / Head Office Manager approval — they may approve requests of any project they manage (projects.manager_id)
+        if ($user->hasAnyRole(['project-manager', 'head-office-manager']) && $travelRequest->status === 'pending_pm' && $pmProjectIds->contains((int) $travelRequest->project_id)) {
             $travelRequest->update([
                 'status' => 'pending_commercial',
                 'pm_id' => $user->id,
@@ -564,14 +572,14 @@ class TravelRequestController extends Controller
             abort(403);
         }
         $user = Auth::user();
-        $pmProjectIds = $user->hasRole('project-manager') ? $user->approverProjectIds() : collect();
+        $pmProjectIds = $user->hasAnyRole(['project-manager', 'head-office-manager']) ? $user->approverProjectIds() : collect();
 
         $reason = $request->validate([
             'rejection_reason' => 'required|string|max:1000',
         ])['rejection_reason'];
 
-        // PM Rejection — the PM may reject requests of any project they manage
-        if ($user->hasRole('project-manager') && $travelRequest->status === 'pending_pm' && $pmProjectIds->contains((int) $travelRequest->project_id)) {
+        // PM Rejection — the PM / Head Office Manager may reject requests of any project they manage
+        if ($user->hasAnyRole(['project-manager', 'head-office-manager']) && $travelRequest->status === 'pending_pm' && $pmProjectIds->contains((int) $travelRequest->project_id)) {
             $travelRequest->update([
                 'status' => 'rejected',
                 'pm_id' => $user->id,

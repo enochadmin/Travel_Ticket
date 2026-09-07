@@ -169,4 +169,40 @@ class RegistrationTest extends TestCase
 
         $this->assertDatabaseCount('user_registrations', 0);
     }
+
+    public function test_user_can_register_as_head_office_manager(): void
+    {
+        $response = $this->post('/register', [
+            'name' => 'Sara Tadesse Alemu',
+            'email' => 'SARA.HO@Example.com ',
+            'project_name' => 'Corporate Finance',
+            'role' => 'head-office-manager',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertSessionHas('status', "Please contact your Organization's IT Admin to Access the System");
+
+        $this->assertDatabaseHas('user_registrations', [
+            'email' => 'sara.ho@example.com',
+            'role' => 'head-office-manager',
+            'status' => 'pending',
+        ]);
+    }
+
+    public function test_registration_rejects_roles_outside_the_allowed_list(): void
+    {
+        $response = $this->post('/register', [
+            'name' => 'Intruder',
+            'email' => 'intruder@example.com',
+            'project_name' => 'Some Project',
+            'role' => 'admin',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        $response->assertSessionHasErrors('role');
+        $this->assertDatabaseCount('user_registrations', 0);
+    }
 }

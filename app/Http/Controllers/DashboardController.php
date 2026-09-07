@@ -179,7 +179,7 @@ class DashboardController extends Controller
                 ->where('status', 'pending_hod')
                 ->latest()->take(10)->get();
 
-        } elseif ($user->hasRole('project-manager')) {
+        } elseif ($user->hasAnyRole(['project-manager', 'head-office-manager'])) {
             $pmProjectId = $user->approverProjectId();
             $data['pmProject'] = $pmProjectId
                 ? Project::find($pmProjectId)

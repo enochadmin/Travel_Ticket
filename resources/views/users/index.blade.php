@@ -158,12 +158,27 @@
                                     {{ optional($user->project)->name ?? '—' }}
                                 </td>
                                 <td class="px-6 py-4 text-right space-x-2">
+                                    @if(! $user->hasRole('admin') && auth()->id() !== $user->id)
+                                        <form action="{{ route('impersonation.start', $user) }}" method="POST" class="inline"
+                                            onsubmit="return confirm(@js('Open this account as ' . $user->name . ' (read-only preview)?'));">
+                                            @csrf
+                                            <button type="submit"
+                                                class="text-xs font-semibold text-sky-700 hover:text-sky-900 bg-sky-50 hover:bg-sky-100 px-3 py-1.5 rounded-lg transition"
+                                                title="View the application exactly as this user sees it (read-only)">
+                                                Open as
+                                            </button>
+                                        </form>
+                                    @endif
+
                                     <a href="{{ route('users.edit', $user) }}"
                                         class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition">Edit</a>
 
                                     @if(auth()->id() !== $user->id)
                                         <form action="{{ route('users.destroy', $user) }}" method="POST" class="inline"
-                                            onsubmit="return confirm('Are you sure you want to permanently delete this user?');">
+                                            data-confirm-form
+                                            data-confirm-title="Delete user"
+                                            data-confirm-message="Are you sure you want to permanently delete {{ $user->name }}? This cannot be undone."
+                                            data-confirm-label="Delete">
                                             @csrf @method('DELETE')
                                             <button type="submit"
                                                 class="text-xs font-semibold text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition">Delete</button>
