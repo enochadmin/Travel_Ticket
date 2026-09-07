@@ -22,6 +22,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Exit an admin "Open as" session. Kept in the auth-only group so it always
+    // works regardless of any route-level verification on the target's pages.
+    Route::post('impersonation/exit', [\App\Http\Controllers\ImpersonationController::class, 'exit'])
+        ->name('impersonation.exit');
 });
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReceptionTicketController;
@@ -125,12 +130,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('sessions', [SettingsSessionController::class, 'show'])->name('session.show');
         Route::delete('sessions/bulk', [SettingsSessionController::class, 'bulkDestroy'])->name('session.bulk-destroy');
         Route::delete('sessions/{sessionId}', [SettingsSessionController::class, 'destroy'])->name('session.destroy');
+
+        Route::get('impersonation-logs', [\App\Http\Controllers\ImpersonationController::class, 'logs'])->name('impersonation-logs');
     });
 
     // Notification routes
     Route::get('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'read'])->name('notifications.read');
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.markAllRead');
     Route::post('/notifications/clear-read', [\App\Http\Controllers\NotificationController::class, 'clearRead'])->name('notifications.clearRead');
+
+    // Admin "Open as" (view-only impersonation)
+    Route::post('impersonation/{user}/start', [\App\Http\Controllers\ImpersonationController::class, 'start'])
+        ->name('impersonation.start')
+        ->middleware('role:admin');
 });
 
 require __DIR__ . '/auth.php';
