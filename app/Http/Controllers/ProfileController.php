@@ -51,6 +51,21 @@ class ProfileController extends Controller
     }
 
     /**
+     * Remove the user's profile picture.
+     */
+    public function removeAvatar(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        if ($user->avatar_path) {
+            Storage::disk('public')->delete($user->avatar_path);
+            $user->update(['avatar_path' => null]);
+        }
+
+        return Redirect::route('profile.edit')->with('status', 'avatar-removed');
+    }
+
+    /**
      * Delete the user's account.
      */
     public function destroy(Request $request): RedirectResponse

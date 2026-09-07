@@ -60,6 +60,20 @@ class ProfileManagementTest extends TestCase
         Storage::disk('public')->assertExists($fresh->avatar_path);
     }
 
+    public function test_user_can_remove_avatar(): void
+    {
+        Storage::fake('public');
+        $path = 'avatars/photo.jpg';
+        Storage::disk('public')->put($path, 'fake-image');
+        $user = $this->makeUser(['avatar_path' => $path]);
+
+        $response = $this->actingAs($user)->post(route('profile.avatar.remove'));
+
+        $response->assertRedirect(route('profile.edit'));
+        $this->assertNull($user->fresh()->avatar_path);
+        Storage::disk('public')->assertMissing($path);
+    }
+
     public function test_avatar_validation_rejects_non_images(): void
     {
         Storage::fake('public');
