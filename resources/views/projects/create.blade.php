@@ -131,6 +131,44 @@
                     </div>
                 </div>
 
+                <script>
+                    document.addEventListener('alpine:init', () => {
+                        Alpine.data('memberPicker', (users, initialSelected) => ({
+                            users: users || [],
+                            per: 12,
+                            q: '',
+                            page: 1,
+                            selected: Object.fromEntries((initialSelected || []).map((id) => [String(id), true])),
+                            get filtered() {
+                                const q = this.q.trim().toLowerCase();
+                                if (!q) return this.users;
+                                return this.users.filter(u =>
+                                    u.name.toLowerCase().includes(q) ||
+                                    u.email.toLowerCase().includes(q)
+                                );
+                            },
+                            get pages() { return Math.max(1, Math.ceil(this.filtered.length / this.per)); },
+                            get cur() { return Math.min(this.page, this.pages); },
+                            get paged() {
+                                const start = (this.cur - 1) * this.per;
+                                return this.filtered.slice(start, start + this.per);
+                            },
+                            get selectedIds() { return Object.keys(this.selected); },
+                            get selectedCount() { return this.selectedIds.length; },
+                            toggle(id) {
+                                const key = String(id);
+                                if (this.selected[key]) {
+                                    delete this.selected[key];
+                                } else {
+                                    this.selected[key] = true;
+                                }
+                            },
+                            pageUp() { if (this.cur < this.pages) this.page = this.cur + 1; },
+                            pageDown() { if (this.cur > 1) this.page = this.cur - 1; }
+                        }));
+                    });
+                </script>
+
                 {{-- Team Members --}}
                 <div>
                     @php
@@ -156,44 +194,111 @@
                     @error('user_ids')<p class="text-red-500 text-xs mb-2">{{ $message }}</p>@enderror
                     @error('user_ids.*')<p class="text-red-500 text-xs mb-2">{{ $message }}</p>@enderror
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        @forelse(($availableUsers ?? collect()) as $user)
-                            @php
-                                $parts = collect(explode(' ', trim($user->name)))->filter();
-                                $initials = $parts->map(fn($part) => \Illuminate\Support\Str::substr($part, 0, 1))->take(2)->implode('');
-                                $role = ucfirst(str_replace('-', ' ', $user->roles->first()?->name ?? 'user'));
-                                $color = $avatarColors[$loop->index % count($avatarColors)];
-                            @endphp
-                            <label class="relative flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 cursor-pointer transition hover:border-indigo-200 hover:bg-indigo-50/40 shadow-sm">
-                                <input type="checkbox" name="user_ids[]" value="{{ $user->id }}"
-                                    class="peer sr-only" {{ in_array((int) $user->id, $selectedUserIds, true) ? 'checked' : '' }}>
-                                <span class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-sm ring-2 ring-white"
-                                    style="background:{{ $color }};">
-                                    {{ strtoupper($initials ?: \Illuminate\Support\Str::substr($user->name, 0, 1)) }}
-                                </span>
-                                <span class="min-w-0 flex-1">
-                                    <span class="block text-sm font-semibold text-gray-800 truncate">{{ $user->name }}</span>
-                                    <span class="block text-xs text-gray-400 truncate">{{ $user->email }}</span>
-                                    <span class="mt-1 inline-flex max-w-full items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600">
-                                        {{ $role }}
-                                        <span class="mx-1 text-gray-300">/</span>
-                                        {{ $user->project ? 'Currently: ' . $user->project->name : 'Unassigned' }}
-                                    </span>
-                                </span>
-                                <span class="w-5 h-5 rounded-full border border-gray-300 bg-white flex items-center justify-center text-white transition peer-checked:bg-indigo-600 peer-checked:border-indigo-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd"
-                                            d="M16.704 5.29a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3.25-3.25a1 1 0 111.414-1.414l2.543 2.543 6.543-6.543a1 1 0 011.414 0z"
-                                            clip-rule="evenodd" />
-                                    </svg>
-                                </span>
-                            </label>
-                        @empty
-                            <div class="sm:col-span-2 rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-center">
-                                <p class="text-sm font-semibold text-gray-600">No users available to add.</p>
-                                <p class="text-xs text-gray-400 mt-1">Create users first, then assign them to projects.</p>
+                    @php
+                        $pickerUsers = ($availableUsers ?? collect())->map(function ($user, $index) use ($avatarColors) {
+                            $parts = collect(explode(' ', trim($user->name)))->filter();
+                            $initials = strtoupper($parts->map(fn($part) => \Illuminate\Support\Str::substr($part, 0, 1))->take(2)->implode(''))
+                                ?: strtoupper(\Illuminate\Support\Str::substr($user->name, 0, 1));
+
+                            return [
+                                'id' => (int) $user->id,
+                                'name' => $user->name,
+                                'email' => $user->email,
+                                'role' => ucfirst(str_replace('-', ' ', $user->roles->first()?->name ?? 'user')),
+                                'placement' => $user->project ? 'Currently: ' . $user->project->name : 'Unassigned',
+                                'initials' => $initials,
+                                'color' => $avatarColors[$index % count($avatarColors)],
+                            ];
+                        })->values()->all();
+                    @endphp
+
+                    <div x-data="memberPicker(@js($pickerUsers), @js($selectedUserIds))" class="space-y-3">
+                        {{-- Realtime search --}}
+                        <div class="relative">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                class="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <input type="text" x-model="q"
+                                placeholder="Search employee by name or email…"
+                                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition">
+                        </div>
+
+                        <p class="text-xs text-gray-400">
+                            <span x-text="`${selectedCount} selected`"></span>
+                            <template x-if="q.trim() !== ''">
+                                <span> · <span x-text="`${filtered.length} match${filtered.length === 1 ? '' : 'es'}`"></span></span>
+                            </template>
+                        </p>
+
+                        {{-- Paginated grid --}}
+                        <template x-if="filtered.length === 0">
+                            <div
+                                class="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-center text-sm text-gray-500">
+                                No employees match your search.
                             </div>
-                        @endforelse
+                        </template>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <template x-for="user in paged" :key="user.id">
+                                <label
+                                    class="relative flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 cursor-pointer transition hover:border-indigo-200 hover:bg-indigo-50/40 shadow-sm"
+                                    :class="selected[user.id] ? 'border-indigo-300 bg-indigo-50/50' : ''">
+                                    <input type="checkbox"
+                                        class="peer sr-only" :checked="!!selected[user.id]"
+                                        @change="toggle(user.id)">
+                                    <span class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-sm ring-2 ring-white"
+                                        :style="`background:${user.color};`">
+                                        <span x-text="user.initials"></span>
+                                    </span>
+                                    <span class="min-w-0 flex-1">
+                                        <span class="block text-sm font-semibold text-gray-800 truncate"
+                                            x-text="user.name"></span>
+                                        <span class="block text-xs text-gray-400 truncate" x-text="user.email"></span>
+                                        <span
+                                            class="mt-1 inline-flex max-w-full items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600">
+                                            <span x-text="user.role"></span>
+                                            <span class="mx-1 text-gray-300">/</span>
+                                            <span class="truncate" x-text="user.placement"></span>
+                                        </span>
+                                    </span>
+                                    <span
+                                        class="w-5 h-5 rounded-full border border-gray-300 bg-white flex items-center justify-center text-white transition peer-checked:bg-indigo-600 peer-checked:border-indigo-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 20 20"
+                                            fill="currentColor">
+                                            <path fill-rule="evenodd"
+                                                d="M16.704 5.29a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3.25-3.25a1 1 0 111.414-1.414l2.543 2.543 6.543-6.543a1 1 0 011.414 0z"
+                                                clip-rule="evenodd" />
+                                        </svg>
+                                    </span>
+                                </label>
+                            </template>
+                        </div>
+
+                        {{-- Pagination --}}
+                        <div class="flex items-center justify-between gap-3 pt-1"
+                            x-show="filtered.length > 0" x-cloak>
+                            <p class="text-xs text-gray-400"
+                                x-text="`Showing ${paged.length ? ((cur - 1) * per + 1) : 0}–${Math.min(cur * per, filtered.length)} of ${filtered.length}`"></p>
+                            <div class="flex items-center gap-2">
+                                <button type="button" @click="pageDown()" :disabled="cur <= 1"
+                                    class="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                                    ← Prev
+                                </button>
+                                <span class="text-xs font-semibold text-gray-500" x-text="`Page ${cur} / ${pages}`"></span>
+                                <button type="button" @click="pageUp()" :disabled="cur >= pages"
+                                    class="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                                    Next →
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Keep every selection in the submitted payload --}}
+                        <template x-for="id in selectedIds" :key="id">
+                            <input type="hidden" name="user_ids[]" :value="id">
+                        </template>
                     </div>
                 </div>
 

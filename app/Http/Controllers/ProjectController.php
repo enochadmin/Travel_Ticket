@@ -36,18 +36,42 @@ class ProjectController extends Controller
         return $user->hasAnyRole(['project-manager', 'head-office-manager']) && $project->manager_id === $user->id;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $projects = Project::with('manager')
+        $allowedStatuses = ['active', 'on-hold', 'completed', 'cancelled'];
+        $status = $request->query('status');
+        if ($status !== 'head-office' && ! in_array($status, $allowedStatuses, true)) {
+            $status = null;
+        }
+
+        $search = trim((string) $request->query('search', ''));
+
+        $query = Project::with('manager')
             ->withCount([
                 'travelRequests as requested_tickets_count',
                 'travelRequests as approved_tickets_count' => function ($query) {
                     $query->where('status', 'approved');
                 }
-            ])
-            ->latest()
-            ->paginate(10);
-        return view('projects.index', compact('projects'));
+            ]);
+
+        if ($status === 'head-office') {
+            $query->headOffice();
+        } elseif ($status) {
+            $query->where('status', $status);
+        }
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('project_code', 'like', "%{$search}%")
+                    ->orWhere('location', 'like', "%{$search}%")
+                    ->orWhere('region', 'like', "%{$search}%");
+            });
+        }
+
+        $projects = $query->latest()->paginate(10)->withQueryString();
+
+        return view('projects.index', compact('projects', 'status', 'search'));
     }
 
     public function create()

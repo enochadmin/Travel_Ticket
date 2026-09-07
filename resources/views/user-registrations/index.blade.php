@@ -94,8 +94,12 @@
                                         {{ $registration->roleLabel() }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-gray-500 whitespace-nowrap">
-                                    {{ $registration->created_at->format('M d, Y') }}
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <p class="text-sm font-semibold text-gray-700"
+                                        title="{{ $registration->created_at->format('M d, Y, g:i A') }}">
+                                        {{ $registration->created_at->diffForHumans(['parts' => 2, 'short' => false]) }}
+                                    </p>
+                                    <p class="text-xs text-gray-400">{{ $registration->created_at->format('M d, Y, g:i A') }}</p>
                                 </td>
                                 <td class="px-6 py-4">
                                     @php

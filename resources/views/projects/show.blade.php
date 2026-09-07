@@ -600,7 +600,10 @@
 
         @hasanyrole('admin|head-office-director|commercial-director|ceo')
         <form action="{{ route('projects.destroy', $project) }}" method="POST" class="ml-auto"
-            onsubmit="return confirm('Delete this project permanently?');">
+            data-confirm-form
+            data-confirm-title="Delete project"
+            data-confirm-message="Are you sure you want to permanently delete {{ $project->name }}? All linked records and memberships will be removed."
+            data-confirm-label="Delete">
             @csrf @method('DELETE')
             <button
                 class="px-5 py-2.5 rounded-xl text-red-600 border border-red-200 text-sm font-medium hover:bg-red-50 transition shadow-sm">

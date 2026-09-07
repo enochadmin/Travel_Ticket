@@ -201,7 +201,10 @@
                                     @endif
                                     @if($request->user_id === Auth::id() && Auth::user()->can('delete own ticket') && ($request->status === 'pending_pm' || ($request->status === 'pending_commercial' && (Auth::user()->hasAnyRole(['project-manager', 'head-office-manager']) || $request->project?->managerIsCommercialDirector()))))
                                         <form action="{{ route('travel-requests.destroy', $request) }}" method="POST"
-                                            class="inline" onsubmit="return confirm('Delete this request?');">
+                                            class="inline" data-confirm-form
+                                            data-confirm-title="Delete travel request"
+                                            data-confirm-message="Are you sure you want to delete this travel request? This cannot be undone."
+                                            data-confirm-label="Delete">
                                             @csrf @method('DELETE')
                                             <button
                                                 class="text-xs font-semibold text-red-500 hover:text-red-700">Delete</button>

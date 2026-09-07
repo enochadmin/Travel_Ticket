@@ -669,7 +669,10 @@
                                     <div class="flex items-center gap-3 flex-shrink-0">
                                         @if($readCount > 0)
                                             <form method="POST" action="{{ route('notifications.clearRead') }}"
-                                                onsubmit="return confirm('Clear all read notifications from this list? Unread ones will stay.');">
+                                                data-confirm-form
+                                                data-confirm-title="Clear read notifications"
+                                                data-confirm-message="Remove all read notifications from this list? Unread notifications will stay."
+                                                data-confirm-label="Clear read">
                                                 @csrf
                                                 <button type="submit"
                                                     class="text-xs text-gray-400 hover:text-red-500 hover:underline font-medium">Clear
@@ -841,6 +844,35 @@
 
     <!-- Confirmation Modal -->
     @include('components.confirmation-modal')
+
+    <script>
+        // Route every form marked data-confirm-form through the styled confirmation
+        // modal instead of the native browser confirm().
+        (function () {
+            document.addEventListener('submit', function (e) {
+                const target = e.target && e.target.closest
+                    ? e.target.closest('form[data-confirm-form]')
+                    : null;
+                if (!target) return;
+
+                e.preventDefault();
+
+                const message = target.dataset.confirmMessage || 'Are you sure you want to proceed?';
+                const title = target.dataset.confirmTitle || 'Confirm action';
+                const label = target.dataset.confirmLabel || 'Yes';
+
+                if (window.confirmationModal) {
+                    window.confirmationModal.show(title, message, function () {
+                        target.submit();
+                    }, label);
+                } else if (window.confirm) {
+                    if (window.confirm(message)) {
+                        target.submit();
+                    }
+                }
+            }, true);
+        })();
+    </script>
 
 </body>
 
