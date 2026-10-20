@@ -24,6 +24,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/avatar/remove', [ProfileController::class, 'removeAvatar'])->name('profile.avatar.remove');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // Fallback avatar delivery for environments where public/storage is not linked.
+    Route::get('media/avatars/{path}', [\App\Http\Controllers\AvatarController::class, 'show'])
+        ->where('path', '.*')
+        ->name('media.avatars');
+
     // Exit an admin "Open as" session. Kept in the auth-only group so it always
     // works regardless of any route-level verification on the target's pages.
     Route::post('impersonation/exit', [\App\Http\Controllers\ImpersonationController::class, 'exit'])

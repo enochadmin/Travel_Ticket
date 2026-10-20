@@ -47,18 +47,18 @@
                 <x-input-error class="mt-1" :messages="$errors->get('avatar')" />
 
                 @if($user->avatarUrl())
-                    <form method="POST" action="{{ route('profile.avatar.remove') }}" class="mt-1">
-                        @csrf
-                        <button type="submit"
-                            class="text-xs font-semibold text-red-500 hover:text-red-700 transition inline-flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            Remove picture
-                        </button>
-                    </form>
+                    {{-- The remove form lives outside this form (see the bottom of the section);
+                         a button cannot contain one form inside another. --}}
+                    <button type="submit" form="avatar-remove-form"
+                        onclick="return confirm('Remove your profile picture?');"
+                        class="text-xs font-semibold text-red-500 hover:text-red-700 transition inline-flex items-center gap-1 mt-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Remove picture
+                    </button>
                 @endif
             </div>
         </div>
@@ -122,6 +122,14 @@
         </div>
     </form>
 
+    @if($user->avatarUrl())
+        {{-- Kept outside the update form: nested forms are silently dropped by browsers,
+             which is why "Remove picture" used to submit the update form instead. --}}
+        <form id="avatar-remove-form" method="POST" action="{{ route('profile.avatar.remove') }}" class="hidden">
+            @csrf
+        </form>
+    @endif
+
     {{-- Simple preview: show the chosen photo immediately (uploaded on Save) --}}
     <script>
         (function () {
@@ -133,12 +141,25 @@
                 const file = input.files && input.files[0];
                 if (!file) return;
 
+                if (preview.dataset.objectUrl) {
+                    URL.revokeObjectURL(preview.dataset.objectUrl);
+                }
+
+                const url = URL.createObjectURL(file);
+                preview.dataset.objectUrl = url;
+
                 const img = document.createElement('img');
-                img.src = URL.createObjectURL(file);
+                img.src = url;
                 img.alt = 'New profile picture';
                 img.className = 'w-full h-full object-cover';
                 preview.innerHTML = '';
                 preview.appendChild(img);
+            });
+
+            window.addEventListener('beforeunload', function () {
+                if (preview.dataset.objectUrl) {
+                    URL.revokeObjectURL(preview.dataset.objectUrl);
+                }
             });
         })();
     </script>

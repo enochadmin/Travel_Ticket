@@ -74,6 +74,82 @@ class ProfileManagementTest extends TestCase
         Storage::disk('public')->assertMissing($path);
     }
 
+    public function test_avatar_url_is_null_when_the_file_is_missing(): void
+    {
+        Storage::fake('public');
+        $user = $this->makeUser(['avatar_path' => 'avatars/gone.jpg']);
+
+        $this->assertFalse($user->hasAvatarFile());
+        $this->assertNull($user->avatarUrl());
+    }
+
+    public function test_avatar_url_points_at_the_public_storage_path(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('avatars/photo.jpg', 'fake-image');
+        $user = $this->makeUser(['avatar_path' => 'avatars/photo.jpg']);
+
+        $this->assertTrue($user->hasAvatarFile());
+        $this->assertStringContainsString('storage/avatars/photo.jpg', $user->avatarUrl());
+    }
+
+    public function test_avatar_path_from_legacy_rows_is_normalised(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('avatars/photo.jpg', 'fake-image');
+
+        $legacy = $this->makeUser(['avatar_path' => '/storage/avatars/photo.jpg']);
+        $this->assertSame('avatars/photo.jpg', $legacy->avatarDiskPath());
+        $this->assertNotNull($legacy->avatarUrl());
+    }
+
+    public function test_avatar_fallback_route_serves_the_stored_file(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('avatars/photo.jpg', 'fake-image');
+        $user = $this->makeUser(['avatar_path' => 'avatars/photo.jpg']);
+
+        $this->actingAs($user)
+            ->get(route('media.avatars', ['path' => 'avatars/photo.jpg']))
+            ->assertOk();
+
+        $this->actingAs($user)
+            ->get('/media/avatars/secret.txt')
+            ->assertNotFound();
+    }
+
+    public function test_remove_picture_control_is_not_a_nested_form(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('avatars/photo.jpg', 'fake-image');
+        $user = $this->makeUser(['avatar_path' => 'avatars/photo.jpg']);
+
+        $html = $this->actingAs($user)->get(route('profile.edit'))->getContent();
+
+        $this->assertStringContainsString('form="avatar-remove-form"', $html);
+
+        $removeFormPosition = strpos($html, '<form id="avatar-remove-form"');
+        $this->assertNotFalse($removeFormPosition, 'The remove-avatar form must be rendered.');
+
+        $updateFormPosition = strpos($html, route('profile.update'));
+        $this->assertNotFalse($updateFormPosition);
+        $updateFormEnd = strpos($html, '</form>', $updateFormPosition);
+
+        // The update form must already be closed — browsers drop a nested <form>.
+        $this->assertGreaterThan($updateFormEnd, $removeFormPosition);
+    }
+
+    public function test_remove_avatar_clears_the_path_even_when_the_file_is_gone(): void
+    {
+        Storage::fake('public');
+        $user = $this->makeUser(['avatar_path' => 'avatars/missing.jpg']);
+
+        $this->actingAs($user)->post(route('profile.avatar.remove'))
+            ->assertRedirect(route('profile.edit'));
+
+        $this->assertNull($user->fresh()->avatar_path);
+    }
+
     public function test_avatar_validation_rejects_non_images(): void
     {
         Storage::fake('public');
