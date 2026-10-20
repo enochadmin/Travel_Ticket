@@ -10,6 +10,7 @@ use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
 {
@@ -82,10 +83,92 @@ class User extends Authenticatable
         return strtoupper(mb_substr($first, 0, 1) . ($last !== '' ? mb_substr($last, 0, 1) : ''));
     }
 
-    /** Absolute URL of the uploaded profile picture, if any. */
+    /**
+     * Relative path of the profile picture on the "public" disk.
+     *
+     * Legacy rows may store an absolute URL, or a path that already contains the
+     * "storage/" prefix, so those forms are normalised here. Returns null when the
+     * value is unusable (empty or an external URL we cannot manage on disk).
+     */
+    public function avatarDiskPath(): ?string
+    {
+        $raw = trim((string) $this->avatar_path);
+
+        if ($raw === '' || preg_match('#^https?://#i', $raw)) {
+            return null;
+        }
+
+        $path = preg_replace('#^/?storage/#i', '', $raw);
+        $path = preg_replace('#^/?public/#i', '', (string) $path);
+        $path = ltrim((string) $path, '/');
+
+        return $path === '' ? null : $path;
+    }
+
+    /** Whether the stored profile picture actually exists on disk. */
+    public function hasAvatarFile(): bool
+    {
+        $path = $this->avatarDiskPath();
+
+        if ($path === null) {
+            return false;
+        }
+
+        try {
+            return Storage::disk('public')->exists($path);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Public URL of the uploaded profile picture, if any.
+     *
+     * Returns null when there is no picture *or* when the file is gone, so views fall
+     * back to the initials placeholder instead of rendering a broken image.
+     */
     public function avatarUrl(): ?string
     {
-        return $this->avatar_path ? asset('storage/' . $this->avatar_path) : null;
+        $raw = trim((string) $this->avatar_path);
+
+        // Legacy rows may already hold an absolute URL — use it untouched.
+        if ($raw !== '' && preg_match('#^https?://#i', $raw)) {
+            return $raw;
+        }
+
+        $path = $this->avatarDiskPath();
+
+        if ($path === null || ! $this->hasAvatarFile()) {
+            return null;
+        }
+
+        return self::publicStorageUrl($path);
+    }
+
+    /**
+     * Build a URL for a file on the "public" disk.
+     *
+     * Uses the /storage symlink when it is available (fast, served straight by the web
+     * server) and falls back to the authenticated media route otherwise — a missing
+     * `php artisan storage:link` must not produce broken images.
+     */
+    public static function publicStorageUrl(string $path): string
+    {
+        $encoded = implode('/', array_map('rawurlencode', explode('/', $path)));
+
+        if (self::hasPublicStorageLink()) {
+            return asset('storage/' . $encoded);
+        }
+
+        return route('media.avatars', ['path' => $encoded]);
+    }
+
+    /** Cached per request: does public/storage resolve to storage/app/public? */
+    protected static function hasPublicStorageLink(): bool
+    {
+        static $available = null;
+
+        return $available ??= file_exists(public_path('storage'));
     }
 
     /** Online when the account is active and active within the last N minutes. */

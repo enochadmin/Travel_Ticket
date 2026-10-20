@@ -196,6 +196,13 @@
             }
         }
 
+        /* Keep the mobile top bar usable on narrow phones. */
+        @media (max-width: 479px) {
+            .navbar-date {
+                display: none;
+            }
+        }
+
         @media (max-width: 767px) {
             .sidebar {
                 position: fixed;

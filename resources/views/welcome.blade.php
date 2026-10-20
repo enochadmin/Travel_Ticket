@@ -92,7 +92,206 @@
         .light-mode .theme-toggle {
             background: rgba(15,23,42,0.08);
             border-color: rgba(15,23,42,0.2);
-        }    </style>
+        }
+
+        /* ============ New visitor guide (spotlight on Register) ============ */
+        .nv-guide {
+            position: fixed;
+            inset: 0;
+            z-index: 60;
+            pointer-events: none;
+        }
+
+        .nv-guide[hidden] { display: none; }
+
+        .nv-guide.nv-hide .nv-spotlight,
+        .nv-guide.nv-hide .nv-ring,
+        .nv-guide.nv-hide .nv-bubble {
+            opacity: 0;
+            transition: opacity .2s ease;
+        }
+
+        /* Dims the whole page but leaves a hole over the target button */
+        .nv-spotlight {
+            position: fixed;
+            border-radius: 14px;
+            box-shadow: 0 0 0 9999px rgba(2, 6, 23, 0.66);
+            transition: left .35s cubic-bezier(.4, 0, .2, 1),
+                        top .35s cubic-bezier(.4, 0, .2, 1),
+                        width .35s cubic-bezier(.4, 0, .2, 1),
+                        height .35s cubic-bezier(.4, 0, .2, 1);
+            pointer-events: none;
+        }
+
+        .nv-ring {
+            position: fixed;
+            overflow: visible;
+            pointer-events: none;
+            filter: drop-shadow(0 0 3px rgba(250, 204, 21, .5));
+        }
+
+        .nv-ring ellipse {
+            fill: none;
+            stroke: #facc15;
+            stroke-width: 2.6;
+            stroke-linecap: round;
+        }
+
+        .nv-ring.nv-pulse {
+            animation: nv-ring-pulse 2.4s ease-in-out infinite;
+        }
+
+        @keyframes nv-ring-pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50%      { transform: scale(1.05); opacity: .72; }
+        }
+
+        .nv-bubble {
+            position: fixed;
+            width: 292px;
+            max-width: calc(100vw - 24px);
+            pointer-events: auto;
+            border-radius: 16px;
+            padding: 15px 16px 14px;
+            background: #0b1220;
+            border: 1px solid rgba(250, 204, 21, .38);
+            box-shadow: 0 20px 48px rgba(2, 6, 23, .55), inset 0 1px 0 rgba(255, 255, 255, .05);
+            animation: nv-bubble-in .32s cubic-bezier(.34, 1.4, .64, 1) both;
+        }
+
+        @keyframes nv-bubble-in {
+            from { opacity: 0; transform: translateY(-8px) scale(.96); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .nv-arrow {
+            position: absolute;
+            top: -7px;
+            width: 13px;
+            height: 13px;
+            background: #0b1220;
+            border-left: 1px solid rgba(250, 204, 21, .38);
+            border-top: 1px solid rgba(250, 204, 21, .38);
+            transform: translateX(-50%) rotate(45deg);
+            border-top-left-radius: 3px;
+        }
+
+        .nv-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: #facc15;
+        }
+
+        .nv-eyebrow .nv-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 9999px;
+            background: #facc15;
+            animation: nv-dot 1.8s ease-in-out infinite;
+        }
+
+        @keyframes nv-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%      { opacity: .35; transform: scale(.75); }
+        }
+
+        .nv-title {
+            margin-top: 6px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -.01em;
+        }
+
+        .nv-copy {
+            margin-top: 4px;
+            font-size: 12.5px;
+            line-height: 1.5;
+            color: #94a3b8;
+        }
+
+        .nv-actions {
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nv-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #0ea5e9;
+            color: #ffffff;
+            font-size: 12.5px;
+            font-weight: 600;
+            padding: 8px 12px;
+            border-radius: 9px;
+            transition: background .18s ease, transform .18s ease;
+        }
+
+        .nv-cta:hover { background: #0284c7; transform: translateY(-1px); }
+
+        .nv-dismiss {
+            background: none;
+            border: 0;
+            padding: 4px 2px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #94a3b8;
+            cursor: pointer;
+        }
+
+        .nv-dismiss:hover { color: #e2e8f0; }
+
+        .nv-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            color: #64748b;
+            font-size: 16px;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .nv-close:hover { background: rgba(148, 163, 184, .15); color: #e2e8f0; }
+
+        /* Gentle shimmer left on the button after the guide is dismissed */
+        .nv-shimmer::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(100deg, transparent 32%, rgba(255, 255, 255, .5) 50%, transparent 68%);
+            transform: translateX(-130%);
+            animation: nv-sweep 3.4s ease-in-out 3;
+            pointer-events: none;
+        }
+
+        @keyframes nv-sweep {
+            0%        { transform: translateX(-130%); }
+            55%, 100% { transform: translateX(130%); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .nv-ring.nv-pulse,
+            .nv-eyebrow .nv-dot,
+            .nv-shimmer::after,
+            .nv-bubble { animation: none !important; }
+        }
+    </style>
 </head>
 
 <body class="bg-black text-white">
@@ -115,7 +314,7 @@
                 <a href="/dashboard" class="bg-white text-black px-6 py-2 rounded-xl">Dashboard</a>
             @else
                 <a href="/login">Login</a>
-                <a href="/register" class="bg-sky-500 px-6 py-2 rounded-xl">Register</a>
+                <a href="/register" id="navRegister" class="relative overflow-hidden bg-sky-500 px-6 py-2 rounded-xl">Register</a>
             @endauth
         </div>
         <!-- Theme Toggle -->
@@ -129,7 +328,8 @@
             </svg>
         </button>
         <!-- Mobile -->
-        <button onclick="toggleMenu()" class="md:hidden text-2xl">☰</button>
+        <button id="navMenuToggle" type="button" onclick="toggleMenu()" class="md:hidden text-2xl"
+            aria-label="Open navigation menu" aria-controls="mobileMenu" aria-expanded="false">☰</button>
     </div>
 
     <!-- Mobile menu -->
@@ -258,10 +458,46 @@
     © {{ date('Y') }} EEC Travel System
 </footer>
 
+@guest
+{{-- First-look guide: dims the page and circles the Register button once per visitor --}}
+<div id="nvGuide" class="nv-guide" hidden aria-hidden="true">
+    <div id="nvSpot" class="nv-spotlight"></div>
+
+    <svg id="nvRing" class="nv-ring" aria-hidden="true">
+        <ellipse id="nvRingPath" cx="0" cy="0" rx="0" ry="0"></ellipse>
+    </svg>
+
+    <div id="nvBubble" class="nv-bubble" role="status" aria-live="polite">
+        <span class="nv-arrow" id="nvArrow"></span>
+        <button type="button" class="nv-close" id="nvClose" aria-label="Dismiss registration hint">&times;</button>
+
+        <span class="nv-eyebrow"><span class="nv-dot"></span>New here?</span>
+        <p class="nv-title">Create your account</p>
+        <p class="nv-copy">Registration takes under a minute — then submit and track your travel requests from anywhere.</p>
+
+        <div class="nv-actions">
+            <a href="/register" class="nv-cta">
+                Register now
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M5 12h14M13 6l6 6-6 6"></path>
+                </svg>
+            </a>
+            <button type="button" class="nv-dismiss" id="nvLater">Maybe later</button>
+        </div>
+    </div>
+</div>
+@endguest
+
 <!-- JS -->
 <script>
     function toggleMenu() {
-        document.getElementById('mobileMenu').classList.toggle('hidden');
+        const menu = document.getElementById('mobileMenu');
+        const toggle = document.getElementById('navMenuToggle');
+        const isOpen = menu.classList.toggle('hidden') === false;
+
+        toggle.setAttribute('aria-expanded', String(isOpen));
+        toggle.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
     }
 
     function setTheme(isLight) {
@@ -326,6 +562,195 @@
     }, { threshold: 0.6 });
 
     statCounters.forEach(counter => statObserver.observe(counter));
+
+    /* ------------------------------------------------------------------
+       New visitor guide
+       One-time spotlight that draws a hand-drawn circle around Register.
+       Kept in a closure so nothing leaks into the global scope.
+    ------------------------------------------------------------------ */
+    (function () {
+        const STORAGE_KEY = 'eec_register_guide_seen_at';
+        const COOLDOWN_DAYS = 7;
+
+        const guide = document.getElementById('nvGuide');
+        if (!guide) return;
+
+        const spot = document.getElementById('nvSpot');
+        const ring = document.getElementById('nvRing');
+        const path = document.getElementById('nvRingPath');
+        const bubble = document.getElementById('nvBubble');
+        const arrow = document.getElementById('nvArrow');
+        const closeBtn = document.getElementById('nvClose');
+        const laterBtn = document.getElementById('nvLater');
+        const cta = bubble.querySelector('.nv-cta');
+
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const desktopQuery = window.matchMedia('(min-width: 768px)');
+
+        let open = false;
+        let closed = false;
+
+        function alreadySeen() {
+            try {
+                const stamp = localStorage.getItem(STORAGE_KEY);
+                if (!stamp) return false;
+
+                return Date.now() - Number(stamp) < COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function remember() {
+            try {
+                localStorage.setItem(STORAGE_KEY, String(Date.now()));
+            } catch (e) {
+                /* storage blocked — the guide simply shows again next visit */
+            }
+        }
+
+        // Desktop points at the Register link; mobile points at the menu toggle
+        // because that is where Register lives on small screens.
+        function target() {
+            const register = document.getElementById('navRegister');
+            const toggle = document.getElementById('navMenuToggle');
+
+            if (desktopQuery.matches && register) {
+                return register;
+            }
+
+            return toggle;
+        }
+
+        function place() {
+            const el = target();
+            if (!el) return false;
+
+            const rect = el.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) return false;
+
+            const pad = 10;
+            const boxWidth = rect.width + pad * 2;
+            const boxHeight = rect.height + pad * 2;
+
+            spot.style.left = (rect.left - pad) + 'px';
+            spot.style.top = (rect.top - pad) + 'px';
+            spot.style.width = boxWidth + 'px';
+            spot.style.height = boxHeight + 'px';
+
+            ring.style.left = (rect.left - pad) + 'px';
+            ring.style.top = (rect.top - pad) + 'px';
+            ring.setAttribute('width', boxWidth);
+            ring.setAttribute('height', boxHeight);
+            ring.setAttribute('viewBox', '0 0 ' + boxWidth + ' ' + boxHeight);
+
+            path.setAttribute('cx', boxWidth / 2);
+            path.setAttribute('cy', boxHeight / 2);
+            path.setAttribute('rx', boxWidth / 2 - 2);
+            path.setAttribute('ry', boxHeight / 2 - 2);
+
+            // Bubble drops below the button, right aligned but never off-screen.
+            // It also has to clear the fixed navbar so the two do not visually merge.
+            const navbar = document.getElementById('navbar');
+            const navBottom = navbar ? navbar.getBoundingClientRect().bottom : rect.bottom;
+            const bubbleWidth = Math.min(292, window.innerWidth - 24);
+            const left = Math.max(12, Math.min(rect.right - bubbleWidth, window.innerWidth - bubbleWidth - 12));
+            const top = Math.max(rect.bottom + 12, navBottom + 10);
+
+            bubble.style.width = bubbleWidth + 'px';
+            bubble.style.left = left + 'px';
+            bubble.style.top = top + 'px';
+
+            // Keep the little arrow pointing at the button's centre.
+            const arrowX = Math.max(18, Math.min(rect.left + rect.width / 2 - left, bubbleWidth - 18));
+            arrow.style.left = arrowX + 'px';
+
+            return true;
+        }
+
+        function drawRing() {
+            const length = typeof path.getTotalLength === 'function' ? path.getTotalLength() : 400;
+
+            path.style.strokeDasharray = length;
+            path.style.strokeDashoffset = length;
+
+            if (reduceMotion) {
+                path.style.strokeDashoffset = 0;
+                return;
+            }
+
+            path.animate(
+                [{ strokeDashoffset: length }, { strokeDashoffset: 0 }],
+                { duration: 950, easing: 'ease-out', fill: 'forwards' }
+            );
+
+            window.setTimeout(() => ring.classList.add('nv-pulse'), 1000);
+        }
+
+        function show() {
+            if (open || closed || alreadySeen()) return;
+
+            guide.hidden = false;
+            if (!place()) {
+                guide.hidden = true;
+                return;
+            }
+
+            open = true;
+            guide.setAttribute('aria-hidden', 'false');
+            drawRing();
+        }
+
+        function dismiss(rememberIt) {
+            if (!open || closed) return;
+
+            closed = true;
+            open = false;
+
+            if (rememberIt !== false) remember();
+
+            guide.classList.add('nv-hide');
+            window.setTimeout(() => {
+                guide.hidden = true;
+                guide.setAttribute('aria-hidden', 'true');
+            }, 220);
+
+            // Leave a single, quiet shimmer sweep on the button instead of a nag.
+            const el = target();
+            if (!reduceMotion && el) {
+                el.classList.add('nv-shimmer');
+                window.setTimeout(() => el.classList.remove('nv-shimmer'), 11000);
+            }
+        }
+
+        closeBtn.addEventListener('click', () => dismiss(true));
+        laterBtn.addEventListener('click', () => dismiss(true));
+        cta.addEventListener('click', () => dismiss(true));
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') dismiss(true);
+        });
+
+        // Any click outside the bubble means they are exploring on their own.
+        document.addEventListener('click', (event) => {
+            if (!open) return;
+            if (bubble.contains(event.target)) return;
+            if (target() && target().contains(event.target)) return;
+
+            dismiss(true);
+        });
+
+        // Scrolling is a sign they are reading, not hesitating.
+        window.addEventListener('scroll', () => {
+            if (open && window.scrollY > 60) dismiss(true);
+        }, { passive: true });
+
+        window.addEventListener('resize', () => {
+            if (open) place();
+        });
+
+        window.setTimeout(show, 1100);
+    })();
 </script>
 
 </body>

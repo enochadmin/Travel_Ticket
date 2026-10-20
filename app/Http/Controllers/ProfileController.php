@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,11 +31,12 @@ class ProfileController extends Controller
         $user = $request->user();
         $validated = $request->validated();
 
+        // The uploaded file is not a column — it is handled separately below.
+        unset($validated['avatar']);
+
         // Profile picture upload
         if ($request->hasFile('avatar')) {
-            if ($user->avatar_path) {
-                Storage::disk('public')->delete($user->avatar_path);
-            }
+            $this->deleteAvatarFile($user);
 
             $validated['avatar_path'] = $request->file('avatar')->store('avatars', 'public');
         }
@@ -57,12 +59,31 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        if ($user->avatar_path) {
-            Storage::disk('public')->delete($user->avatar_path);
-            $user->update(['avatar_path' => null]);
+        $this->deleteAvatarFile($user);
+
+        if ($user->avatar_path !== null) {
+            $user->forceFill(['avatar_path' => null])->save();
         }
 
         return Redirect::route('profile.edit')->with('status', 'avatar-removed');
+    }
+
+    /**
+     * Delete the stored avatar file (if any) without failing when it is already gone.
+     */
+    private function deleteAvatarFile(User $user): void
+    {
+        $path = $user->avatarDiskPath();
+
+        if ($path === null) {
+            return;
+        }
+
+        try {
+            Storage::disk('public')->delete($path);
+        } catch (\Throwable) {
+            // A unreadable/locked file must never block the profile update.
+        }
     }
 
     /**
@@ -77,6 +98,8 @@ class ProfileController extends Controller
         $user = $request->user();
 
         Auth::logout();
+
+        $this->deleteAvatarFile($user);
 
         $user->delete();
 

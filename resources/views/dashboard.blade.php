@@ -690,10 +690,21 @@
                 <p class="text-xs font-semibold uppercase tracking-wider text-green-700 dark:text-green-400 group-hover:text-green-800 dark:group-hover:text-green-300">Approved</p>
                 <p class="mt-3 text-4xl font-bold text-green-800 dark:text-green-300">{{ $approved }}</p>
             </a>
-            <a href="{{ route('travel-requests.index') }}" 
-               class="group rounded-2xl border border-yellow-200 bg-yellow-50 dark:bg-yellow-950/30 dark:border-yellow-900 p-6 hover:shadow-lg hover:border-yellow-300 transition-all duration-200 cursor-pointer">
-                <p class="text-xs font-semibold uppercase tracking-wider text-yellow-700 dark:text-yellow-400 group-hover:text-yellow-800 dark:group-hover:text-yellow-300">Pending</p>
-                <p class="mt-3 text-4xl font-bold text-yellow-800 dark:text-yellow-300">{{ $pending }}</p>
+            <a href="{{ route('travel-requests.index', ['status' => 'pending_commercial']) }}"
+               class="group relative overflow-hidden rounded-2xl border-2 border-amber-300 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-700 p-6 hover:shadow-lg hover:border-amber-400 transition-all duration-200 cursor-pointer">
+                <div class="flex items-start justify-between gap-3">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400 group-hover:text-amber-800 dark:group-hover:text-amber-300">Pending</p>
+                    @if($pending > 0)
+                        <span class="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                            <span class="h-1.5 w-1.5 rounded-full bg-white animate-pulse"></span>
+                            Needs action
+                        </span>
+                    @endif
+                </div>
+                <p class="mt-3 text-4xl font-bold text-amber-800 dark:text-amber-300">{{ $pending }}</p>
+                <p class="mt-1 text-xs font-semibold text-amber-700/80 dark:text-amber-400">
+                    @if($pending > 0){{ $pending }} waiting for your approval @else Nothing waiting on you @endif
+                </p>
             </a>
             <a href="{{ route('travel-requests.index', ['status' => 'rejected']) }}" 
                class="group rounded-2xl border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-6 hover:shadow-lg hover:border-red-300 transition-all duration-200 cursor-pointer">
@@ -707,16 +718,329 @@
             </a>
         </div>
 
+        {{-- ===== PENDING APPROVALS — click the button to break the count down per project ===== --}}
+        @php
+            // Age bands: over 15 days is critical (red), 10–15 needs attention (amber), under 10 is healthy (green).
+            $ageTones = [
+                'critical' => [
+                    'label' => 'Critical',
+                    'badge' => 'bg-red-100 text-red-700 ring-1 ring-red-200 dark:bg-red-950/60 dark:text-red-300 dark:ring-red-900',
+                    'text' => 'text-red-600 dark:text-red-400',
+                    'bar' => 'bg-red-500',
+                    'pill' => 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300',
+                ],
+                'watch' => [
+                    'label' => 'Watch',
+                    'badge' => 'bg-amber-100 text-amber-800 ring-1 ring-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:ring-amber-800',
+                    'text' => 'text-amber-600 dark:text-amber-400',
+                    'bar' => 'bg-amber-400',
+                    'pill' => 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300',
+                ],
+                'fresh' => [
+                    'label' => 'On track',
+                    'badge' => 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:ring-emerald-900',
+                    'text' => 'text-emerald-600 dark:text-emerald-400',
+                    'bar' => 'bg-emerald-500',
+                    'pill' => 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300',
+                ],
+            ];
+
+            $ageTone = fn (?int $days) => $days === null
+                ? 'fresh'
+                : ($days > $pendingAgeThresholds['critical'] ? 'critical' : ($days >= $pendingAgeThresholds['watch'] ? 'watch' : 'fresh'));
+        @endphp
+
+        <div x-data="{ open: {{ $pendingViewOpen ? 'true' : 'false' }}, filtersOpen: {{ $pendingFiltersActive ? 'true' : 'false' }} }"
+             class="overflow-hidden rounded-2xl border-2 border-amber-300 bg-white shadow-sm dark:border-amber-800 dark:bg-slate-900">
+
+            {{-- Header --}}
+            <div class="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex items-start gap-4">
+                    <span class="relative inline-flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        @if($pendingTotal > 0)
+                            <span class="absolute -right-1 -top-1 flex h-3 w-3">
+                                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75"></span>
+                                <span class="relative inline-flex h-3 w-3 rounded-full bg-amber-500"></span>
+                            </span>
+                        @endif
+                    </span>
+                    <div>
+                        <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">Commercial review queue</p>
+                        <div class="mt-1 flex flex-wrap items-baseline gap-x-2">
+                            <span class="text-3xl font-extrabold leading-none text-amber-700 dark:text-amber-300">{{ $pendingTotal }}</span>
+                            <span class="text-sm font-semibold text-gray-700 dark:text-slate-200">
+                                {{ \Illuminate\Support\Str::plural('ticket', $pendingTotal) }} awaiting your approval
+                            </span>
+                        </div>
+                        <p class="mt-1.5 text-xs text-gray-500 dark:text-slate-400">
+                            @if($pendingFiltersActive)
+                                Filtered view — {{ $pendingGrandTotal }} awaiting commercial review in total.
+                            @else
+                                {{ $pendingGrandTotal }} awaiting commercial review across all projects.
+                            @endif
+                            @if($pendingAging['avg_days'] !== null)
+                                Average age <span class="font-semibold text-amber-700 dark:text-amber-400">{{ $pendingAging['avg_days'] }}d</span>.
+                            @endif
+                        </p>
+
+                        {{-- Age at a glance: how long the filtered tickets have been waiting --}}
+                        <div class="mt-2.5 flex flex-wrap items-center gap-1.5">
+                            @foreach($ageTones as $tone => $style)
+                                <span class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold {{ $style['pill'] }}"
+                                      title="{{ $tone === 'critical' ? 'Waiting more than '.$pendingAgeThresholds['critical'].' days' : ($tone === 'watch' ? 'Waiting '.$pendingAgeThresholds['watch'].'–'.$pendingAgeThresholds['critical'].' days' : 'Waiting less than '.$pendingAgeThresholds['watch'].' days') }}">
+                                    <span class="h-1.5 w-1.5 rounded-full {{ $style['bar'] }}"></span>
+                                    {{ $style['label'] }}
+                                    <span class="font-mono font-bold">{{ $pendingAging[$tone] }}</span>
+                                </span>
+                            @endforeach
+                            @if($pendingAging['oldest_days'] !== null)
+                                <span class="text-[11px] text-gray-500 dark:text-slate-400">
+                                    oldest <span class="font-semibold {{ $ageTones[$ageTone($pendingAging['oldest_days'])]['text'] }}">{{ $pendingAging['oldest_days'] }}d</span>
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 sm:justify-end">
+                    <a href="{{ route('travel-requests.index', ['status' => 'pending_commercial']) }}"
+                       class="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-800 transition hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                        Awaiting commercial review
+                        <span class="rounded bg-white/70 px-1.5 py-0.5 font-mono text-[10px] text-amber-900 dark:bg-slate-900 dark:text-amber-200">{{ $pendingGrandTotal }}</span>
+                    </a>
+
+                    <button type="button" @click="open = !open"
+                        class="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 10h16M4 14h10M4 18h7" />
+                        </svg>
+                        <span x-text="open ? 'Hide breakdown' : 'Pending by project'">Pending by project</span>
+                        <svg class="h-4 w-4 transition-transform duration-200" :class="open ? 'rotate-180' : ''"
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Filters: collapsed to a single line, expanded on demand --}}
+            @php
+                $dateBasisLabel = $pendingDateType === 'created_at' ? 'Requested on' : 'Travel date';
+                $rangeLabel = ($pendingFrom || $pendingTo)
+                    ? ($pendingFrom ?: '…') . ' → ' . ($pendingTo ?: '…')
+                    : null;
+                $projectLabel = $pendingProject
+                    ? optional($pendingProjectOptions->firstWhere('id', (int) $pendingProject))->name
+                    : null;
+                $filterSummary = collect([
+                    $rangeLabel ? $dateBasisLabel . ': ' . $rangeLabel : null,
+                    $projectLabel,
+                ])->filter()->implode(' · ');
+            @endphp
+
+            <div class="flex items-center justify-between gap-4 border-t border-amber-100 px-6 py-2 dark:border-slate-700">
+                <button type="button" @click="filtersOpen = !filtersOpen" :aria-expanded="filtersOpen"
+                    class="inline-flex flex-shrink-0 items-center gap-1.5 text-xs font-semibold text-amber-800 transition hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-200">
+                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                    <span x-text="filtersOpen ? 'Hide filters' : 'Filter by date & project'">Filter by date &amp; project</span>
+                    <svg class="h-3.5 w-3.5 transition-transform duration-200" :class="filtersOpen ? 'rotate-180' : ''"
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+
+                <div class="flex min-w-0 items-center gap-3">
+                    @if($pendingFiltersActive)
+                        <span class="hidden truncate text-xs text-gray-500 dark:text-slate-400 sm:block" title="{{ $filterSummary }}">
+                            {{ $filterSummary }}
+                        </span>
+                        <a href="{{ route('dashboard', ['pending_view' => 1]) }}"
+                            class="flex-shrink-0 text-xs font-semibold text-amber-700 underline-offset-2 transition hover:text-amber-900 hover:underline dark:text-amber-300">
+                            Clear
+                        </a>
+                    @endif
+                </div>
+            </div>
+
+            <form method="GET" action="{{ route('dashboard') }}" x-show="filtersOpen" x-cloak
+                  x-transition:enter="transition ease-out duration-200"
+                  x-transition:enter-start="opacity-0 -translate-y-1"
+                  x-transition:enter-end="opacity-100 translate-y-0"
+                  class="border-t border-amber-100 bg-amber-50/40 px-6 py-4 dark:border-slate-700 dark:bg-slate-800/40">
+                <input type="hidden" name="pending_view" value="1">
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                    <div class="lg:col-span-1">
+                        <label for="pending_from" class="mb-1 block text-xs font-semibold text-gray-500 dark:text-slate-400">From</label>
+                        <input id="pending_from" type="date" name="pending_from" value="{{ $pendingFrom }}"
+                            class="w-full rounded-lg border-gray-200 text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100">
+                    </div>
+                    <div class="lg:col-span-1">
+                        <label for="pending_to" class="mb-1 block text-xs font-semibold text-gray-500 dark:text-slate-400">To</label>
+                        <input id="pending_to" type="date" name="pending_to" value="{{ $pendingTo }}"
+                            class="w-full rounded-lg border-gray-200 text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100">
+                    </div>
+                    <div class="lg:col-span-1">
+                        <label for="pending_date_type" class="mb-1 block text-xs font-semibold text-gray-500 dark:text-slate-400">Date basis</label>
+                        <select id="pending_date_type" name="pending_date_type"
+                            class="w-full rounded-lg border-gray-200 text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100">
+                            <option value="travel_date" {{ $pendingDateType === 'travel_date' ? 'selected' : '' }}>Travel date</option>
+                            <option value="created_at" {{ $pendingDateType === 'created_at' ? 'selected' : '' }}>Requested on</option>
+                        </select>
+                    </div>
+                    <div class="lg:col-span-1">
+                        <label for="pending_project" class="mb-1 block text-xs font-semibold text-gray-500 dark:text-slate-400">Project</label>
+                        <select id="pending_project" name="pending_project"
+                            class="w-full rounded-lg border-gray-200 text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100">
+                            <option value="">All projects</option>
+                            @foreach($pendingProjectOptions as $project)
+                                <option value="{{ $project->id }}" {{ (int) $pendingProject === (int) $project->id ? 'selected' : '' }}>
+                                    {{ $project->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="flex items-end gap-2 lg:col-span-2">
+                        <button type="submit"
+                            class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600">
+                            Apply
+                        </button>
+                        <a href="{{ route('dashboard', ['pending_view' => 1]) }}"
+                            class="inline-flex w-full items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
+                            Clear
+                        </a>
+                    </div>
+                </div>
+            </form>
+
+            {{-- Project breakdown --}}
+            <div x-show="open" x-cloak
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 -translate-y-1"
+                 x-transition:enter-end="opacity-100 translate-y-0"
+                 class="border-t border-amber-100 px-6 py-5 dark:border-slate-700">
+                @if($pendingProjects->isEmpty())
+                    <div class="py-8 text-center">
+                        <p class="text-3xl">✅</p>
+                        <p class="mt-2 text-sm font-semibold text-gray-700 dark:text-slate-200">Nothing pending for this filter</p>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">All tickets in this scope have already been decided.</p>
+                    </div>
+                @else
+                    <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <h4 class="text-sm font-bold text-gray-800 dark:text-slate-100">Ticket age per project</h4>
+                        <span class="text-xs text-gray-500 dark:text-slate-400">Oldest first · age counted from the request date</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        @foreach($pendingProjects as $row)
+                            @php
+                                $tone = $ageTone($row['oldest_days']);
+                                $linkParams = array_filter([
+                                    'status' => 'pending_commercial',
+                                    'project_id' => $row['id'],
+                                    'date_from' => $pendingDateType === 'travel_date' ? $pendingFrom : null,
+                                    'date_to' => $pendingDateType === 'travel_date' ? $pendingTo : null,
+                                ]);
+                                $counts = $row['buckets'];
+                            @endphp
+                            <a href="{{ route('travel-requests.index', $linkParams) }}"
+                               class="group flex flex-col rounded-xl border p-4 transition hover:shadow-md
+                                      {{ $tone === 'critical' ? 'border-red-200 bg-red-50/40 hover:border-red-300 dark:border-red-900 dark:bg-red-950/20' : ($tone === 'watch' ? 'border-amber-200 bg-amber-50/40 hover:border-amber-300 dark:border-amber-900 dark:bg-amber-950/20' : 'border-emerald-200 bg-emerald-50/40 hover:border-emerald-300 dark:border-emerald-900 dark:bg-emerald-950/20') }}">
+
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <p class="truncate text-sm font-bold text-gray-800 group-hover:text-gray-900 dark:text-slate-100">
+                                            {{ $row['name'] }}
+                                        </p>
+                                        <p class="mt-0.5 text-[11px] text-gray-500 dark:text-slate-400">
+                                            {{ $row['total'] }} pending · avg {{ $row['avg_days'] }}d
+                                        </p>
+                                    </div>
+
+                                    {{-- Age since the request date — the star of this card --}}
+                                    <div class="flex flex-col items-center">
+                                        <span class="inline-flex h-12 min-w-[3.25rem] flex-col items-center justify-center rounded-xl px-2 leading-none {{ $ageTones[$tone]['badge'] }}">
+                                            <span class="text-xl font-extrabold">{{ $row['oldest_days'] }}</span>
+                                            <span class="mt-0.5 text-[9px] font-bold uppercase tracking-wider opacity-80">days</span>
+                                        </span>
+                                        <span class="mt-1 text-[10px] font-bold uppercase tracking-wider {{ $ageTones[$tone]['text'] }}">
+                                            {{ $ageTones[$tone]['label'] }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {{-- Aging split: red / amber / green --}}
+                                <div class="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-white/70 ring-1 ring-inset ring-gray-200 dark:bg-slate-700 dark:ring-slate-600">
+                                    @foreach(['critical', 'watch', 'fresh'] as $bucket)
+                                        @if($counts[$bucket] > 0)
+                                            <div class="h-full {{ $ageTones[$bucket]['bar'] }}"
+                                                 style="width: {{ round($counts[$bucket] / max(1, $row['total']) * 100, 2) }}%"
+                                                 title="{{ $ageTones[$bucket]['label'] }}: {{ $counts[$bucket] }}"></div>
+                                        @endif
+                                    @endforeach
+                                </div>
+
+                                <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold">
+                                    @foreach(['critical', 'watch', 'fresh'] as $bucket)
+                                        <span class="inline-flex items-center gap-1 {{ $counts[$bucket] > 0 ? $ageTones[$bucket]['text'] : 'text-gray-400 dark:text-slate-500' }}">
+                                            <span class="h-1.5 w-1.5 rounded-full {{ $counts[$bucket] > 0 ? $ageTones[$bucket]['bar'] : 'bg-gray-300 dark:bg-slate-600' }}"></span>
+                                            {{ $counts[$bucket] }} {{ strtolower($ageTones[$bucket]['label']) }}
+                                        </span>
+                                    @endforeach
+                                </div>
+
+                                <div class="mt-3 flex items-center justify-between border-t border-white/70 pt-2 text-[11px] text-gray-500 dark:border-slate-700 dark:text-slate-400">
+                                    <span>
+                                        @if($row['oldest_requested_at'])
+                                            Since {{ $row['oldest_requested_at']->format('M d, Y') }}
+                                        @endif
+                                    </span>
+                                    <span>
+                                        @if($row['next_travel'])
+                                            Next travel {{ $row['next_travel']->format('M d') }}
+                                        @endif
+                                    </span>
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+
+                    <div class="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-gray-50 px-4 py-3 text-sm dark:bg-slate-800/60">
+                        <span class="font-semibold text-gray-700 dark:text-slate-200">
+                            {{ $pendingProjects->count() }} {{ \Illuminate\Support\Str::plural('project', $pendingProjects->count()) }} ·
+                            {{ $pendingTotal }} pending {{ \Illuminate\Support\Str::plural('ticket', $pendingTotal) }}
+                        </span>
+                        <a href="{{ route('travel-requests.index', array_filter([
+                                'status' => 'pending_commercial',
+                                'project_id' => $pendingProject,
+                                'date_from' => $pendingDateType === 'travel_date' ? $pendingFrom : null,
+                                'date_to' => $pendingDateType === 'travel_date' ? $pendingTo : null,
+                            ])) }}"
+                            class="text-xs font-semibold text-amber-700 hover:text-amber-900 dark:text-amber-400">
+                            Open in ticket list →
+                        </a>
+                    </div>
+                @endif
+            </div>
+        </div>
+
         {{-- Trend Cards --}}
         <div class="grid gap-4 sm:grid-cols-2">
             {{-- Month Trend --}}
-            <div class="rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900 p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <div>
+            <div class="min-w-0 overflow-hidden rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900 p-6">
+                <div class="flex items-center justify-between gap-3 mb-4">
+                    <div class="min-w-0">
                         <p class="text-xs font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-400">This Month vs Last Month</p>
                         <p class="mt-2 text-3xl font-bold text-blue-800 dark:text-blue-300">{{ $currentMonthRequests }} requests</p>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex shrink-0 items-center gap-2">
                         @if($monthTrendPercent > 0)
                             <svg class="w-8 h-8 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M12 5a1 1 0 011 1v5.586l1.293-1.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L11 12.586V6a1 1 0 011-1z" clip-rule="evenodd" />
@@ -740,7 +1064,7 @@
             </div>
 
             {{-- Request Status Chart --}}
-            <div class="rounded-2xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-900 p-6">
+            <div class="min-w-0 overflow-hidden rounded-2xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-900 p-6">
                 <h3 class="text-sm font-semibold text-gray-700 dark:text-slate-100 mb-4">Request Status Overview</h3>
                 <div class="mx-auto max-w-xs" style="height: 200px;">
                     <canvas id="{{ $summaryChartId }}"></canvas>
@@ -1068,102 +1392,238 @@
 
     <div class="space-y-8">
 
-        {{-- Hero Banner --}}
-        <div class="rounded-2xl p-8 flex items-center justify-between overflow-hidden relative"
-            style="background: linear-gradient(135deg,#0c4a6e,#0ea5e9);">
-            <div class="relative z-10">
-                <p class="text-sky-200 text-sm font-medium mb-1">Welcome back,</p>
-                <h2 class="text-2xl font-bold text-white mb-4">{{ Auth::user()->name }}</h2>
-                @if(Auth::user()->project_id)
-                    <a href="{{ route('travel-requests.create') }}"
-                        class="inline-flex items-center gap-2 bg-white text-sky-700 font-semibold text-sm px-5 py-2.5 rounded-xl shadow hover:shadow-md transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                        Raise Ticket Here
-                    </a>
-                @else
-                    <p class="text-sky-300 text-sm">You are not assigned to a project yet. Contact your admin.</p>
-                @endif
+        {{-- Slim header: who you are, where you sit, and the one action that matters --}}
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="min-w-0">
+                <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-600 dark:text-sky-400">My travel</p>
+                <h2 class="mt-1 truncate text-2xl font-bold text-gray-800 dark:text-slate-100">Welcome back, {{ Auth::user()->name }}</h2>
+                <p class="mt-1 text-sm text-gray-500 dark:text-slate-400">
+                    {{ optional(Auth::user()->project)->name ?? 'No project assigned' }}
+                    <span class="mx-1 text-gray-300 dark:text-slate-600">·</span>
+                    {{ $myApproved }} {{ \Illuminate\Support\Str::plural('trip', $myApproved) }} taken
+                </p>
             </div>
-            <div class="absolute right-0 top-0 h-full w-48 opacity-10">
-                <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"
-                    class="w-full h-full text-white fill-current">
-                    <path
-                        d="M45.2,-58.7C57.8,-49.5,66.4,-34.7,70.1,-18.6C73.8,-2.6,72.7,14.8,65.1,28.8C57.5,42.9,43.5,53.7,28.1,60.5C12.7,67.3,-4,70.2,-19.3,66.1C-34.6,62,-48.4,50.9,-58.3,36.6C-68.2,22.3,-74.2,4.7,-71.6,-11.5C-69,-27.7,-57.8,-42.5,-44.2,-51.7C-30.7,-60.9,-15.3,-64.5,0.9,-65.6C17.1,-66.7,32.6,-68,45.2,-58.7Z"
-                        transform="translate(100 100)" />
-                </svg>
-            </div>
+
+            @if(Auth::user()->project_id)
+                <a href="{{ route('travel-requests.create') }}"
+                   class="inline-flex shrink-0 items-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Raise ticket
+                </a>
+            @else
+                <p class="shrink-0 rounded-xl bg-amber-50 px-4 py-2.5 text-xs font-semibold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                    You are not assigned to a project yet. Contact your admin.
+                </p>
+            @endif
         </div>
 
-        {{-- Stat Cards --}}
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {{-- Compact stat chips --}}
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
             @php
                 $myCards = [
-                    ['label' => 'Total Tickets', 'value' => $myTotal, 'from' => '#0ea5e9', 'to' => '#38bdf8'],
-                    ['label' => 'Pending', 'value' => $myPending, 'from' => '#f59e0b', 'to' => '#fbbf24'],
-                    ['label' => 'Approved', 'value' => $myApproved, 'from' => '#10b981', 'to' => '#34d399'],
-                    ['label' => 'Rejected', 'value' => $myRejected, 'from' => '#ef4444', 'to' => '#f87171'],
+                    ['label' => 'Tickets', 'value' => $myTotal, 'dot' => 'bg-sky-500', 'text' => 'text-sky-700 dark:text-sky-400'],
+                    ['label' => 'Pending', 'value' => $myPending, 'dot' => 'bg-amber-500', 'text' => 'text-amber-700 dark:text-amber-400'],
+                    ['label' => 'Approved', 'value' => $myApproved, 'dot' => 'bg-emerald-500', 'text' => 'text-emerald-700 dark:text-emerald-400'],
+                    ['label' => 'Rejected', 'value' => $myRejected, 'dot' => 'bg-red-500', 'text' => 'text-red-700 dark:text-red-400'],
                 ];
             @endphp
             @foreach($myCards as $card)
-                <div class="bg-white rounded-2xl shadow-sm p-5 border border-gray-100 text-center">
-                    <p class="text-3xl font-bold"
-                        style="background: linear-gradient(135deg,{{ $card['from'] }},{{ $card['to'] }});-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
-                        {{ $card['value'] }}
-                    </p>
-                    <p class="text-xs text-gray-500 mt-1 font-medium">{{ $card['label'] }}</p>
+                <div class="flex items-center gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                    <span class="h-2 w-2 shrink-0 rounded-full {{ $card['dot'] }}"></span>
+                    <div class="min-w-0">
+                        <p class="text-xl font-bold leading-none {{ $card['text'] }}">{{ $card['value'] }}</p>
+                        <p class="mt-1 text-[11px] font-medium uppercase tracking-wide text-gray-500 dark:text-slate-400">{{ $card['label'] }}</p>
+                    </div>
                 </div>
             @endforeach
         </div>
 
-        {{-- My Recent Requests --}}
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h2 class="text-base font-semibold text-gray-700">🧳 My Recent Tickets</h2>
-                <a href="{{ route('travel-requests.index') }}"
-                    class="text-xs text-sky-600 hover:underline font-medium">View all →</a>
+        {{-- ===== My travel report: trend, destinations, project, latest trips ===== --}}
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+
+            {{-- 12-month trend (approved trips) --}}
+            <div class="min-w-0 overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-sm lg:col-span-2 dark:border-slate-700 dark:bg-slate-900">
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-800 dark:text-slate-100">My travel trend</h3>
+                        <p class="mt-0.5 text-xs text-gray-500 dark:text-slate-400">Approved trips per month · last 12 months</p>
+                    </div>
+                    <p class="text-xs font-semibold text-sky-600 dark:text-sky-400">
+                        {{ $travelTrendTotal }} {{ \Illuminate\Support\Str::plural('trip', $travelTrendTotal) }}
+                    </p>
+                </div>
+                <div class="mt-4" style="height: 190px;">
+                    <canvas id="myTravelTrendChart"></canvas>
+                </div>
             </div>
-            @if($myRequests->isEmpty())
-                <div class="p-8 text-center">
-                    <p class="text-4xl mb-3">✈️</p>
-                    <p class="text-gray-500">You haven't made any travel requests yet.</p>
-                </div>
-            @else
-                <div class="divide-y divide-gray-50">
-                    @foreach($myRequests as $req)
-                        @php
-                            $statusColors = [
-                                'approved' => 'bg-green-100 text-green-700',
-                                'rejected' => 'bg-red-100 text-red-700',
-                                'pending_pm' => 'bg-yellow-100 text-yellow-700',
-                                'pending_commercial' => 'bg-purple-100 text-purple-700',
-                                'pending_hod' => 'bg-blue-100 text-blue-700',
-                                'pending_ceo' => 'bg-indigo-100 text-indigo-700',
-                            ];
-                        @endphp
-                        <div class="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition">
+
+            {{-- Where they travel most --}}
+            <div class="min-w-0 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                <h3 class="text-sm font-bold text-gray-800 dark:text-slate-100">Where you travel most</h3>
+                <p class="mt-0.5 text-xs text-gray-500 dark:text-slate-400">Top destinations</p>
+
+                @if($topDestinations->isEmpty())
+                    <p class="mt-6 text-sm text-gray-400 dark:text-slate-500">No approved trips yet.</p>
+                @else
+                    @php $destinationMax = max(1, $topDestinations->max('count')); @endphp
+                    <div class="mt-4 space-y-3">
+                        @foreach($topDestinations as $destination)
                             <div>
-                                <p class="font-semibold text-gray-800 text-sm">{{ $req->destination }}</p>
-                                <p class="text-xs text-gray-400 mt-0.5">{{ $req->travel_date }} ·
-                                    {{ optional($req->project)->name ?? 'No project' }}
-                                </p>
+                                <div class="flex items-baseline justify-between gap-2 text-xs">
+                                    <span class="truncate font-semibold text-gray-700 dark:text-slate-200">{{ $destination['name'] }}</span>
+                                    <span class="shrink-0 font-mono text-gray-500 dark:text-slate-400">{{ $destination['count'] }}</span>
+                                </div>
+                                <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-slate-700">
+                                    <div class="h-full rounded-full bg-sky-500"
+                                         style="width: {{ (int) round($destination['count'] / $destinationMax * 100) }}%"></div>
+                                </div>
                             </div>
-                            <div class="flex items-center gap-3">
-                                <span
-                                    class="px-2 py-0.5 rounded-full text-xs font-semibold {{ $statusColors[$req->status] ?? 'bg-gray-100 text-gray-600' }}">
-                                    {{ ucfirst(str_replace('_', ' ', $req->status)) }}
-                                </span>
-                                    <a href="{{ route('travel-requests.show', $req) }}"
-                                    class="text-xs text-sky-600 hover:underline font-medium">View</a>
-                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
+                {{-- Project split --}}
+                <div class="mt-5 border-t border-gray-100 pt-4 dark:border-slate-700">
+                    <p class="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-slate-400">Travelled under</p>
+                    @if($projectShare->isEmpty())
+                        <p class="mt-2 text-sm text-gray-400 dark:text-slate-500">—</p>
+                    @else
+                        <div class="mt-2 space-y-1.5">
+                            @foreach($projectShare->take(4) as $share)
+                                <div class="flex items-center justify-between gap-2 text-xs">
+                                    <span class="inline-flex min-w-0 items-center gap-1.5 text-gray-700 dark:text-slate-200">
+                                        <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400"></span>
+                                        <span class="truncate">{{ $share['name'] }}</span>
+                                    </span>
+                                    <span class="shrink-0 font-mono text-gray-500 dark:text-slate-400">
+                                        {{ $myApproved > 0 ? (int) round($share['count'] / $myApproved * 100) : 0 }}%
+                                    </span>
+                                </div>
+                            @endforeach
                         </div>
-                    @endforeach
+                    @endif
                 </div>
-            @endif
+            </div>
+
+            {{-- Latest travel history: last trip + next upcoming --}}
+            <div class="min-w-0 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm lg:col-span-2 dark:border-slate-700 dark:bg-slate-900">
+                <div class="flex items-baseline justify-between gap-2">
+                    <h3 class="text-sm font-bold text-gray-800 dark:text-slate-100">Latest travel history</h3>
+                    <a href="{{ route('travel-requests.index') }}" class="text-xs font-semibold text-sky-600 hover:underline dark:text-sky-400">All tickets →</a>
+                </div>
+
+                @if(! $latestPastTrip && ! $nextUpcomingTrip)
+                    <p class="mt-4 rounded-xl bg-gray-50 px-4 py-6 text-center text-sm text-gray-500 dark:bg-slate-800/60 dark:text-slate-400">
+                        No approved trips yet. Your history shows up here once a ticket is approved.
+                    </p>
+                @else
+                    <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {{-- Last trip --}}
+                        <div class="rounded-xl border border-gray-100 p-4 dark:border-slate-700">
+                            <p class="text-[11px] font-bold uppercase tracking-wide text-gray-400 dark:text-slate-500">Last trip</p>
+                            @if($latestPastTrip)
+                                <p class="mt-1.5 truncate text-sm font-bold text-gray-800 dark:text-slate-100">{{ $latestPastTrip->destination }}</p>
+                                <p class="mt-0.5 text-xs text-gray-500 dark:text-slate-400">
+                                    {{ \Illuminate\Support\Carbon::parse($latestPastTrip->travel_date)->format('M d, Y') }}
+                                    <span class="mx-1 text-gray-300 dark:text-slate-600">·</span>
+                                    {{ optional($latestPastTrip->project)->name ?? 'No project' }}
+                                </p>
+                                <a href="{{ route('travel-requests.show', $latestPastTrip) }}"
+                                   class="mt-2 inline-block text-xs font-semibold text-sky-600 hover:underline dark:text-sky-400">View ticket →</a>
+                            @else
+                                <p class="mt-2 text-sm text-gray-400 dark:text-slate-500">No past trips yet.</p>
+                            @endif
+                        </div>
+
+                        {{-- Next trip --}}
+                        <div class="rounded-xl border border-sky-100 bg-sky-50/50 p-4 dark:border-sky-900 dark:bg-sky-950/20">
+                            <p class="text-[11px] font-bold uppercase tracking-wide text-sky-600 dark:text-sky-400">Next trip</p>
+                            @if($nextUpcomingTrip)
+                                @php
+                                    $daysAway = (int) now()->startOfDay()->diffInDays(\Illuminate\Support\Carbon::parse($nextUpcomingTrip->travel_date)->startOfDay(), false);
+                                @endphp
+                                <p class="mt-1.5 truncate text-sm font-bold text-gray-800 dark:text-slate-100">{{ $nextUpcomingTrip->destination }}</p>
+                                <p class="mt-0.5 text-xs text-gray-500 dark:text-slate-400">
+                                    {{ \Illuminate\Support\Carbon::parse($nextUpcomingTrip->travel_date)->format('M d, Y') }}
+                                    <span class="mx-1 text-gray-300 dark:text-slate-600">·</span>
+                                    {{ optional($nextUpcomingTrip->project)->name ?? 'No project' }}
+                                </p>
+                                <p class="mt-2 inline-flex items-center gap-1 rounded-full bg-sky-600 px-2 py-0.5 text-[11px] font-bold text-white">
+                                    {{ $daysAway === 0 ? 'Today' : 'In ' . $daysAway . ' ' . \Illuminate\Support\Str::plural('day', $daysAway) }}
+                                </p>
+                            @else
+                                <p class="mt-2 text-sm text-gray-400 dark:text-slate-500">Nothing scheduled.</p>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+            </div>
+
+            {{-- Small reminder: pending tickets waiting on others --}}
+            <div class="min-w-0 rounded-2xl border border-amber-200 bg-amber-50/60 p-5 shadow-sm dark:border-amber-900 dark:bg-amber-950/20">
+                <h3 class="text-sm font-bold text-amber-800 dark:text-amber-300">Waiting for approval</h3>
+                <p class="mt-1 text-3xl font-extrabold leading-none text-amber-700 dark:text-amber-300">{{ $myPending }}</p>
+                <p class="mt-1 text-xs text-amber-700/80 dark:text-amber-400/80">
+                    {{ \Illuminate\Support\Str::plural('ticket', $myPending) }} still moving through the approval chain.
+                </p>
+                @if($myPending > 0)
+                    <a href="{{ route('travel-requests.index') }}"
+                       class="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-amber-800 hover:underline dark:text-amber-300">
+                        Track them →
+                    </a>
+                @endif
+            </div>
         </div>
     </div>
+
+    {{-- Personal trend chart --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const canvas = document.getElementById('myTravelTrendChart');
+            if (!canvas || typeof Chart === 'undefined') return;
+
+            const labels = @json($travelTrend->pluck('label'));
+            const counts = @json($travelTrend->pluck('count'));
+            const peak = Math.max(1, ...counts);
+
+            new Chart(canvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: counts.map(value => value === 0 ? 'rgba(14,165,233,0.18)' : 'rgba(14,165,233,0.85)'),
+                        borderRadius: 4,
+                        maxBarThickness: 22,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.parsed.y} ${ctx.parsed.y === 1 ? 'trip' : 'trips'}`,
+                            },
+                        },
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#94a3b8' } },
+                        y: {
+                            beginAtZero: true,
+                            suggestedMax: peak,
+                            ticks: { stepSize: 1, precision: 0, font: { size: 10 }, color: '#94a3b8' },
+                            grid: { color: 'rgba(148,163,184,0.18)' },
+                            border: { display: false },
+                        },
+                    },
+                },
+            });
+        });
+    </script>
     @endhasrole
 
 </x-app-layout>
